@@ -37,6 +37,7 @@
 
     <!-- Login -->
     <string name="url_hint">Server url</string>
+
     <string name="user_hint">Username</string>
     <string name="password_hint">Password</string>
     <string name="log_in_button">Log In</string>
@@ -368,5 +369,7 @@
     <string name="field_errors">Some fields have errors. Please, check them to be able to complete</string>
     <string name="unselect_enrollment">Unselect enrollment</string>
     <string name="unselect_enrollment_description">Show dashboard with all active programs</string>
+    <string name="CHECK_SYNC_ERRORS">Check sync errors</string>
+    <string name="error_dialog_title">Sync error log</string>
 
 </resources>
