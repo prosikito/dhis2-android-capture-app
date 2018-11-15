@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
 import io.reactivex.Observable;
 import io.reactivex.disposables.CompositeDisposable;
@@ -75,13 +76,13 @@ final class DataEntryPresenterImpl implements DataEntryPresenter {
     @Override
     public void onAttach(@NonNull DataEntryView dataEntryView) {
         this.dataEntryView = dataEntryView;
-        Flowable<List<FieldViewModel>> fieldsFlowable = dataEntryRepository.list();
+        Observable<List<FieldViewModel>> fieldsFlowable = dataEntryRepository.list();
         Flowable<Result<RuleEffect>> ruleEffectFlowable = ruleEngineRepository.calculate()
-                .subscribeOn(schedulerProvider.computation());
+                .subscribeOn(schedulerProvider.computation()).onErrorReturn(throwable -> Result.failure(new Exception(throwable)));
 
         // Combining results of two repositories into a single stream.
         Flowable<List<FieldViewModel>> viewModelsFlowable = Flowable.zip(
-                fieldsFlowable, ruleEffectFlowable, this::applyEffects);
+                fieldsFlowable.toFlowable(BackpressureStrategy.LATEST), ruleEffectFlowable, this::applyEffects);
 
         disposable.add(viewModelsFlowable
                 .subscribeOn(schedulerProvider.io())//check if computation does better than io
@@ -104,7 +105,7 @@ final class DataEntryPresenterImpl implements DataEntryPresenter {
         );
     }
 
-    private void save(String uid, String value) {
+    private void save(String uid, String value, Boolean isAttribute) {
         CompositeDisposable saveDisposable = new CompositeDisposable();
         saveDisposable.add(
                 dataEntryStore.save(uid, value)
@@ -213,12 +214,12 @@ final class DataEntryPresenterImpl implements DataEntryPresenter {
                 RuleActionAssign assign = (RuleActionAssign) ruleAction;
 
                 if (fieldViewModels.get(assign.field()) == null)
-                    save(assign.field(), ruleEffect.data());
+                    save(assign.field(), ruleEffect.data(),assign.isAttribute());
                 else {
                     String value = fieldViewModels.get(assign.field()).value();
 
                     if (value == null || !value.equals(ruleEffect.data())) {
-                        save(assign.field(), ruleEffect.data());
+                        save(assign.field(), ruleEffect.data(),assign.isAttribute());
                     }
 
                     fieldViewModels.put(assign.field(), fieldViewModels.get(assign.field()).withValue(ruleEffect.data()));
