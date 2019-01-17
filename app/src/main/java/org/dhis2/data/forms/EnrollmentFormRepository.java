@@ -12,11 +12,13 @@ import org.dhis2.data.forms.dataentry.fields.FieldViewModelFactoryImpl;
 import org.dhis2.data.tuples.Pair;
 import org.dhis2.data.tuples.Trio;
 import org.dhis2.utils.CodeGenerator;
+import org.dhis2.utils.Constants;
 import org.dhis2.utils.DateUtils;
 import org.hisp.dhis.android.core.category.CategoryComboModel;
 import org.hisp.dhis.android.core.category.CategoryOptionComboModel;
 import org.hisp.dhis.android.core.common.State;
 import org.hisp.dhis.android.core.common.ValueType;
+import org.hisp.dhis.android.core.common.ValueTypeDeviceRenderingModel;
 import org.hisp.dhis.android.core.enrollment.EnrollmentModel;
 import org.hisp.dhis.android.core.enrollment.EnrollmentStatus;
 import org.hisp.dhis.android.core.event.EventModel;
@@ -29,6 +31,7 @@ import org.hisp.dhis.android.core.trackedentity.TrackedEntityInstanceModel;
 import org.hisp.dhis.rules.RuleEngine;
 import org.hisp.dhis.rules.RuleEngineContext;
 import org.hisp.dhis.rules.RuleExpressionEvaluator;
+import org.hisp.dhis.rules.models.TriggerEnvironment;
 
 import java.util.Arrays;
 import java.util.Calendar;
@@ -67,7 +70,7 @@ class EnrollmentFormRepository implements FormRepository {
             "WHERE Enrollment.uid = ? " +
             "LIMIT 1";
 
-    private static final String SELECT_ENROLLMENT_DATE = "SELECT Enrollment.enrollmentDate\n" +
+    private static final String SELECT_ENROLLMENT_DATE = "SELECT Enrollment.*\n" +
             "FROM Enrollment\n" +
             "WHERE Enrollment.uid = ? " +
             "LIMIT 1";
@@ -84,7 +87,7 @@ class EnrollmentFormRepository implements FormRepository {
             "Program.uid, " +
             "Enrollment.organisationUnit, " +
             "ProgramStage.minDaysFromStart, " +
-            "ProgramStage.generatedByEnrollmentDate, " +
+            "ProgramStage.reportDateToUse, " +
             "Enrollment.incidentDate, " +
             "Enrollment.enrollmentDate, " +
             "ProgramStage.periodType \n" +
@@ -220,6 +223,7 @@ class EnrollmentFormRepository implements FormRepository {
                                     .calculatedValueMap(new HashMap<>())
                                     .supplementaryData(new HashMap<>())
                                     .build().toEngineBuilder();
+                            builder.triggerEnvironment(TriggerEnvironment.ANDROIDCLIENT);
                             builder.events(events);
                             return builder.build();
                         }))
@@ -243,10 +247,13 @@ class EnrollmentFormRepository implements FormRepository {
 
     @NonNull
     @Override
-    public Flowable<String> reportDate() {
-        return briteDatabase
-                .createQuery(EnrollmentModel.TABLE, SELECT_ENROLLMENT_DATE, enrollmentUid == null ? "" : enrollmentUid)
-                .mapToOne(cursor -> cursor.getString(0) == null ? "" : cursor.getString(0))
+    public Flowable<Pair<ProgramModel, String>> reportDate() {
+        return briteDatabase.createQuery(ProgramModel.TABLE, SELECT_ENROLLMENT_PROGRAM, enrollmentUid == null ? "" : enrollmentUid)
+                .mapToOne(ProgramModel::create)
+                .flatMap(programModel -> briteDatabase.createQuery(EnrollmentModel.TABLE, SELECT_ENROLLMENT_DATE, enrollmentUid == null ? "" : enrollmentUid)
+                        .mapToOne(EnrollmentModel::create)
+                        .map(enrollmentModel -> Pair.create(programModel, enrollmentModel.enrollmentDate() != null ?
+                                DateUtils.uiDateFormat().format(enrollmentModel.enrollmentDate()) : "")))
                 .toFlowable(BackpressureStrategy.LATEST)
                 .distinctUntilChanged();
     }
@@ -394,39 +401,46 @@ class EnrollmentFormRepository implements FormRepository {
                 String program = cursor.getString(1);
                 String orgUnit = cursor.getString(2);
                 int minDaysFromStart = cursor.getInt(3);
-                Boolean generatedByEnrollmentDate = cursor.getInt(4) == 1;
+                String reportDateToUse = cursor.getString(4) != null ? cursor.getString(4) : "";
+                String incidentDateString = cursor.getString(5);
+                String reportDateString = cursor.getString(6);
                 Date incidentDate = null;
                 Date enrollmentDate = null;
                 PeriodType periodType = cursor.getString(7) != null ? PeriodType.valueOf(cursor.getString(7)) : null;
 
-                try {
-                    incidentDate = DateUtils.databaseDateFormat().parse(cursor.getString(5));
-                    enrollmentDate = DateUtils.databaseDateFormat().parse(cursor.getString(6));
+                if (incidentDateString != null)
+                    try {
+                        incidentDate = DateUtils.databaseDateFormat().parse(incidentDateString);
+                    } catch (Exception e) {
+                        Timber.e(e);
+                    }
 
-                } catch (Exception e) {
-                    Timber.e(e);
-                }
+                if (reportDateString != null)
+                    try {
+                        enrollmentDate = DateUtils.databaseDateFormat().parse(reportDateString);
+                    } catch (Exception e) {
+                        Timber.e(e);
+                    }
 
                 Date eventDate;
                 Calendar cal = DateUtils.getInstance().getCalendar();
-                if (generatedByEnrollmentDate) {
-
-                    cal.setTime(enrollmentDate != null ? enrollmentDate : Calendar.getInstance().getTime());
-                    cal.set(Calendar.HOUR_OF_DAY, 0);
-                    cal.set(Calendar.MINUTE, 0);
-                    cal.set(Calendar.SECOND, 0);
-                    cal.set(Calendar.MILLISECOND, 0);
-                    cal.add(Calendar.DATE, minDaysFromStart);
-                    eventDate = cal.getTime();
-                } else {
-                    cal.setTime(incidentDate != null ? incidentDate : Calendar.getInstance().getTime());
-                    cal.set(Calendar.HOUR_OF_DAY, 0);
-                    cal.set(Calendar.MINUTE, 0);
-                    cal.set(Calendar.SECOND, 0);
-                    cal.set(Calendar.MILLISECOND, 0);
-                    cal.add(Calendar.DATE, minDaysFromStart);
-                    eventDate = cal.getTime();
+                switch (reportDateToUse) {
+                    case Constants.ENROLLMENT_DATE:
+                        cal.setTime(enrollmentDate != null ? enrollmentDate : Calendar.getInstance().getTime());
+                        break;
+                    case Constants.INCIDENT_DATE:
+                        cal.setTime(incidentDate != null ? incidentDate : Calendar.getInstance().getTime());
+                        break;
+                    default:
+                        cal.setTime(Calendar.getInstance().getTime());
+                        break;
                 }
+                cal.set(Calendar.HOUR_OF_DAY, 0);
+                cal.set(Calendar.MINUTE, 0);
+                cal.set(Calendar.SECOND, 0);
+                cal.set(Calendar.MILLISECOND, 0);
+                cal.add(Calendar.DATE, minDaysFromStart);
+                eventDate = cal.getTime();
 
                 if (periodType != null)
                     eventDate = DateUtils.getInstance().getNextPeriod(periodType, eventDate, 0); //Sets eventDate to current Period date
@@ -451,7 +465,7 @@ class EnrollmentFormRepository implements FormRepository {
                         eventBuilder.dueDate(eventDate);
                     else
                         eventBuilder.eventDate(eventDate);
-                    
+
                     EventModel event = eventBuilder.build();
 
 
@@ -556,6 +570,13 @@ class EnrollmentFormRepository implements FormRepository {
             dataValue = optionCodeName;
         }
 
+        ValueTypeDeviceRenderingModel fieldRendering = null;
+        Cursor rendering = briteDatabase.query("SELECT * FROM ValueTypeDeviceRendering WHERE uid = ?", uid);
+        if (rendering != null && rendering.moveToFirst()) {
+            fieldRendering = ValueTypeDeviceRenderingModel.create(cursor);
+            rendering.close();
+        }
+
         FieldViewModelFactoryImpl fieldFactory = new FieldViewModelFactoryImpl(
                 "",
                 "",
@@ -568,7 +589,7 @@ class EnrollmentFormRepository implements FormRepository {
                 "");
 
         return fieldFactory.create(uid, label, valueType, mandatory, optionSetUid, dataValue, section,
-                allowFutureDates, status == EnrollmentStatus.ACTIVE, null, description);
+                allowFutureDates, status == EnrollmentStatus.ACTIVE, null, description, fieldRendering);
     }
 
     @NonNull

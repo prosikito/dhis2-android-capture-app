@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.app.DatePickerDialog;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.databinding.DataBindingUtil;
 import android.databinding.ObservableBoolean;
 import android.os.Bundle;
@@ -72,6 +73,10 @@ public class TEIDataFragment extends FragmentGlobalAbstract implements DialogCli
     private String lastModifiedEventUid;
     private ProgramStageModel programStageFromEvent;
     private ObservableBoolean followUp = new ObservableBoolean(false);
+
+    private boolean hasCatComb;
+    private ArrayList<EventModel> catComboShowed = new ArrayList<>();
+
 
     public static TEIDataFragment getInstance() {
         if (instance == null)
@@ -145,6 +150,8 @@ public class TEIDataFragment extends FragmentGlobalAbstract implements DialogCli
     public void setData(DashboardProgramModel nprogram) {
 
         if (nprogram != null && nprogram.getCurrentEnrollment() != null) {
+            SharedPreferences prefs = getContext().getSharedPreferences(Constants.SHARE_PREFS, Context.MODE_PRIVATE);
+            hasCatComb = !nprogram.getCurrentProgram().categoryCombo().equals(prefs.getString(Constants.DEFAULT_CAT_COMBO, ""));
             List<EventModel> events = new ArrayList<>();
             adapter = new EventAdapter(presenter, nprogram.getProgramStages(), events, nprogram.getCurrentEnrollment());
             binding.teiRecycler.setLayoutManager(new LinearLayoutManager(getAbstracContext()));
@@ -209,6 +216,10 @@ public class TEIDataFragment extends FragmentGlobalAbstract implements DialogCli
                     if (event.eventDate().after(DateUtils.getInstance().getToday()))
                         binding.teiRecycler.scrollToPosition(events.indexOf(event));
                 }
+                if(hasCatComb && event.attributeOptionCombo()==null && !catComboShowed.contains(event)){
+                    presenter.getCatComboOptions(event);
+                    catComboShowed.add(event);
+                }
             }
         };
     }
@@ -227,7 +238,7 @@ public class TEIDataFragment extends FragmentGlobalAbstract implements DialogCli
                         this);
                 dialog.show();
             } else if (programStageModel.remindCompleted())
-                askCompleteProgram();
+                presenter.areEventsCompleted(this);
         };
     }
 
@@ -247,18 +258,6 @@ public class TEIDataFragment extends FragmentGlobalAbstract implements DialogCli
             }
 
         };
-    }
-
-    private void askCompleteProgram() {
-        dialog = new CustomDialog(
-                getContext(),
-                getString(R.string.event_completed_title),
-                getString(R.string.event_completed_message),
-                getString(R.string.button_ok),
-                getString(R.string.cancel),
-                RC_EVENTS_COMPLETED,
-                this);
-        dialog.show();
     }
 
     public Consumer<EnrollmentStatus> enrollmentCompleted() {
@@ -314,7 +313,7 @@ public class TEIDataFragment extends FragmentGlobalAbstract implements DialogCli
     @Override
     public void onNegative() {
         if (dialog.getRequestCode() == RC_GENERATE_EVENT && programStageFromEvent.remindCompleted())
-            askCompleteProgram();
+            presenter.areEventsCompleted(this);
     }
 
     public void switchFollowUp(boolean followUp) {
