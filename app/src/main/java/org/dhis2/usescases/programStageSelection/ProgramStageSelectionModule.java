@@ -1,11 +1,12 @@
 package org.dhis2.usescases.programStageSelection;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 
 import org.dhis2.data.dagger.PerActivity;
 import org.dhis2.data.forms.RulesRepository;
 import com.squareup.sqlbrite2.BriteDatabase;
 
+import org.dhis2.utils.RulesUtilsProvider;
 import org.hisp.dhis.rules.RuleExpressionEvaluator;
 
 import dagger.Module;
@@ -34,8 +35,9 @@ public class ProgramStageSelectionModule {
 
     @Provides
     @PerActivity
-    ProgramStageSelectionContract.Presenter providesPresenter(@NonNull ProgramStageSelectionRepository programStageSelectionRepository) {
-        return new ProgramStageSelectionPresenter(programStageSelectionRepository);
+    ProgramStageSelectionContract.Presenter providesPresenter(@NonNull ProgramStageSelectionRepository programStageSelectionRepository,
+                                                              @NonNull RulesUtilsProvider ruleUtils) {
+        return new ProgramStageSelectionPresenter(programStageSelectionRepository,ruleUtils);
     }
 
     @Provides

@@ -1,7 +1,7 @@
 package org.dhis2.data.forms.dataentry.fields.age;
 
-import android.databinding.DataBindingUtil;
-import android.support.annotation.NonNull;
+import androidx.databinding.DataBindingUtil;
+import androidx.annotation.NonNull;
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
 
@@ -30,7 +30,8 @@ public class AgeRow implements Row<AgeHolder, AgeViewModel> {
         this.renderType = null;
     }
 
-    public AgeRow(LayoutInflater layoutInflater, FlowableProcessor<RowAction> processor, boolean isBgTransparent, String renderType) {
+    public AgeRow(LayoutInflater layoutInflater, FlowableProcessor<RowAction> processor,
+                  @NonNull FlowableProcessor<Integer> currentPosition,boolean isBgTransparent, String renderType) {
         this.inflater = layoutInflater;
         this.isBgTransparent = isBgTransparent;
         this.processor = processor;

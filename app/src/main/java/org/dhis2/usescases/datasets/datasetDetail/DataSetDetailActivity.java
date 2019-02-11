@@ -2,13 +2,13 @@ package org.dhis2.usescases.datasets.datasetDetail;
 
 import android.annotation.SuppressLint;
 import android.app.DatePickerDialog;
-import android.databinding.DataBindingUtil;
+import androidx.databinding.DataBindingUtil;
 import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
-import android.support.v4.content.ContextCompat;
-import android.support.v4.content.res.ResourcesCompat;
-import android.support.v7.widget.DividerItemDecoration;
+import androidx.core.content.ContextCompat;
+import androidx.core.content.res.ResourcesCompat;
+import androidx.recyclerview.widget.DividerItemDecoration;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.AdapterView;
@@ -22,7 +22,8 @@ import org.dhis2.databinding.ActivityDatasetDetailBinding;
 import org.dhis2.usescases.general.ActivityGlobalAbstract;
 import org.dhis2.usescases.main.program.OrgUnitHolder;
 import org.dhis2.utils.CatComboAdapter;
-import org.dhis2.utils.CustomViews.RxDateDialog;
+import org.dhis2.utils.Constants;
+import org.dhis2.utils.custom_views.RxDateDialog;
 import org.dhis2.utils.DateUtils;
 import org.dhis2.utils.Period;
 import org.hisp.dhis.android.core.category.CategoryComboModel;
@@ -81,7 +82,7 @@ public class DataSetDetailActivity extends ActivityGlobalAbstract implements Dat
         chosenDateYear.add(new Date());
 
         dataSetUid = getIntent().getStringExtra("DATASET_UID");
-        accessWriteData = Boolean.valueOf(getIntent().getStringExtra("ACCESS_DATA"));
+        accessWriteData = Boolean.valueOf(getIntent().getStringExtra(Constants.ACCESS_DATA));
         binding.setPresenter(presenter);
 
         adapter = new DataSetDetailAdapter(presenter);
@@ -394,6 +395,7 @@ public class DataSetDetailActivity extends ActivityGlobalAbstract implements Dat
         }
     }
 
+    @SuppressLint("RestrictedApi")
     @Override
     public void setWritePermission(Boolean canWrite) {
         binding.addDatasetButton.setVisibility(canWrite ? View.VISIBLE : View.GONE);

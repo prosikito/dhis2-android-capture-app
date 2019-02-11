@@ -5,18 +5,34 @@
 
     <data>
 
+        <import type="android.view.View" />
 
-
+        <variable
+            name="sharing"
+            type="androidx.databinding.ObservableBoolean" />
     </data>
 
-    <android.support.constraint.ConstraintLayout
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
-        <android.support.constraint.ConstraintLayout
+        <CheckBox
+            android:id="@+id/selected"
+            android:layout_width="wrap_content"
+            android:layout_height="0dp"
+            android:layout_marginStart="16dp"
+            android:theme="@style/checkBoxErrorLog"
+            android:visibility="@{sharing ? View.VISIBLE : View.GONE}"
+            app:layout_constraintBottom_toBottomOf="@id/parentLayout"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <androidx.constraintlayout.widget.ConstraintLayout
             android:id="@+id/parentLayout"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@id/selected">
 
 
             <TextView
@@ -45,14 +61,14 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="32dp"
+                android:layout_marginEnd="16dp"
                 android:gravity="center|start"
                 android:textColor="@color/colorGreyDefault"
                 android:textSize="16sp"
                 android:textStyle="bold"
-                android:layout_marginEnd="16dp"
+                app:layout_constraintEnd_toStartOf="@id/image"
                 app:layout_constraintStart_toEndOf="@id/errorCode"
                 app:layout_constraintTop_toBottomOf="@id/errorDate"
-                app:layout_constraintEnd_toStartOf="@id/image"
                 tools:text="Error Message Title" />
 
             <ImageView
@@ -65,19 +81,19 @@
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toTopOf="@id/errorMessage"
                 app:srcCompat="@drawable/ic_arrow_down" />
-        </android.support.constraint.ConstraintLayout>
+        </androidx.constraintlayout.widget.ConstraintLayout>
 
         <TextView
             android:id="@+id/errorDescription"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:paddingEnd="16dp"
             android:paddingStart="16dp"
+            android:paddingEnd="16dp"
             android:visibility="gone"
             app:layout_constraintTop_toBottomOf="@id/parentLayout"
             tools:text="@string/lorem"
             tools:visibility="visible" />
 
-    </android.support.constraint.ConstraintLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
 </layout>

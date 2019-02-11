@@ -1,6 +1,6 @@
 package org.dhis2.data.forms.dataentry.fields.unsupported;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 
 import org.dhis2.data.forms.dataentry.fields.FieldViewModel;
 
@@ -34,6 +34,6 @@ public abstract class UnsupportedViewModel extends FieldViewModel {
     @Nonnull
     @Override
     public FieldViewModel withValue(String data) {
-        return new AutoValue_UnsupportedViewModel(uid(), label(), false, data, programStageSection(), allowFutureDate(), editable(), optionSet(), warning(), error(),description());
+        return new AutoValue_UnsupportedViewModel(uid(), label(), false, data, programStageSection(), allowFutureDate(),false, optionSet(), warning(), error(),description());
     }
 }

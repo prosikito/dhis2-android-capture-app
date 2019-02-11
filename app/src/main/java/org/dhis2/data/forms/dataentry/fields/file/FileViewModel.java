@@ -1,6 +1,6 @@
 package org.dhis2.data.forms.dataentry.fields.file;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 
 import org.dhis2.data.forms.dataentry.fields.FieldViewModel;
 import com.google.auto.value.AutoValue;
@@ -42,6 +42,6 @@ public abstract class FileViewModel extends FieldViewModel {
     @Override
     public FieldViewModel withValue(String data) {
         return new AutoValue_FileViewModel(uid(), label(), mandatory(), data, programStageSection(),
-                allowFutureDate(), editable(), optionSet(), warning(), error(),description());
+                allowFutureDate(), false, optionSet(), warning(), error(),description());
     }
 }

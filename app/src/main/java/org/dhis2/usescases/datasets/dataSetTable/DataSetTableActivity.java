@@ -1,28 +1,29 @@
 package org.dhis2.usescases.datasets.dataSetTable;
 
-import android.databinding.DataBindingUtil;
+import androidx.databinding.DataBindingUtil;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import org.dhis2.App;
 import org.dhis2.R;
+import org.dhis2.data.forms.dataentry.tablefields.RowAction;
 import org.dhis2.data.tuples.Pair;
 import org.dhis2.databinding.ActivityDatasetTableBinding;
+import org.dhis2.usescases.datasets.dataSetTable.dataSetSection.DataSetSectionFragment;
 import org.dhis2.usescases.general.ActivityGlobalAbstract;
 import org.dhis2.utils.Constants;
 import org.hisp.dhis.android.core.category.CategoryModel;
-import org.hisp.dhis.android.core.category.CategoryOptionComboModel;
 import org.hisp.dhis.android.core.category.CategoryOptionModel;
 import org.hisp.dhis.android.core.dataelement.DataElementModel;
 import org.hisp.dhis.android.core.dataset.DataSetModel;
-import org.hisp.dhis.android.core.datavalue.DataValue;
-import org.hisp.dhis.android.core.datavalue.DataValueModel;
 
 import java.util.List;
 import java.util.Map;
 
 import javax.inject.Inject;
+
+import io.reactivex.Flowable;
 
 public class DataSetTableActivity extends ActivityGlobalAbstract implements DataSetTableContract.View {
 
@@ -30,7 +31,9 @@ public class DataSetTableActivity extends ActivityGlobalAbstract implements Data
     String periodTypeName;
     String periodInitialDate;
     String catCombo;
-
+    boolean accessDataWrite;
+    int rowTotal;
+    int columTotal;
     @Inject
     DataSetTableContract.Presenter presenter;
     private ActivityDatasetTableBinding binding;
@@ -59,6 +62,7 @@ public class DataSetTableActivity extends ActivityGlobalAbstract implements Data
         periodInitialDate = getIntent().getStringExtra(Constants.PERIOD_TYPE_DATE);
         catCombo = getIntent().getStringExtra(Constants.CAT_COMB);
         String dataSetUid = getIntent().getStringExtra(Constants.DATA_SET_UID);
+        accessDataWrite = getIntent().getBooleanExtra(Constants.ACCESS_DATA, true);
         ((App) getApplicationContext()).userComponent().plus(new DataSetTableModule(dataSetUid)).inject(this);
 
         binding = DataBindingUtil.setContentView(this, R.layout.activity_dataset_table);
@@ -79,7 +83,7 @@ public class DataSetTableActivity extends ActivityGlobalAbstract implements Data
 
     @Override
     public void setDataElements(Map<String, List<DataElementModel>> dataElements, Map<String, List<List<Pair<CategoryOptionModel, CategoryModel>>>> catOptions) {
-        viewPagerAdapter = new DataSetSectionAdapter(getSupportFragmentManager());
+        viewPagerAdapter = new DataSetSectionAdapter(getSupportFragmentManager(), accessDataWrite);
         binding.viewPager.setAdapter(viewPagerAdapter);
         binding.tabLayout.setupWithViewPager(binding.viewPager);
         viewPagerAdapter.swapData(dataElements);
@@ -97,4 +101,17 @@ public class DataSetTableActivity extends ActivityGlobalAbstract implements Data
     public DataSetTableContract.Presenter getPresenter() {
         return presenter;
     }
+
+
+    @Override
+    public Boolean accessDataWrite() {
+        return accessDataWrite;
+    }
+
+    @Override
+    public Flowable<RowAction> rowActions() {
+        return ((DataSetSectionFragment)viewPagerAdapter.getItem(binding.viewPager.getCurrentItem())).rowActions();
+    }
+
+
 }

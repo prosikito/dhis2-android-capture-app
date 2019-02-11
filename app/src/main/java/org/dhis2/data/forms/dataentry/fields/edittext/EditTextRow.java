@@ -1,9 +1,9 @@
 package org.dhis2.data.forms.dataentry.fields.edittext;
 
-import android.databinding.DataBindingUtil;
-import android.databinding.ObservableBoolean;
-import android.databinding.ViewDataBinding;
-import android.support.annotation.NonNull;
+import androidx.databinding.DataBindingUtil;
+import androidx.databinding.ObservableBoolean;
+import androidx.databinding.ViewDataBinding;
+import androidx.annotation.NonNull;
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
 
@@ -28,6 +28,7 @@ public class EditTextRow implements Row<EditTextCustomHolder, EditTextModel> {
     private final String renderType;
     private final ObservableBoolean isEditable;
 
+    //Search form constructor
     public EditTextRow(@NonNull LayoutInflater layoutInflater, @NonNull FlowableProcessor<RowAction> processor, boolean isBgTransparent) {
         this.inflater = layoutInflater;
         this.processor = processor;
@@ -36,7 +37,10 @@ public class EditTextRow implements Row<EditTextCustomHolder, EditTextModel> {
         this.isEditable = new ObservableBoolean(true);
     }
 
-    public EditTextRow(@NonNull LayoutInflater layoutInflater, @NonNull FlowableProcessor<RowAction> processor, boolean isBgTransparent, String renderType, ObservableBoolean isEditable) {
+    //Data entryconstructor
+    public EditTextRow(@NonNull LayoutInflater layoutInflater, @NonNull FlowableProcessor<RowAction> processor,
+                       @NonNull FlowableProcessor<Integer> currentPosition,
+                       boolean isBgTransparent, String renderType, ObservableBoolean isEditable) {
         this.inflater = layoutInflater;
         this.processor = processor;
         this.isBgTransparent = isBgTransparent;

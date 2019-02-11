@@ -1,10 +1,13 @@
 package org.dhis2.usescases.main;
 
 
-import android.support.annotation.NonNull;
-import android.support.annotation.UiThread;
+import androidx.annotation.NonNull;
+import androidx.annotation.UiThread;
 
 import org.dhis2.usescases.general.AbstractActivityContracts;
+import org.hisp.dhis.android.core.maintenance.D2Error;
+
+import java.util.List;
 
 import io.reactivex.functions.Consumer;
 
@@ -24,6 +27,7 @@ public final class MainContracts {
 
         void changeFragment(int id);
 
+        void showSyncErrors(List<D2Error> data);
     }
 
     public interface Presenter {
@@ -40,5 +44,7 @@ public final class MainContracts {
         void showFilter();
 
         void changeFragment(int id);
+
+        void getErrors();
     }
 }

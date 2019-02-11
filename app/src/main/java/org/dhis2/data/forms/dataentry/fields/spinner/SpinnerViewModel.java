@@ -1,6 +1,6 @@
 package org.dhis2.data.forms.dataentry.fields.spinner;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 
 import org.dhis2.data.forms.dataentry.fields.FieldViewModel;
 import com.google.auto.value.AutoValue;
@@ -44,6 +44,6 @@ public abstract class SpinnerViewModel extends FieldViewModel {
     @Nonnull
     @Override
     public FieldViewModel withValue(String data) {
-        return new AutoValue_SpinnerViewModel(uid(),label(),mandatory(),data,programStageSection(),allowFutureDate(),editable(),warning(),error(),description(),hint(),optionSet());
+        return new AutoValue_SpinnerViewModel(uid(),label(),mandatory(),data,programStageSection(),allowFutureDate(),false,warning(),error(),description(),hint(),optionSet());
     }
 }

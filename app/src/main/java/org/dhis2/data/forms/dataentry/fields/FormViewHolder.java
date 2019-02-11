@@ -1,12 +1,15 @@
 package org.dhis2.data.forms.dataentry.fields;
 
-import android.databinding.ViewDataBinding;
-import android.support.v7.widget.RecyclerView;
+import android.app.Activity;
+import androidx.databinding.ViewDataBinding;
+import androidx.recyclerview.widget.RecyclerView;
+import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.ImageView;
 
 import org.dhis2.R;
 import org.dhis2.utils.Constants;
-import org.dhis2.utils.CustomViews.CustomDialog;
+import org.dhis2.utils.custom_views.CustomDialog;
 
 /**
  * QUADRAM. Created by ppajuelo on 06/11/2017.
@@ -28,7 +31,7 @@ public abstract class FormViewHolder extends RecyclerView.ViewHolder {
                     new CustomDialog(
                             itemView.getContext(),
                             label.toString(),
-                            descriptionText != null ? descriptionText : "No info for this field",
+                            descriptionText != null ? descriptionText : itemView.getContext().getString(R.string.empty_description),
                             itemView.getContext().getString(R.string.action_accept),
                             null,
                             Constants.DESCRIPTION_DIALOG,
@@ -38,4 +41,9 @@ public abstract class FormViewHolder extends RecyclerView.ViewHolder {
     }
 
     public abstract void dispose();
+
+    public void closeKeyboard(View v){
+        InputMethodManager imm = (InputMethodManager) v.getContext().getSystemService(Activity.INPUT_METHOD_SERVICE);
+        imm.hideSoftInputFromWindow(v.getWindowToken(), 0);
+    }
 }
