@@ -1,43 +1,29 @@
 package org.dhis2.usescases.searchTrackEntity.adapters;
 
-import androidx.recyclerview.widget.RecyclerView;
-
 import org.dhis2.data.metadata.MetadataRepository;
 import org.dhis2.databinding.ItemSearchRelationshipTrackedEntityBinding;
 import org.dhis2.usescases.searchTrackEntity.SearchTEContractsModule;
-
-import org.hisp.dhis.android.core.relationship.RelationshipTypeModel;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttributeValueModel;
 
-import java.util.ArrayList;
 import java.util.List;
 
-import io.reactivex.disposables.CompositeDisposable;
+import androidx.recyclerview.widget.RecyclerView;
 
 /**
  * QUADRAM. Created by frodriguez on 11/7/2017.
  */
 
+@SuppressWarnings({"squid:S1172", "squid:S1068", "squid:CommentedOutCodeLine"})
 public class SearchRelationshipViewHolder extends RecyclerView.ViewHolder {
 
     private ItemSearchRelationshipTrackedEntityBinding binding;
-    private CompositeDisposable compositeDisposable;
-    private SearchTEContractsModule.Presenter presenter;
-    private SearchTeiModel trackedEntityInstanceModel;
-
-    private RelationshipTypeModel relationshipType;
-    private List<RelationshipTypeModel> relationshipTypes = new ArrayList<>();
 
     SearchRelationshipViewHolder(ItemSearchRelationshipTrackedEntityBinding binding) {
         super(binding.getRoot());
         this.binding = binding;
-        compositeDisposable = new CompositeDisposable();
     }
 
-
-    public void bind(SearchTEContractsModule.Presenter presenter, SearchTeiModel teiModel, MetadataRepository metadataRepository) {
-        this.presenter = presenter;
-        this.trackedEntityInstanceModel = teiModel;
+    public void bind(SearchTEContractsModule.SearchTEPresenter presenter, SearchTeiModel teiModel, MetadataRepository metadataRepository) {
         binding.setPresenter(presenter);
 
         //--------------------------
@@ -55,9 +41,7 @@ public class SearchRelationshipViewHolder extends RecyclerView.ViewHolder {
 
         binding.executePendingBindings();
 
-        itemView.setOnClickListener(view->presenter.addRelationship(trackedEntityInstanceModel.getTei().uid(),trackedEntityInstanceModel.isOnline()));
-
-
+        itemView.setOnClickListener(view -> presenter.addRelationship(teiModel.getTei().uid(), teiModel.isOnline()));
     }
 
    /* private void setRelationshipTypeList(List<RelationshipTypeModel> relationshipTypesModels) {
@@ -69,7 +53,7 @@ public class SearchRelationshipViewHolder extends RecyclerView.ViewHolder {
         binding.relationshipSpinner.setSelection(0);
         binding.relationshipSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+            public void onItemSelected(AdapterView<?> parent, DataSetTableView view, int position, long id) {
                 if (position > 0) {
                     Pair<RelationshipTypeModel, String> selectedRelationShip = (Pair<RelationshipTypeModel, String>) parent.getItemAtPosition(position);
                     presenter.addRelationship(trackedEntityInstanceModel.getTei().uid(), selectedRelationShip.val0().uid(),trackedEntityInstanceModel.isOnline());
@@ -87,6 +71,4 @@ public class SearchRelationshipViewHolder extends RecyclerView.ViewHolder {
         binding.setAttribute(trackedEntityAttributeValueModels);
         binding.executePendingBindings();
     }
-
-
 }

@@ -7,26 +7,14 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
-import android.content.res.TypedArray;
-import androidx.databinding.BindingMethod;
-import androidx.databinding.BindingMethods;
-import androidx.databinding.DataBindingUtil;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import androidx.core.content.ContextCompat;
-import androidx.recyclerview.widget.DividerItemDecoration;
-import androidx.recyclerview.widget.RecyclerView;
-import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.Window;
-import android.view.WindowManager;
 import android.widget.AdapterView;
 import android.widget.Spinner;
+
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import org.dhis2.App;
 import org.dhis2.BuildConfig;
@@ -44,12 +32,14 @@ import org.dhis2.usescases.searchTrackEntity.adapters.SearchTEAdapter;
 import org.dhis2.usescases.searchTrackEntity.adapters.SearchTeiModel;
 import org.dhis2.utils.ColorUtils;
 import org.dhis2.utils.Constants;
-import org.dhis2.utils.custom_views.OptionSetDialog;
 import org.dhis2.utils.EndlessRecyclerViewScrollListener;
 import org.dhis2.utils.HelpManager;
 import org.dhis2.utils.NetworkUtils;
+import org.dhis2.utils.custom_views.OptionSetDialog;
+import org.dhis2.utils.custom_views.OptionSetPopUp;
+import org.hisp.dhis.android.core.option.OptionModel;
 import org.hisp.dhis.android.core.program.ProgramModel;
-import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttributeModel;
+import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttribute;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -58,6 +48,14 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
+import androidx.databinding.BindingMethod;
+import androidx.databinding.BindingMethods;
+import androidx.databinding.DataBindingUtil;
+import androidx.recyclerview.widget.DividerItemDecoration;
+import androidx.recyclerview.widget.RecyclerView;
 import io.reactivex.Flowable;
 import io.reactivex.functions.Consumer;
 import io.reactivex.processors.PublishProcessor;
@@ -71,11 +69,12 @@ import timber.log.Timber;
 @BindingMethods({
         @BindingMethod(type = FloatingActionButton.class, attribute = "app:srcCompat", method = "setImageDrawable")
 })
-public class SearchTEActivity extends ActivityGlobalAbstract implements SearchTEContractsModule.View {
+@SuppressWarnings("squid:MaximumInheritanceDepth")
+public class SearchTEActivity extends ActivityGlobalAbstract implements SearchTEContractsModule.SearchTEView {
 
     ActivitySearchBinding binding;
     @Inject
-    SearchTEContractsModule.Presenter presenter;
+    SearchTEContractsModule.SearchTEPresenter presenter;
     @Inject
     MetadataRepository metadataRepository;
 
@@ -90,11 +89,11 @@ public class SearchTEActivity extends ActivityGlobalAbstract implements SearchTE
     private BroadcastReceiver networkReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-
+            // do nothing
         }
     };
     private ProgramModel program;
-    private static PublishProcessor<Integer> onlinePagerProcessor;
+    private PublishProcessor<Integer> onlinePagerProcessor;
     private PublishProcessor<Integer> offlinePagerProcessor;
     private EndlessRecyclerViewScrollListener endlessRecyclerViewScrollListener;
     //---------------------------------------------------------------------------------------------
@@ -116,14 +115,14 @@ public class SearchTEActivity extends ActivityGlobalAbstract implements SearchTE
             fromRelationship = getIntent().getBooleanExtra("FROM_RELATIONSHIP", false);
             fromRelationshipTeiUid = getIntent().getStringExtra("FROM_RELATIONSHIP_TEI");
         } catch (Exception e) {
-            Timber.d(e.getMessage());
+            Timber.d(e);
         }
 
         if (fromRelationship) {
-            searchRelationshipAdapter = new SearchRelationshipAdapter(presenter, metadataRepository, false);
+            searchRelationshipAdapter = new SearchRelationshipAdapter(presenter, metadataRepository);
             binding.scrollView.setAdapter(searchRelationshipAdapter);
         } else {
-            searchTEAdapter = new SearchTEAdapter(presenter, metadataRepository);
+            searchTEAdapter = new SearchTEAdapter(presenter);
             binding.scrollView.setAdapter(searchTEAdapter);
         }
 
@@ -168,7 +167,7 @@ public class SearchTEActivity extends ActivityGlobalAbstract implements SearchTE
     //region SearchForm
 
     @Override
-    public void setForm(List<TrackedEntityAttributeModel> trackedEntityAttributeModels, @Nullable ProgramModel program, HashMap<String, String> queryData) {
+    public void setForm(List<TrackedEntityAttribute> trackedEntityAttributes, @Nullable ProgramModel program, HashMap<String, String> queryData) {
 
         this.program = program;
 
@@ -179,7 +178,7 @@ public class SearchTEActivity extends ActivityGlobalAbstract implements SearchTE
 
         //Form has been set.
         FormAdapter formAdapter = (FormAdapter) binding.formRecycler.getAdapter();
-        formAdapter.setList(trackedEntityAttributeModels, program, queryData);
+        formAdapter.setList(trackedEntityAttributes, program, queryData);
     }
 
     @NonNull
@@ -188,7 +187,7 @@ public class SearchTEActivity extends ActivityGlobalAbstract implements SearchTE
     }
 
     @Override
-    public Flowable<Trio<String, String, Integer>> optionSetActions(){
+    public Flowable<Trio<String, String, Integer>> optionSetActions() {
         return ((FormAdapter) binding.formRecycler.getAdapter()).asFlowableOption();
     }
 
@@ -251,7 +250,7 @@ public class SearchTEActivity extends ActivityGlobalAbstract implements SearchTE
             HelpManager.getInstance().setScreenHelp(getClass().getName(), steps);
 
             if (!prefs.getBoolean("TUTO_SEARCH_SHOWN", false) && !BuildConfig.DEBUG) {
-                HelpManager.getInstance().showHelp();/* getAbstractActivity().fancyShowCaseQueue.show();*/
+                HelpManager.getInstance().showHelp();
                 prefs.edit().putBoolean("TUTO_SEARCH_SHOWN", true).apply();
             }
 
@@ -334,7 +333,7 @@ public class SearchTEActivity extends ActivityGlobalAbstract implements SearchTE
 
             @Override
             public void onNothingSelected(AdapterView<?> adapterView) {
-
+                // do nothing
             }
         });
     }
@@ -352,7 +351,6 @@ public class SearchTEActivity extends ActivityGlobalAbstract implements SearchTE
         int programTheme = ColorUtils.getThemeFromColor(color);
         int programColor = ColorUtils.getColorFrom(color, ColorUtils.getPrimaryColor(getContext(), ColorUtils.ColorType.PRIMARY));
 
-
         SharedPreferences prefs = getAbstracContext().getSharedPreferences(
                 Constants.SHARE_PREFS, Context.MODE_PRIVATE);
         if (programTheme != -1) {
@@ -362,41 +360,14 @@ public class SearchTEActivity extends ActivityGlobalAbstract implements SearchTE
             binding.appbatlayout.setBackgroundColor(programColor);
         } else {
             prefs.edit().remove(Constants.PROGRAM_THEME).apply();
-            int colorPrimary;
-            switch (prefs.getInt(Constants.THEME, R.style.AppTheme)) {
-                case R.style.AppTheme:
-                    colorPrimary = R.color.colorPrimary;
-                    break;
-                case R.style.RedTheme:
-                    colorPrimary = R.color.colorPrimaryRed;
-                    break;
-                case R.style.OrangeTheme:
-                    colorPrimary = R.color.colorPrimaryOrange;
-                    break;
-                case R.style.GreenTheme:
-                    colorPrimary = R.color.colorPrimaryGreen;
-                    break;
-                default:
-                    colorPrimary = R.color.colorPrimary;
-                    break;
-            }
+            int colorPrimary = getPrimaryColorFromTheme();
             binding.enrollmentButton.setBackgroundTintList(ColorStateList.valueOf(ContextCompat.getColor(this, colorPrimary)));
             binding.mainToolbar.setBackgroundColor(ContextCompat.getColor(this, colorPrimary));
             binding.appbatlayout.setBackgroundColor(ContextCompat.getColor(this, colorPrimary));
         }
 
         binding.executePendingBindings();
-        setTheme(prefs.getInt(Constants.PROGRAM_THEME, prefs.getInt(Constants.THEME, R.style.AppTheme)));
-
-        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP) {
-            Window window = getWindow();
-            window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-            TypedValue typedValue = new TypedValue();
-            TypedArray a = obtainStyledAttributes(typedValue.data, new int[]{R.attr.colorPrimaryDark});
-            int colorToReturn = a.getColor(0, 0);
-            a.recycle();
-            window.setStatusBarColor(colorToReturn);
-        }
+        applyColors();
     }
 
     @Override
@@ -405,7 +376,10 @@ public class SearchTEActivity extends ActivityGlobalAbstract implements SearchTE
     }
 
     @Override
-    public void setListOptions(List<String> options) {
-        OptionSetDialog.newInstance().setOptions(options);
+    public void setListOptions(List<OptionModel> options) {
+        if (OptionSetDialog.isCreated())
+            OptionSetDialog.newInstance().setOptions(options);
+        else if (OptionSetPopUp.isCreated())
+            OptionSetPopUp.getInstance().setOptions(options);
     }
 }

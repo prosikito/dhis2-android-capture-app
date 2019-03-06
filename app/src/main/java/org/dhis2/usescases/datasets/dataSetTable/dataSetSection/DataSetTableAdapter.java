@@ -1,7 +1,6 @@
 package org.dhis2.usescases.datasets.dataSetTable.dataSetSection;
 
 import android.content.Context;
-import androidx.databinding.DataBindingUtil;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,13 +11,15 @@ import com.evrencoskun.tableview.adapter.recyclerview.holder.AbstractViewHolder;
 
 import org.dhis2.R;
 import org.hisp.dhis.android.core.category.CategoryOptionComboModel;
-import org.hisp.dhis.android.core.dataelement.DataElementModel;
+import org.hisp.dhis.android.core.dataelement.DataElement;
+
+import androidx.databinding.DataBindingUtil;
 
 /**
  * QUADRAM. Created by ppajuelo on 02/10/2018.
  */
 
-class DataSetTableAdapter extends AbstractTableAdapter<CategoryOptionComboModel, DataElementModel, String> {
+class DataSetTableAdapter extends AbstractTableAdapter<CategoryOptionComboModel, DataElement, String> {
     public DataSetTableAdapter(Context context) {
         super(context);
     }
@@ -28,7 +29,7 @@ class DataSetTableAdapter extends AbstractTableAdapter<CategoryOptionComboModel,
      * RecyclerView of the TableView needs a new RecyclerView.ViewHolder of the given type to
      * represent an item.
      *
-     * @param viewType : This value comes from #getCellItemViewType method to support different type
+     * @param viewType : This VALUE comes from #getCellItemViewType method to support different type
      *                 of viewHolder as a Cell item.
      * @see #getCellItemViewType(int);
      */
@@ -40,7 +41,7 @@ class DataSetTableAdapter extends AbstractTableAdapter<CategoryOptionComboModel,
     }
 
     /**
-     * That is where you set Cell View Model data to your custom Cell ViewHolder. This method is
+     * That is where you set Cell DataSetTableView Model data to your custom Cell ViewHolder. This method is
      * Called by Cell RecyclerView of the TableView to display the data at the specified position.
      * This method gives you everything you need about a cell item.
      *
@@ -68,7 +69,7 @@ class DataSetTableAdapter extends AbstractTableAdapter<CategoryOptionComboModel,
      * Column Header RecyclerView of the TableView needs a new RecyclerView.ViewHolder of the given
      * type to represent an item.
      *
-     * @param viewType : This value comes from "getColumnHeaderItemViewType" method to support
+     * @param viewType : This VALUE comes from "getColumnHeaderItemViewType" method to support
      *                 different type of viewHolder as a Column Header item.
      * @see #getColumnHeaderItemViewType(int);
      */
@@ -80,7 +81,7 @@ class DataSetTableAdapter extends AbstractTableAdapter<CategoryOptionComboModel,
     }
 
     /**
-     * That is where you set Column Header View Model data to your custom Column Header ViewHolder.
+     * That is where you set Column Header DataSetTableView Model data to your custom Column Header ViewHolder.
      * This method is Called by ColumnHeader RecyclerView of the TableView to display the data at
      * the specified position. This method gives you everything you need about a column header
      * item.
@@ -107,7 +108,7 @@ class DataSetTableAdapter extends AbstractTableAdapter<CategoryOptionComboModel,
      * Row Header RecyclerView of the TableView needs a new RecyclerView.ViewHolder of the given
      * type to represent an item.
      *
-     * @param viewType : This value comes from "getRowHeaderItemViewType" method to support
+     * @param viewType : This VALUE comes from "getRowHeaderItemViewType" method to support
      *                 different type of viewHolder as a row Header item.
      * @see #getRowHeaderItemViewType(int);
      */
@@ -120,7 +121,7 @@ class DataSetTableAdapter extends AbstractTableAdapter<CategoryOptionComboModel,
 
 
     /**
-     * That is where you set Row Header View Model data to your custom Row Header ViewHolder. This
+     * That is where you set Row Header DataSetTableView Model data to your custom Row Header ViewHolder. This
      * method is Called by RowHeader RecyclerView of the TableView to display the data at the
      * specified position. This method gives you everything you need about a row header item.
      *
@@ -148,7 +149,7 @@ class DataSetTableAdapter extends AbstractTableAdapter<CategoryOptionComboModel,
     @Override
     public int getColumnHeaderItemViewType(int columnPosition) {
         // The unique ID for this type of column header item
-        // If you have different items for Cell View by X (Column) position,
+        // If you have different items for Cell DataSetTableView by X (Column) position,
         // then you should fill this method to be able create different
         // type of CellViewHolder on "onCreateCellViewHolder"
         return 0;
@@ -157,7 +158,7 @@ class DataSetTableAdapter extends AbstractTableAdapter<CategoryOptionComboModel,
     @Override
     public int getRowHeaderItemViewType(int rowPosition) {
         // The unique ID for this type of row header item
-        // If you have different items for Row Header View by Y (Row) position,
+        // If you have different items for Row Header DataSetTableView by Y (Row) position,
         // then you should fill this method to be able create different
         // type of RowHeaderViewHolder on "onCreateRowHeaderViewHolder"
         return 0;
@@ -166,7 +167,7 @@ class DataSetTableAdapter extends AbstractTableAdapter<CategoryOptionComboModel,
     @Override
     public int getCellItemViewType(int columnPosition) {
         // The unique ID for this type of cell item
-        // If you have different items for Cell View by X (Column) position,
+        // If you have different items for Cell DataSetTableView by X (Column) position,
         // then you should fill this method to be able create different
         // type of CellViewHolder on "onCreateCellViewHolder"
         return 0;

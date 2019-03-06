@@ -7,12 +7,14 @@ import android.os.Bundle;
 
 import org.dhis2.App;
 import org.dhis2.R;
+import org.dhis2.data.tuples.Pair;
 import org.dhis2.databinding.ActivityProgramStageSelectionBinding;
 import org.dhis2.usescases.eventsWithoutRegistration.eventInitial.EventInitialActivity;
 import org.dhis2.usescases.general.ActivityGlobalAbstract;
 import org.dhis2.utils.Constants;
+import org.hisp.dhis.android.core.common.ObjectStyleModel;
 import org.hisp.dhis.android.core.period.PeriodType;
-import org.hisp.dhis.android.core.program.ProgramStageModel;
+import org.hisp.dhis.android.core.program.ProgramStage;
 
 import java.util.List;
 
@@ -27,7 +29,7 @@ import static org.dhis2.utils.Constants.EVENT_CREATION_TYPE;
 import static org.dhis2.utils.Constants.EVENT_PERIOD_TYPE;
 import static org.dhis2.utils.Constants.EVENT_REPEATABLE;
 import static org.dhis2.utils.Constants.EVENT_SCHEDULE_INTERVAL;
-import static org.dhis2.utils.Constants.ORG_UNIT;
+import static org.dhis2.utils.Constants.EXTRA_ORG_UNIT;
 import static org.dhis2.utils.Constants.PROGRAM_UID;
 import static org.dhis2.utils.Constants.TRACKED_ENTITY_INSTANCE;
 
@@ -35,18 +37,17 @@ import static org.dhis2.utils.Constants.TRACKED_ENTITY_INSTANCE;
 /**
  * QUADRAM. Created by ppajuelo on 31/10/2017.
  */
-
-public class ProgramStageSelectionActivity extends ActivityGlobalAbstract implements ProgramStageSelectionContract.View {
+@SuppressWarnings("squid:MaximumInheritanceDepth")
+public class ProgramStageSelectionActivity extends ActivityGlobalAbstract implements ProgramStageSelectionContract.ProgramStageSelectionView {
 
     ActivityProgramStageSelectionBinding binding;
 
     @Inject
-    ProgramStageSelectionContract.Presenter presenter;
+    ProgramStageSelectionContract.ProgramStageSelectionPresenter presenter;
 
     ProgramStageSelectionAdapter adapter;
     private String enrollmenId;
     private String programId;
-    private int orientation;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -64,7 +65,7 @@ public class ProgramStageSelectionActivity extends ActivityGlobalAbstract implem
     @Override
     protected void onResume() {
         super.onResume();
-        orientation = Resources.getSystem().getConfiguration().orientation;
+        int orientation = Resources.getSystem().getConfiguration().orientation;
         presenter.getProgramStages(programId, enrollmenId, this); //TODO: enrollment / event path
         int columnCount = (orientation == Configuration.ORIENTATION_LANDSCAPE) ? 3 : 2;
         binding.recyclerView.setLayoutManager(new GridLayoutManager(this, columnCount));
@@ -77,9 +78,9 @@ public class ProgramStageSelectionActivity extends ActivityGlobalAbstract implem
     }
 
     @Override
-    public void setData(List<ProgramStageModel> programStageModels) {
-        if (programStageModels != null && !programStageModels.isEmpty()) {
-            adapter.setProgramStageModels(programStageModels);
+    public void setData(List<Pair<ProgramStage, ObjectStyleModel>> programStages) {
+        if (programStages != null && !programStages.isEmpty()) {
+            adapter.setProgramStages(programStages);
             adapter.notifyDataSetChanged();
         } else {
             // if there are no program stages to select, the event cannot be added
@@ -94,7 +95,7 @@ public class ProgramStageSelectionActivity extends ActivityGlobalAbstract implem
         Bundle bundle = new Bundle();
         bundle.putString(PROGRAM_UID, getIntent().getStringExtra(PROGRAM_UID));
         bundle.putString(TRACKED_ENTITY_INSTANCE, getIntent().getStringExtra(TRACKED_ENTITY_INSTANCE));
-        bundle.putString(ORG_UNIT, getIntent().getStringExtra(ORG_UNIT));
+        bundle.putString(EXTRA_ORG_UNIT, getIntent().getStringExtra(EXTRA_ORG_UNIT));
         bundle.putString(ENROLLMENT_UID, getIntent().getStringExtra(ENROLLMENT_UID));
         bundle.putString(EVENT_CREATION_TYPE, getIntent().getStringExtra(EVENT_CREATION_TYPE));
         bundle.putBoolean(EVENT_REPEATABLE, repeatable);

@@ -1,13 +1,12 @@
 package org.dhis2.usescases.datasets.datasetInitial;
 
-import androidx.databinding.DataBindingUtil;
 import android.os.Bundle;
-import androidx.annotation.Nullable;
-import com.google.android.material.textfield.TextInputEditText;
 import android.view.Gravity;
 import android.view.Menu;
 import android.view.View;
 import android.widget.PopupMenu;
+
+import com.google.android.material.textfield.TextInputEditText;
 
 import org.dhis2.App;
 import org.dhis2.R;
@@ -15,9 +14,9 @@ import org.dhis2.databinding.ActivityDatasetInitialBinding;
 import org.dhis2.databinding.ItemCategoryComboBinding;
 import org.dhis2.usescases.general.ActivityGlobalAbstract;
 import org.dhis2.utils.Constants;
+import org.dhis2.utils.DateUtils;
 import org.dhis2.utils.custom_views.OrgUnitDialog;
 import org.dhis2.utils.custom_views.PeriodDialog;
-import org.dhis2.utils.DateUtils;
 import org.hisp.dhis.android.core.category.CategoryComboModel;
 import org.hisp.dhis.android.core.category.CategoryModel;
 import org.hisp.dhis.android.core.category.CategoryOptionModel;
@@ -28,15 +27,20 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 import javax.inject.Inject;
 
-public class DataSetInitialActivity extends ActivityGlobalAbstract implements DataSetInitialContract.View {
+import androidx.annotation.Nullable;
+import androidx.databinding.DataBindingUtil;
+
+@SuppressWarnings("squid:MaximumInheritanceDepth")
+public class DataSetInitialActivity extends ActivityGlobalAbstract implements DataSetInitialContract.DataSetInitialView {
 
     private ActivityDatasetInitialBinding binding;
     View selectedView;
     @Inject
-    DataSetInitialContract.Presenter presenter;
+    DataSetInitialContract.DataSetInitialPresenter presenter;
 
     private HashMap<String, CategoryOptionModel> selectedCatOptions;
     private OrganisationUnitModel selectedOrgUnit;
@@ -60,14 +64,8 @@ public class DataSetInitialActivity extends ActivityGlobalAbstract implements Da
     }
 
     @Override
-    protected void onPause() {
-        presenter.onDettach();
-        super.onPause();
-    }
-
-    @Override
     public void setAccessDataWrite(Boolean canWrite) {
-
+        // do nothing
     }
 
     @Override
@@ -87,6 +85,12 @@ public class DataSetInitialActivity extends ActivityGlobalAbstract implements Da
                 binding.catComboContainer.addView(categoryComboBinding.getRoot());
             }
         checkActionVisivbility();
+    }
+
+    @Override
+    protected void onPause() {
+        presenter.onDettach();
+        super.onPause();
     }
 
     /**
@@ -182,8 +186,8 @@ public class DataSetInitialActivity extends ActivityGlobalAbstract implements Da
             visible = false;
         if (selectedPeriod == null)
             visible = false;
-        for (String key : selectedCatOptions.keySet()) {
-            if (selectedCatOptions.get(key) == null)
+        for (Map.Entry<String, CategoryOptionModel> entry : selectedCatOptions.entrySet()) {
+            if (entry.getValue() == null)
                 visible = false;
         }
 

@@ -37,26 +37,6 @@ public class EventSummaryModule {
 
     @Provides
     @PerActivity
-    EventSummaryContract.View provideView(EventSummaryContract.View activity) {
-        return activity;
-    }
-
-    @Provides
-    @PerActivity
-    EventSummaryContract.Presenter providesPresenter(EventSummaryContract.Interactor interactor) {
-        return new EventSummaryPresenter(interactor);
-    }
-
-    @Provides
-    @PerActivity
-    EventSummaryContract.Interactor provideInteractor(@NonNull EventSummaryRepository eventSummaryRepository,
-                                                      @NonNull MetadataRepository metadataRepository,
-                                                      @NonNull SchedulerProvider schedulerProvider) {
-        return new EventSummaryInteractor(eventSummaryRepository, metadataRepository, schedulerProvider);
-    }
-
-    @Provides
-    @PerActivity
     EventSummaryRepository eventSummaryRepository(@NonNull Context context,
                                                   @NonNull BriteDatabase briteDatabase,
                                                   @NonNull FormRepository formRepository) {
@@ -64,14 +44,34 @@ public class EventSummaryModule {
     }
 
     @Provides
-    FormRepository formRepository(@NonNull BriteDatabase briteDatabase,
-                                  @NonNull RuleExpressionEvaluator evaluator,
-                                  @NonNull RulesRepository rulesRepository) {
-        return new EventRepository(briteDatabase, evaluator, rulesRepository, eventUid);
+    @PerActivity
+    EventSummaryContract.EventSummaryView provideView(EventSummaryContract.EventSummaryView activity) {
+        return activity;
+    }
+
+    @Provides
+    @PerActivity
+    EventSummaryContract.EventSummaryPresenter providesPresenter(EventSummaryContract.EventSummaryInteractor interactor) {
+        return new EventSummaryPresenterImpl(interactor);
+    }
+
+    @Provides
+    @PerActivity
+    EventSummaryContract.EventSummaryInteractor provideInteractor(@NonNull EventSummaryRepository eventSummaryRepository,
+                                                                  @NonNull MetadataRepository metadataRepository,
+                                                                  @NonNull SchedulerProvider schedulerProvider) {
+        return new EventSummaryInteractorImpl(eventSummaryRepository, metadataRepository, schedulerProvider);
     }
 
     @Provides
     RulesRepository rulesRepository(@NonNull BriteDatabase briteDatabase) {
         return new RulesRepository(briteDatabase);
+    }
+
+    @Provides
+    FormRepository formRepository(@NonNull BriteDatabase briteDatabase,
+                                  @NonNull RuleExpressionEvaluator evaluator,
+                                  @NonNull RulesRepository rulesRepository) {
+        return new EventRepository(briteDatabase, evaluator, rulesRepository, eventUid);
     }
 }

@@ -29,19 +29,17 @@ public class EventCaptureModule {
 
 
     private final String eventUid;
-    private final String programUid;
 
-    public EventCaptureModule(String eventUid, String programUid) {
+    public EventCaptureModule(String eventUid) {
         this.eventUid = eventUid;
-        this.programUid = programUid;
     }
 
     @Provides
     @PerActivity
-    EventCaptureContract.Presenter providePresenter(@NonNull EventCaptureContract.EventCaptureRepository eventCaptureRepository,
-                                                    @NonNull MetadataRepository metadataRepository,
-                                                    @NonNull RulesUtilsProvider ruleUtils,
-                                                    @NonNull DataEntryStore dataEntryStore) {
+    EventCaptureContract.EventCapturePresenter providePresenter(@NonNull EventCaptureContract.EventCaptureRepository eventCaptureRepository,
+                                                                @NonNull MetadataRepository metadataRepository,
+                                                                @NonNull RulesUtilsProvider ruleUtils,
+                                                                @NonNull DataEntryStore dataEntryStore) {
         return new EventCapturePresenterImpl(eventUid,eventCaptureRepository, metadataRepository, ruleUtils, dataEntryStore);
     }
 

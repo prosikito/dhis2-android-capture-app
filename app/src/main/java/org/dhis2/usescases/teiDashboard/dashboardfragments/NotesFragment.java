@@ -1,11 +1,7 @@
 package org.dhis2.usescases.teiDashboard.dashboardfragments;
 
 import android.content.Context;
-import androidx.databinding.DataBindingUtil;
 import android.os.Bundle;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.fragment.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -22,6 +18,10 @@ import org.hisp.dhis.android.core.enrollment.note.NoteModel;
 
 import java.util.List;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.databinding.DataBindingUtil;
+import androidx.fragment.app.Fragment;
 import io.reactivex.functions.Consumer;
 
 /**
@@ -29,13 +29,13 @@ import io.reactivex.functions.Consumer;
  */
 
 public class NotesFragment extends FragmentGlobalAbstract {
-    FragmentNotesBinding binding;
-    static NotesFragment instance;
+    private FragmentNotesBinding binding;
+    private static NotesFragment instance;
     private NotesAdapter noteAdapter;
-    TeiDashboardContracts.Presenter presenter;
-    ActivityGlobalAbstract activity;
+    private TeiDashboardContracts.TeiDashboardPresenter presenter;
+    private ActivityGlobalAbstract activity;
 
-    static public NotesFragment getInstance() {
+    public static NotesFragment getInstance() {
         if (instance == null)
             instance = new NotesFragment();
 
@@ -43,7 +43,7 @@ public class NotesFragment extends FragmentGlobalAbstract {
     }
 
     @Override
-    public void onAttach(Context context) {
+    public void onAttach(@NonNull Context context) {
         super.onAttach(context);
         activity = (ActivityGlobalAbstract) context;
         presenter = ((TeiDashboardMobileActivity) context).getPresenter();
@@ -57,14 +57,16 @@ public class NotesFragment extends FragmentGlobalAbstract {
         presenter.setNoteProcessor(noteAdapter.asFlowable());
         presenter.subscribeToNotes(this);
         binding.notesRecycler.setAdapter(noteAdapter);
-        binding.buttonAdd.setOnClickListener(this::addNote);
-        binding.buttonDelete.setOnClickListener(this::clearNote);
+        binding.buttonAdd.setOnClickListener(view -> addNote());
+        binding.buttonDelete.setOnClickListener(view -> clearNote());
         binding.editNote.setOnTouchListener((v, event) -> {
             if (v.getId() == R.id.edit_note) {
                 v.getParent().requestDisallowInterceptTouchEvent(true);
                 switch (event.getAction() & MotionEvent.ACTION_MASK) {
                     case MotionEvent.ACTION_UP:
                         v.getParent().requestDisallowInterceptTouchEvent(false);
+                        break;
+                    default:
                         break;
                 }
             }
@@ -73,26 +75,24 @@ public class NotesFragment extends FragmentGlobalAbstract {
         return binding.getRoot();
     }
 
-    public void addNote(View view) {
+    private void addNote() {
         if (presenter.hasProgramWritePermission()) {
             noteAdapter.addNote(binding.editNote.getText().toString());
-            clearNote(view);
+            clearNote();
         } else
             activity.displayMessage(getString(R.string.search_access_error));
     }
 
-    public void clearNote(View view) {
+    private void clearNote() {
         binding.editNote.getText().clear();
     }
 
     public Consumer<List<NoteModel>> swapNotes() {
-        return noteModels -> {
-            noteAdapter.setItems(noteModels);
-        };
+        return noteModels -> noteAdapter.setItems(noteModels);
     }
 
-
     public static Fragment createInstance() {
-        return instance = new NotesFragment();
+        instance = new NotesFragment();
+        return instance;
     }
 }

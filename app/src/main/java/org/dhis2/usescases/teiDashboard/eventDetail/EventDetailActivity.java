@@ -4,13 +4,8 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import androidx.databinding.DataBindingUtil;
-import androidx.databinding.ObservableBoolean;
 import android.os.Bundle;
 import android.os.Handler;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import android.view.Gravity;
 import android.view.View;
 import android.widget.PopupMenu;
 
@@ -24,23 +19,25 @@ import org.dhis2.databinding.ActivityEventDetailBinding;
 import org.dhis2.usescases.eventsWithoutRegistration.eventCapture.EventCaptureActivity;
 import org.dhis2.usescases.general.ActivityGlobalAbstract;
 import org.dhis2.utils.Constants;
-import org.dhis2.utils.custom_views.CategoryComboDialog;
-import org.dhis2.utils.custom_views.CustomDialog;
-import org.dhis2.utils.custom_views.OrgUnitDialog;
 import org.dhis2.utils.DateUtils;
 import org.dhis2.utils.DialogClickListener;
 import org.dhis2.utils.HelpManager;
+import org.dhis2.utils.custom_views.CategoryComboDialog;
+import org.dhis2.utils.custom_views.CustomDialog;
+import org.dhis2.utils.custom_views.OrgUnitDialog;
 import org.hisp.dhis.android.core.event.EventModel;
 import org.hisp.dhis.android.core.event.EventStatus;
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnitModel;
 import org.hisp.dhis.android.core.program.ProgramModel;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 
 import javax.inject.Inject;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.databinding.DataBindingUtil;
+import androidx.databinding.ObservableBoolean;
 import io.reactivex.functions.Consumer;
 import me.toptas.fancyshowcase.FancyShowCaseView;
 import me.toptas.fancyshowcase.FocusShape;
@@ -48,12 +45,15 @@ import me.toptas.fancyshowcase.FocusShape;
 /**
  * QUADRAM. Created by Cristian E. on 18/12/2017.
  */
+@SuppressWarnings("squid:MaximumInheritanceDepth")
+public class EventDetailActivity extends ActivityGlobalAbstract implements EventDetailContracts.EventDetailView {
 
-public class EventDetailActivity extends ActivityGlobalAbstract implements EventDetailContracts.View {
+    private static final String EVENT_DATA_ENTRY = "EVENT_DATA_ENTRY";
+    private static final String EVENT_UID = "EVENT_UID";
 
     ActivityEventDetailBinding binding;
     @Inject
-    EventDetailContracts.Presenter presenter;
+    EventDetailContracts.EventDetailPresenter presenter;
 
     EventDetailModel eventDetailModel;
     private String eventUid;
@@ -62,11 +62,11 @@ public class EventDetailActivity extends ActivityGlobalAbstract implements Event
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         ((App) getApplicationContext()).userComponent().plus(
-                new EventDetailModule(getIntent().getStringExtra("EVENT_UID"),
+                new EventDetailModule(getIntent().getStringExtra(EVENT_UID),
                         getIntent().getStringExtra("TEI_UID"))).inject(this);
         supportPostponeEnterTransition();
         super.onCreate(savedInstanceState);
-        eventUid = getIntent().getStringExtra("EVENT_UID");
+        eventUid = getIntent().getStringExtra(EVENT_UID);
         binding = DataBindingUtil.setContentView(this, R.layout.activity_event_detail);
         binding.teiName.setText(getIntent().getStringExtra("TOOLBAR_TITLE"));
         binding.setPresenter(presenter);
@@ -87,12 +87,12 @@ public class EventDetailActivity extends ActivityGlobalAbstract implements Event
 
     @Override
     public void setData(EventDetailModel eventDetailModel, MetadataRepository metadataRepository) {
-        if(eventDetailModel.getEventModel().status() != EventStatus.SCHEDULE && eventDetailModel.getEventModel().eventDate()!=null){
+        if (eventDetailModel.getEventModel().status() != EventStatus.SCHEDULE && eventDetailModel.getEventModel().eventDate() != null) {
             Intent intent2 = new Intent(this, EventCaptureActivity.class);
             intent2.putExtras(EventCaptureActivity.getActivityBundle(eventDetailModel.getEventModel().uid(), eventDetailModel.getEventModel().program()));
             startActivity(intent2, null);
             finish();
-        }else {
+        } else {
             this.eventDetailModel = eventDetailModel;
             presenter.getExpiryDate(eventDetailModel.getEventModel().uid());
             binding.setEvent(eventDetailModel.getEventModel());
@@ -116,15 +116,15 @@ public class EventDetailActivity extends ActivityGlobalAbstract implements Event
 
             supportStartPostponedEnterTransition();
 
-            if (getSupportFragmentManager().findFragmentByTag("EVENT_DATA_ENTRY") != null)
+            if (getSupportFragmentManager().findFragmentByTag(EVENT_DATA_ENTRY) != null)
                 getSupportFragmentManager().beginTransaction()
-                        .remove(getSupportFragmentManager().findFragmentByTag("EVENT_DATA_ENTRY"))
+                        .remove(getSupportFragmentManager().findFragmentByTag(EVENT_DATA_ENTRY))
                         .commit();
 
             getSupportFragmentManager().beginTransaction()
                     .replace(R.id.dataFragment, FormFragment.newInstance(
                             FormViewArguments.createForEvent(eventUid), false,
-                            false, true), "EVENT_DATA_ENTRY")
+                            false, true), EVENT_DATA_ENTRY)
                     .commit();
 
             if (!HelpManager.getInstance().isTutorialReadyForScreen(getClass().getName()))
@@ -143,7 +143,7 @@ public class EventDetailActivity extends ActivityGlobalAbstract implements Event
 
     @Override
     public void setDataEditable() {
-        if (binding.getStage().accessDataWrite()) {
+        if (binding.getStage().access().data().write()) {
             isEditable.set(!isEditable.get());
         } else
             displayMessage(null);
@@ -270,7 +270,7 @@ public class EventDetailActivity extends ActivityGlobalAbstract implements Event
             HelpManager.getInstance().setScreenHelp(getClass().getName(), steps);
 
             if (!prefs.getBoolean("TUTO_TEI_EVENT", false) && !BuildConfig.DEBUG) {
-                HelpManager.getInstance().showHelp();/* getAbstractActivity().fancyShowCaseQueue.show();*/
+                HelpManager.getInstance().showHelp();
                 prefs.edit().putBoolean("TUTO_TEI_EVENT", true).apply();
             }
 
@@ -280,22 +280,7 @@ public class EventDetailActivity extends ActivityGlobalAbstract implements Event
 
     @Override
     public void showMoreOptions(View view) {
-        PopupMenu popupMenu = new PopupMenu(this, view, Gravity.BOTTOM);
-        try {
-            Field[] fields = popupMenu.getClass().getDeclaredFields();
-            for (Field field : fields) {
-                if ("mPopup".equals(field.getName())) {
-                    field.setAccessible(true);
-                    Object menuPopupHelper = field.get(popupMenu);
-                    Class<?> classPopupHelper = Class.forName(menuPopupHelper.getClass().getName());
-                    Method setForceIcons = classPopupHelper.getMethod("setForceShowIcon", boolean.class);
-                    setForceIcons.invoke(menuPopupHelper, true);
-                    break;
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        PopupMenu popupMenu = getMoreOptionsMenu(view);
         popupMenu.getMenuInflater().inflate(R.menu.event_menu, popupMenu.getMenu());
         popupMenu.setOnMenuItemClickListener(item -> {
             switch (item.getItemId()) {
@@ -305,10 +290,12 @@ public class EventDetailActivity extends ActivityGlobalAbstract implements Event
                 case R.id.menu_delete:
                     presenter.confirmDeleteEvent();
                     break;
+                default:
+                    break;
             }
             return false;
         });
-        popupMenu.getMenu().getItem(1).setVisible(binding.getStage().accessDataWrite() && eventDetailModel.isEnrollmentActive());
+        popupMenu.getMenu().getItem(1).setVisible(binding.getStage().access().data().write() && eventDetailModel.isEnrollmentActive());
         popupMenu.show();
     }
 }

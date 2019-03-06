@@ -1,13 +1,11 @@
 package org.dhis2.usescases.main;
 
 
-import androidx.annotation.NonNull;
-
 import org.dhis2.data.dagger.PerActivity;
 import org.dhis2.data.metadata.MetadataRepository;
-import org.dhis2.data.user.UserRepository;
 import org.hisp.dhis.android.core.D2;
 
+import androidx.annotation.NonNull;
 import dagger.Module;
 import dagger.Provides;
 
@@ -16,16 +14,15 @@ public final class MainModule {
 
     @Provides
     @PerActivity
-    MainContracts.View homeView(MainActivity activity) {
+    MainContracts.MainView homeView(MainActivity activity) {
         return activity;
     }
 
 
     @Provides
     @PerActivity
-    MainContracts.Presenter homePresenter(D2 d2,
-                                          @NonNull UserRepository userRepository, @NonNull MetadataRepository metadataRepository) {
-        return new MainPresenter(d2, userRepository, metadataRepository);
+    MainContracts.MainPresenter homePresenter(D2 d2, @NonNull MetadataRepository metadataRepository) {
+        return new MainPresenterImpl(d2, metadataRepository);
     }
 
 }

@@ -1,9 +1,6 @@
 package org.dhis2.data.forms.dataentry;
 
 import android.content.Context;
-
-import androidx.appcompat.app.AlertDialog;
-import androidx.databinding.ObservableBoolean;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -18,9 +15,10 @@ import org.dhis2.data.tuples.Trio;
 import org.dhis2.usescases.general.ActivityGlobalAbstract;
 import org.dhis2.usescases.general.FragmentGlobalAbstract;
 import org.dhis2.utils.OnDialogClickListener;
-import org.dhis2.utils.custom_views.OptionSetDialog;
 import org.dhis2.utils.Preconditions;
 import org.dhis2.utils.custom_views.OptionSetDialog;
+import org.dhis2.utils.custom_views.OptionSetPopUp;
+import org.hisp.dhis.android.core.option.OptionModel;
 import org.hisp.dhis.android.core.program.ProgramStageSectionRenderingType;
 
 import java.util.List;
@@ -29,6 +27,7 @@ import javax.inject.Inject;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.databinding.ObservableBoolean;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.GridLayoutManager;
@@ -103,11 +102,6 @@ public final class DataEntryFragment extends FragmentGlobalAbstract implements D
         dataEntryPresenter.onDetach();
     }
 
-    @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-    }
-
     @NonNull
     @Override
     public Flowable<RowAction> rowActions() {
@@ -129,7 +123,7 @@ public final class DataEntryFragment extends FragmentGlobalAbstract implements D
     @Override
     public void removeSection(String sectionUid) {
         if (formFragment instanceof FormFragment) {
-            ((FormFragment) formFragment).hideSections(sectionUid);
+            ((FormFragment) formFragment).hideSections();
         }
     }
 
@@ -165,8 +159,11 @@ public final class DataEntryFragment extends FragmentGlobalAbstract implements D
     }
 
     @Override
-    public void setListOptions(List<String> options) {
-        OptionSetDialog.newInstance().setOptions(options);
+    public void setListOptions(List<OptionModel> options) {
+        if (OptionSetDialog.isCreated())
+            OptionSetDialog.newInstance().setOptions(options);
+        else if (OptionSetPopUp.isCreated())
+            OptionSetPopUp.getInstance().setOptions(options);
     }
 
     @Override

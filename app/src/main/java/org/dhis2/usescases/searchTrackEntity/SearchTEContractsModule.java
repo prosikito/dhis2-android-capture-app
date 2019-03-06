@@ -1,20 +1,20 @@
 package org.dhis2.usescases.searchTrackEntity;
 
-import androidx.annotation.Nullable;
-
 import org.dhis2.data.forms.dataentry.fields.RowAction;
 import org.dhis2.data.tuples.Pair;
 import org.dhis2.data.tuples.Trio;
 import org.dhis2.usescases.general.AbstractActivityContracts;
 import org.dhis2.usescases.searchTrackEntity.adapters.SearchTeiModel;
+import org.hisp.dhis.android.core.option.OptionModel;
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnitModel;
 import org.hisp.dhis.android.core.program.ProgramModel;
-import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttributeModel;
+import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttribute;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityTypeModel;
 
 import java.util.HashMap;
 import java.util.List;
 
+import androidx.annotation.Nullable;
 import io.reactivex.Flowable;
 import io.reactivex.Observable;
 import io.reactivex.functions.Consumer;
@@ -25,8 +25,8 @@ import io.reactivex.functions.Consumer;
 
 public class SearchTEContractsModule {
 
-    public interface View extends AbstractActivityContracts.View {
-        void setForm(List<TrackedEntityAttributeModel> trackedEntityAttributeModels, @Nullable ProgramModel program, HashMap<String, String> queryData);
+    public interface SearchTEView extends AbstractActivityContracts.View {
+        void setForm(List<TrackedEntityAttribute> trackedEntityAttributes, @Nullable ProgramModel program, HashMap<String, String> queryData);
 
         Consumer<Pair<List<SearchTeiModel>, String>> swapTeiListData();
 
@@ -50,12 +50,12 @@ public class SearchTEContractsModule {
 
         String fromRelationshipTEI();
 
-        void setListOptions(List<String> options);
+        void setListOptions(List<OptionModel> options);
     }
 
-    public interface Presenter {
+    public interface SearchTEPresenter {
 
-        void init(View view, String trackedEntityType, String initialProgram);
+        void init(SearchTEView view, String trackedEntityType, String initialProgram);
 
         void onDestroy();
 
@@ -71,7 +71,7 @@ public class SearchTEContractsModule {
 
         void enroll(String programUid, String uid);
 
-        void onTEIClick(String TEIuid, boolean isOnline);
+        void onTEIClick(String teiUid, boolean isOnline);
 
         void getTrakedEntities();
 
@@ -79,13 +79,13 @@ public class SearchTEContractsModule {
 
         ProgramModel getProgramModel();
 
-        void addRelationship(String TEIuid, String relationshipTypeUid, boolean online);
+        void addRelationship(String teiUid, String relationshipTypeUid, boolean online);
 
-        void addRelationship(String TEIuid, boolean online);
+        void addRelationship(String teiUid, boolean online);
 
         void downloadTei(String teiUid);
 
-        void downloadTeiForRelationship(String TEIuid, String relationshipTypeUid);
+        void downloadTeiForRelationship(String teiUid, String relationshipTypeUid);
 
         Observable<List<OrganisationUnitModel>> getOrgUnits();
 

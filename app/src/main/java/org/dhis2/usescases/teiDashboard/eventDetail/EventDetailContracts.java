@@ -1,18 +1,16 @@
 package org.dhis2.usescases.teiDashboard.eventDetail;
 
-import androidx.annotation.NonNull;
-
 import org.dhis2.data.metadata.MetadataRepository;
 import org.dhis2.usescases.general.AbstractActivityContracts;
 import org.dhis2.utils.custom_views.OrgUnitDialog;
-
 import org.hisp.dhis.android.core.category.CategoryOptionComboModel;
 import org.hisp.dhis.android.core.event.EventModel;
 import org.hisp.dhis.android.core.event.EventStatus;
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnitModel;
 import org.hisp.dhis.android.core.program.ProgramModel;
-import org.hisp.dhis.android.core.program.ProgramStageModel;
+import org.hisp.dhis.android.core.program.ProgramStage;
 
+import androidx.annotation.NonNull;
 import io.reactivex.functions.Consumer;
 
 /**
@@ -21,7 +19,7 @@ import io.reactivex.functions.Consumer;
 
 public class EventDetailContracts {
 
-    interface View extends AbstractActivityContracts.View {
+    interface EventDetailView extends AbstractActivityContracts.View {
 
         void setData(EventDetailModel eventDetailModel, MetadataRepository metadataRepository);
 
@@ -49,8 +47,8 @@ public class EventDetailContracts {
         void showCatOptionDialog();
     }
 
-    public interface Presenter extends AbstractActivityContracts.Presenter {
-        void init(EventDetailContracts.View view);
+    public interface EventDetailPresenter extends AbstractActivityContracts.Presenter {
+        void init(EventDetailView view);
 
         void getEventData(String eventUid);
 
@@ -58,7 +56,7 @@ public class EventDetailContracts {
 
         void back();
 
-        void eventStatus(android.view.View view, EventModel eventModel, ProgramStageModel stageModel);
+        void eventStatus(android.view.View view, EventModel eventModel, ProgramStage programStage);
 
         void editData();
 

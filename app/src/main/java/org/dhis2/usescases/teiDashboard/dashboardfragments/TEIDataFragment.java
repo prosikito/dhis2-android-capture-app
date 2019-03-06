@@ -25,7 +25,7 @@ import org.dhis2.utils.EventCreationType;
 import org.dhis2.utils.custom_views.CustomDialog;
 import org.hisp.dhis.android.core.enrollment.EnrollmentStatus;
 import org.hisp.dhis.android.core.event.EventModel;
-import org.hisp.dhis.android.core.program.ProgramStageModel;
+import org.hisp.dhis.android.core.program.ProgramStage;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -43,7 +43,7 @@ import static android.app.Activity.RESULT_OK;
 import static org.dhis2.utils.Constants.ENROLLMENT_UID;
 import static org.dhis2.utils.Constants.EVENT_CREATION_TYPE;
 import static org.dhis2.utils.Constants.EVENT_SCHEDULE_INTERVAL;
-import static org.dhis2.utils.Constants.ORG_UNIT;
+import static org.dhis2.utils.Constants.EXTRA_ORG_UNIT;
 import static org.dhis2.utils.Constants.PROGRAM_UID;
 import static org.dhis2.utils.Constants.TRACKED_ENTITY_INSTANCE;
 
@@ -63,12 +63,11 @@ public class TEIDataFragment extends FragmentGlobalAbstract implements DialogCli
     private FragmentTeiDataBinding binding;
 
     private static TEIDataFragment instance;
-    private TeiDashboardContracts.Presenter presenter;
+    private TeiDashboardContracts.TeiDashboardPresenter presenter;
 
     private EventAdapter adapter;
     private CustomDialog dialog;
-    private String lastModifiedEventUid;
-    private ProgramStageModel programStageFromEvent;
+    private ProgramStage programStageFromEvent;
     private ObservableBoolean followUp = new ObservableBoolean(false);
 
     private boolean hasCatComb;
@@ -84,11 +83,12 @@ public class TEIDataFragment extends FragmentGlobalAbstract implements DialogCli
     }
 
     public static TEIDataFragment createInstance() {
-        return instance = new TEIDataFragment();
+        instance = new TEIDataFragment();
+        return instance;
     }
 
     @Override
-    public void onAttach(Context context) {
+    public void onAttach(@NonNull Context context) {
         super.onAttach(context);
         this.context = context;
         presenter = ((TeiDashboardMobileActivity) context).getPresenter();
@@ -96,8 +96,12 @@ public class TEIDataFragment extends FragmentGlobalAbstract implements DialogCli
 
     @Override
     public void onDestroy() {
-        instance = null;
+        destroyInstance();
         super.onDestroy();
+    }
+
+    private static void destroyInstance() {
+        instance = null;
     }
 
     @Nullable
@@ -142,7 +146,7 @@ public class TEIDataFragment extends FragmentGlobalAbstract implements DialogCli
             SharedPreferences prefs = context.getSharedPreferences(Constants.SHARE_PREFS, Context.MODE_PRIVATE);
             hasCatComb = !nprogram.getCurrentProgram().categoryCombo().equals(prefs.getString(Constants.DEFAULT_CAT_COMBO, ""));
             List<EventModel> events = new ArrayList<>();
-            adapter = new EventAdapter(presenter, nprogram.getProgramStages(), events, nprogram.getCurrentEnrollment());
+            adapter = new EventAdapter(presenter, nprogram.getProgramStages(), events, nprogram.getCurrentEnrollment(), nprogram.getCurrentProgram());
             binding.teiRecycler.setLayoutManager(new LinearLayoutManager(getAbstracContext()));
             binding.teiRecycler.setAdapter(adapter);
             binding.setTrackEntity(nprogram.getTei());
@@ -181,19 +185,16 @@ public class TEIDataFragment extends FragmentGlobalAbstract implements DialogCli
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == REQ_DETAILS) {
-            if (resultCode == RESULT_OK) {
-                presenter.getData();
-            }
+        if (requestCode == REQ_DETAILS && resultCode == RESULT_OK) {
+            presenter.getData();
         }
         if (requestCode == REQ_EVENT && resultCode == RESULT_OK) {
             presenter.getTEIEvents(this);
             if (data != null) {
-                lastModifiedEventUid = data.getStringExtra(Constants.EVENT_UID);
+                String lastModifiedEventUid = data.getStringExtra(Constants.EVENT_UID);
                 if (lastModifiedEventUid != null)
                     presenter.displayGenerateEvent(this, lastModifiedEventUid);
             }
-
         }
     }
 
@@ -201,9 +202,8 @@ public class TEIDataFragment extends FragmentGlobalAbstract implements DialogCli
         return events -> {
             adapter.swapItems(events);
             for (EventModel event : events) {
-                if (event.eventDate() != null) {
-                    if (event.eventDate().after(DateUtils.getInstance().getToday()))
-                        binding.teiRecycler.scrollToPosition(events.indexOf(event));
+                if (event.eventDate() != null && event.eventDate().after(DateUtils.getInstance().getToday())) {
+                    binding.teiRecycler.scrollToPosition(events.indexOf(event));
                 }
                 if (hasCatComb && event.attributeOptionCombo() == null && !catComboShowed.contains(event)) {
                     presenter.getCatComboOptions(event);
@@ -213,10 +213,10 @@ public class TEIDataFragment extends FragmentGlobalAbstract implements DialogCli
         };
     }
 
-    public Consumer<ProgramStageModel> displayGenerateEvent() {
-        return programStageModel -> {
-            this.programStageFromEvent = programStageModel;
-            if (programStageModel.displayGenerateEventBox() || programStageModel.allowGenerateNextVisit()) {
+    public Consumer<ProgramStage> displayGenerateEvent() {
+        return programStage -> {
+            this.programStageFromEvent = programStage;
+            if (programStage.displayGenerateEventBox() || programStage.allowGenerateNextVisit()) {
                 dialog = new CustomDialog(
                         getContext(),
                         getString(R.string.dialog_generate_new_event),
@@ -226,26 +226,29 @@ public class TEIDataFragment extends FragmentGlobalAbstract implements DialogCli
                         RC_GENERATE_EVENT,
                         this);
                 dialog.show();
-            } else if (programStageModel.remindCompleted())
+            } else if (programStage.remindCompleted())
                 showDialogCloseProgram();
         };
     }
 
-    private void showDialogCloseProgram(){
-        dialog = new CustomDialog(
-                getContext(),
-                getString(R.string.event_completed),
-                getString(R.string.complete_enrollment_message),
-                getString(R.string.button_ok),
-                getString(R.string.cancel),
-                RC_EVENTS_COMPLETED,
-                this);
-        dialog.show();
+    private void showDialogCloseProgram() {
+        if (isAdded() && getContext() != null) {
+            dialog = new CustomDialog(
+                    getContext(),
+                    getString(R.string.event_completed),
+                    getString(R.string.complete_enrollment_message),
+                    getString(R.string.button_ok),
+                    getString(R.string.cancel),
+                    RC_EVENTS_COMPLETED,
+                    this);
+            dialog.show();
+        }
     }
 
     public Consumer<Single<Boolean>> areEventsCompleted() {
         return eventsCompleted -> {
-            if (eventsCompleted.blockingGet()) {
+            if (eventsCompleted.blockingGet() &&
+                    isAdded() && getContext() != null) {
                 dialog = new CustomDialog(
                         getContext(),
                         getString(R.string.event_completed_title),
@@ -256,7 +259,6 @@ public class TEIDataFragment extends FragmentGlobalAbstract implements DialogCli
                         this);
                 dialog.show();
             }
-
         };
     }
 
@@ -285,7 +287,7 @@ public class TEIDataFragment extends FragmentGlobalAbstract implements DialogCli
         Bundle bundle = new Bundle();
         bundle.putString(PROGRAM_UID, presenter.getDashBoardData().getCurrentEnrollment().program());
         bundle.putString(TRACKED_ENTITY_INSTANCE, presenter.getTeUid());
-        bundle.putString(ORG_UNIT, presenter.getDashBoardData().getTei().organisationUnit()); //We take the OU of the TEI for the events
+        bundle.putString(EXTRA_ORG_UNIT, presenter.getDashBoardData().getTei().organisationUnit()); //We take the OU of the TEI for the events
         bundle.putString(ENROLLMENT_UID, presenter.getDashBoardData().getCurrentEnrollment().uid());
         bundle.putString(EVENT_CREATION_TYPE, eventCreationType.name());
         bundle.putInt(EVENT_SCHEDULE_INTERVAL, scheduleIntervalDays);

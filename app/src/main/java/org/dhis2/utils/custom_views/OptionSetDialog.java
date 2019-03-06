@@ -1,12 +1,7 @@
 package org.dhis2.utils.custom_views;
 
 import android.app.Dialog;
-import androidx.databinding.DataBindingUtil;
 import android.os.Bundle;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.fragment.app.DialogFragment;
-import androidx.recyclerview.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -19,11 +14,17 @@ import org.dhis2.data.forms.dataentry.fields.spinner.SpinnerViewModel;
 import org.dhis2.data.tuples.Trio;
 import org.dhis2.databinding.DialogOptionSetBinding;
 import org.dhis2.utils.EndlessRecyclerViewScrollListener;
+import org.hisp.dhis.android.core.option.OptionModel;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.databinding.DataBindingUtil;
+import androidx.fragment.app.DialogFragment;
+import androidx.recyclerview.widget.RecyclerView;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.processors.FlowableProcessor;
@@ -32,7 +33,7 @@ import timber.log.Timber;
 
 public class OptionSetDialog extends DialogFragment {
 
-    static OptionSetDialog instace;
+    private static OptionSetDialog instace;
     private DialogOptionSetBinding binding;
     private CompositeDisposable disposable;
     //1st param is text to search, 2nd param is uid of optionSet,3rd param is page
@@ -53,12 +54,17 @@ public class OptionSetDialog extends DialogFragment {
         return instace;
     }
 
+    public static Boolean isCreated(){
+        return instace != null;
+    }
+
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
         Dialog dialog = super.onCreateDialog(savedInstanceState);
-        dialog.getWindow().requestFeature(Window.FEATURE_NO_TITLE);
-        dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
-
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().requestFeature(Window.FEATURE_NO_TITLE);
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+        }
         return dialog;
     }
 
@@ -67,7 +73,7 @@ public class OptionSetDialog extends DialogFragment {
         binding = DataBindingUtil.inflate(inflater, R.layout.dialog_option_set, container, false);
 
 
-        binding.title.setText(optionSet.description());
+        binding.title.setText(optionSet.label());
         disposable = new CompositeDisposable();
 
         endlessScrollListener = new EndlessRecyclerViewScrollListener(binding.recycler.getLayoutManager(), 2, 0) {
@@ -102,9 +108,13 @@ public class OptionSetDialog extends DialogFragment {
 
     @Override
     public void dismiss() {
-        instace = null;
+        destroyInstance();
         disposable.clear();
         super.dismiss();
+    }
+
+    private static void destroyInstance() {
+        instace = null;
     }
 
     public OptionSetDialog setOnClick(OptionSetOnClickListener listener) {
@@ -112,7 +122,7 @@ public class OptionSetDialog extends DialogFragment {
         return this;
     }
 
-    public OptionSetDialog setOptions(List<String> options) {
+    public OptionSetDialog setOptions(List<OptionModel> options) {
         adapter.setOptions(options,endlessScrollListener.getCurrentPage());
         return this;
     }

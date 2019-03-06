@@ -1,26 +1,28 @@
 package org.dhis2.data.user;
 
-import androidx.annotation.NonNull;
-
 import com.squareup.sqlbrite2.BriteDatabase;
 
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnitModel;
+import org.hisp.dhis.android.core.user.User;
 import org.hisp.dhis.android.core.user.UserCredentialsModel;
-import org.hisp.dhis.android.core.user.UserModel;
 
 import java.util.List;
 
+import androidx.annotation.NonNull;
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
 import io.reactivex.Observable;
 
+import static org.dhis2.data.database.SqlConstants.ALL;
+import static org.dhis2.data.database.SqlConstants.FROM;
+import static org.dhis2.data.database.SqlConstants.LIMIT_1;
+import static org.dhis2.data.database.SqlConstants.SELECT;
+import static org.dhis2.data.database.SqlConstants.USER_TABLE;
+
 public class UserRepositoryImpl implements UserRepository {
-    private static final String SELECT_USER = "SELECT * FROM " +
-            UserModel.TABLE + " LIMIT 1";
-    private static final String SELECT_USER_CREDENTIALS = "SELECT * FROM " +
-            UserCredentialsModel.TABLE + " LIMIT 1";
-    private static final String SELECT_USER_ORG_UNITS = "SELECT * FROM " +
-            OrganisationUnitModel.TABLE;
+    private static final String SELECT_USER = SELECT + ALL + FROM + USER_TABLE + LIMIT_1;
+    private static final String SELECT_USER_CREDENTIALS = SELECT + ALL + FROM + UserCredentialsModel.TABLE + LIMIT_1;
+    private static final String SELECT_USER_ORG_UNITS = SELECT + ALL + FROM + OrganisationUnitModel.TABLE;
 
     private final BriteDatabase briteDatabase;
 
@@ -39,10 +41,10 @@ public class UserRepositoryImpl implements UserRepository {
 
     @NonNull
     @Override
-    public Flowable<UserModel> me() {
+    public Flowable<User> me() {
         return briteDatabase
-                .createQuery(UserModel.TABLE, SELECT_USER)
-                .mapToOne(UserModel::create).toFlowable(BackpressureStrategy.BUFFER);
+                .createQuery(USER_TABLE, SELECT_USER)
+                .mapToOne(User::create).toFlowable(BackpressureStrategy.BUFFER);
     }
 
     @NonNull

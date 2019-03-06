@@ -1,9 +1,6 @@
 package org.dhis2.usescases.datasets.dataSetTable;
 
-import androidx.databinding.DataBindingUtil;
 import android.os.Bundle;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
 import org.dhis2.App;
 import org.dhis2.R;
@@ -11,7 +8,7 @@ import org.dhis2.databinding.ActivityDatasetTableBinding;
 import org.dhis2.usescases.general.ActivityGlobalAbstract;
 import org.dhis2.utils.Constants;
 import org.hisp.dhis.android.core.category.CategoryOptionComboModel;
-import org.hisp.dhis.android.core.dataelement.DataElementModel;
+import org.hisp.dhis.android.core.dataelement.DataElement;
 import org.hisp.dhis.android.core.dataset.DataSetModel;
 
 import java.util.List;
@@ -19,7 +16,12 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
-public class DataSetTableActivity extends ActivityGlobalAbstract implements DataSetTableContract.View {
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.databinding.DataBindingUtil;
+
+@SuppressWarnings("squid:MaximumInheritanceDepth")
+public class DataSetTableActivity extends ActivityGlobalAbstract implements DataSetTableContract.DataSetTableView {
 
     String orgUnitUid;
     String periodTypeName;
@@ -27,9 +29,8 @@ public class DataSetTableActivity extends ActivityGlobalAbstract implements Data
     String catCombo;
 
     @Inject
-    DataSetTableContract.Presenter presenter;
+    DataSetTableContract.DataSetTablePresenter presenter;
     private ActivityDatasetTableBinding binding;
-    private DataSetSectionAdapter viewPagerAdapter;
 
     public static Bundle getBundle(@NonNull String dataSetUid,
                                    @NonNull String orgUnitUid,
@@ -38,7 +39,7 @@ public class DataSetTableActivity extends ActivityGlobalAbstract implements Data
                                    @NonNull String catCombo) {
         Bundle bundle = new Bundle();
         bundle.putString(Constants.DATA_SET_UID, dataSetUid);
-        bundle.putString(Constants.ORG_UNIT, orgUnitUid);
+        bundle.putString(Constants.EXTRA_ORG_UNIT, orgUnitUid);
         bundle.putString(Constants.PERIOD_TYPE, periodTypeName);
         bundle.putString(Constants.PERIOD_TYPE_DATE, periodInitialDate);
         bundle.putString(Constants.CAT_COMB, catCombo);
@@ -49,7 +50,7 @@ public class DataSetTableActivity extends ActivityGlobalAbstract implements Data
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        orgUnitUid = getIntent().getStringExtra(Constants.ORG_UNIT);
+        orgUnitUid = getIntent().getStringExtra(Constants.EXTRA_ORG_UNIT);
         periodTypeName = getIntent().getStringExtra(Constants.PERIOD_TYPE);
         periodInitialDate = getIntent().getStringExtra(Constants.PERIOD_TYPE_DATE);
         catCombo = getIntent().getStringExtra(Constants.CAT_COMB);
@@ -73,8 +74,8 @@ public class DataSetTableActivity extends ActivityGlobalAbstract implements Data
     }
 
     @Override
-    public void setDataElements(Map<String, List<DataElementModel>> dataElements, Map<String, List<CategoryOptionComboModel>> catOptions) {
-        viewPagerAdapter = new DataSetSectionAdapter(getSupportFragmentManager());
+    public void setDataElements(Map<String, List<DataElement>> dataElements, Map<String, List<CategoryOptionComboModel>> catOptions) {
+        DataSetSectionAdapter viewPagerAdapter = new DataSetSectionAdapter(getSupportFragmentManager());
         binding.viewPager.setAdapter(viewPagerAdapter);
         binding.tabLayout.setupWithViewPager(binding.viewPager);
         viewPagerAdapter.swapData(dataElements);
@@ -85,7 +86,7 @@ public class DataSetTableActivity extends ActivityGlobalAbstract implements Data
         binding.dataSetName.setText(data.displayName());
     }
 
-    public DataSetTableContract.Presenter getPresenter() {
+    public DataSetTableContract.DataSetTablePresenter getPresenter() {
         return presenter;
     }
 }

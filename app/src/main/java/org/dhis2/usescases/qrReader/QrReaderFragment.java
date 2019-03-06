@@ -4,14 +4,7 @@ package org.dhis2.usescases.qrReader;
 import android.Manifest;
 import android.app.Dialog;
 import android.content.Context;
-import androidx.databinding.DataBindingUtil;
 import android.os.Bundle;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.core.app.ActivityCompat;
-import androidx.fragment.app.Fragment;
-import androidx.core.content.ContextCompat;
-import androidx.appcompat.app.AlertDialog;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -41,11 +34,19 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+import androidx.core.content.res.ResourcesCompat;
+import androidx.databinding.DataBindingUtil;
+import androidx.fragment.app.Fragment;
 import me.dm7.barcodescanner.zxing.ZXingScannerView;
 import timber.log.Timber;
 
 import static android.content.pm.PackageManager.PERMISSION_GRANTED;
-import static org.dhis2.utils.Constants.ORG_UNIT;
+import static org.dhis2.utils.Constants.EXTRA_ORG_UNIT;
 import static org.dhis2.utils.Constants.PROGRAM_UID;
 
 
@@ -56,7 +57,7 @@ public class QrReaderFragment extends FragmentGlobalAbstract implements ZXingSca
 
     private ZXingScannerView mScannerView;
     private Context context;
-    FragmentQrBinding binding;
+    private FragmentQrBinding binding;
     private boolean isPermissionRequested = false;
 
     @Inject
@@ -189,7 +190,7 @@ public class QrReaderFragment extends FragmentGlobalAbstract implements ZXingSca
         Bundle bundle = new Bundle();
         bundle.putString(PROGRAM_UID, programId);
         bundle.putString(Constants.EVENT_UID, eventUid);
-        bundle.putString(ORG_UNIT, orgUnit);
+        bundle.putString(EXTRA_ORG_UNIT, orgUnit);
         startActivity(EventInitialActivity.class, bundle, false, false, null);
     }
 
@@ -319,48 +320,51 @@ public class QrReaderFragment extends FragmentGlobalAbstract implements ZXingSca
         promtForTEIMoreQr();
     }
 
-    @Override
-    public void promtForTEIMoreQr() {
-
-        // IDENTIFICATION
-        String message = getString(R.string.qr_id) + ":\n";
+    private String getIdentificationText() {
+        StringBuilder message = new StringBuilder(getString(R.string.qr_id)).append(":\n");
         if (teiUid != null) {
-            message = message + teiUid + "\n\n";
+            message.append(teiUid).append("\n\n");
         } else {
-            message = message + getString(R.string.qr_no_data) + "\n\n";
+            message.append(getString(R.string.qr_no_data)).append("\n\n");
         }
+        return message.toString();
+    }
 
-        // ATTRIBUTES
-        message = message + getString(R.string.qr_attributes) + ":\n";
+    private String getAttributesText() {
+        StringBuilder message = new StringBuilder(getString(R.string.qr_attributes)).append(":\n");
 
         if (attributes != null && !attributes.isEmpty()) {
             for (Trio<String, String, Boolean> attribute : attributes) {
                 if (attribute.val2()) {
-                    message = message + attribute.val1() + "\n";
+                    message.append(attribute.val1()).append("\n");
                 }
             }
-            message = message + "\n";
+            message.append("\n");
         } else {
-            message = message + getString(R.string.qr_no_data) + "\n\n";
+            message.append(getString(R.string.qr_no_data)).append("\n\n");
         }
+        return message.toString();
+    }
 
-        // ENROLLMENT
-        message = message + getString(R.string.qr_enrollment) + ":\n";
+    private String getEnrollmentText() {
+        StringBuilder message = new StringBuilder(getString(R.string.qr_enrollment)).append(":\n");
 
         if (enrollments != null && !enrollments.isEmpty()) {
             for (Pair<String, Boolean> enrollment : enrollments) {
                 if (enrollment.val1()) {
-                    message = message + enrollment.val0() + "\n";
+                    message.append(enrollment.val0()).append("\n");
                 }
             }
-            message = message + "\n";
+            message.append("\n");
         } else {
-            message = message + getString(R.string.qr_no_data) + "\n\n";
+            message.append(getString(R.string.qr_no_data)).append("\n\n");
         }
 
+        return message.toString();
+    }
 
-        // EVENTS
-        message = message + getString(R.string.qr_events) + ":\n";
+    private String getEventText() {
+        String message = getString(R.string.qr_events) + ":\n";
 
         if (events != null && !events.isEmpty()) {
             int count = 0;
@@ -374,9 +378,11 @@ public class QrReaderFragment extends FragmentGlobalAbstract implements ZXingSca
             message = message + getString(R.string.qr_no_data) + "\n\n";
         }
 
+        return message;
+    }
 
-        // RELATIONSHIPS
-        message = message + getString(R.string.qr_relationships) + ":\n";
+    private String getRelationshipText() {
+        String message = getString(R.string.qr_relationships) + ":\n";
 
         if (relationships != null && !relationships.isEmpty()) {
             int count = 0;
@@ -390,20 +396,34 @@ public class QrReaderFragment extends FragmentGlobalAbstract implements ZXingSca
             message = message + getString(R.string.qr_no_data) + "\n\n";
         }
 
-        // ATTRIBUTES
-        message = message + getString(R.string.qr_data_values) + ":\n";
+        return message;
+    }
+
+    private String getDataValueText() {
+        StringBuilder message = new StringBuilder(getString(R.string.qr_data_values)).append(":\n");
 
         if (teiEventData != null && !teiEventData.isEmpty()) {
             for (Trio<TrackedEntityDataValueModel, String, Boolean> attribute : teiEventData) {
-                message = message + attribute.val1() + ":\n" + attribute.val0().value() + "\n\n";
+                message.append(attribute.val1()).append(":\n").append(attribute.val0().value()).append("\n\n");
             }
-            message = message + "\n";
+            message.append("\n");
         } else {
-            message = message + getString(R.string.qr_no_data) + "\n\n";
+            message.append(getString(R.string.qr_no_data)).append("\n\n");
         }
 
-        // READ MORE
-        message = message + "\n\n" + getString(R.string.read_more_qr);
+        return message.toString();
+    }
+
+    private String getReadMoreText() {
+        return "\n\n" + getString(R.string.read_more_qr);
+    }
+
+    @Override
+    public void promtForTEIMoreQr() {
+
+        // IDENTIFICATION
+        String message = getIdentificationText() + getAttributesText() + getEnrollmentText() + getEventText() +
+                getRelationshipText() + getDataValueText() + getReadMoreText();
 
         AlertDialog.Builder builder = new AlertDialog.Builder(context, R.style.CustomDialog)
                 .setTitle(getString(R.string.QR_SCANNER))
@@ -418,8 +438,12 @@ public class QrReaderFragment extends FragmentGlobalAbstract implements ZXingSca
                 });
         AlertDialog alertDialog = builder.create();
         alertDialog.setOnShowListener(dialogInterface -> {
-            alertDialog.getButton(Dialog.BUTTON_POSITIVE).setTextColor(getResources().getColor(R.color.colorPrimary));
-            alertDialog.getButton(Dialog.BUTTON_NEGATIVE).setTextColor(getResources().getColor(R.color.colorPrimary));
+            if (getContext() != null && isAdded()) {
+                alertDialog.getButton(Dialog.BUTTON_POSITIVE).setTextColor(
+                        ResourcesCompat.getColor(getResources(), R.color.colorPrimary, getContext().getTheme()));
+                alertDialog.getButton(Dialog.BUTTON_NEGATIVE).setTextColor(
+                        ResourcesCompat.getColor(getResources(), R.color.colorPrimary, getContext().getTheme()));
+            }
         });
         alertDialog.show();
     }
@@ -428,28 +452,28 @@ public class QrReaderFragment extends FragmentGlobalAbstract implements ZXingSca
     public void promtForEventWORegistrationMoreQr() {
 
         // IDENTIFICATION
-        String message = getString(R.string.qr_id) + ":\n";
+        StringBuilder message = new StringBuilder(getString(R.string.qr_id)).append(":\n");
         if (eventUid != null) {
-            message = message + eventUid + "\n\n";
+            message.append(eventUid).append("\n\n");
         } else {
-            message = message + getString(R.string.qr_no_data) + "\n\n";
+            message.append(getString(R.string.qr_no_data)).append("\n\n");
         }
 
         // ATTRIBUTES
-        message = message + getString(R.string.qr_data_values) + ":\n";
+        message.append(getString(R.string.qr_data_values)).append(":\n");
 
         if (eventData != null && !eventData.isEmpty()) {
             for (Trio<TrackedEntityDataValueModel, String, Boolean> attribute : eventData) {
-                message = message + attribute.val1() + ":\n" + attribute.val0().value() + "\n\n";
+                message.append(attribute.val1()).append(":\n").append(attribute.val0().value()).append("\n\n");
             }
-            message = message + "\n";
+            message.append("\n");
         } else {
-            message = message + getString(R.string.qr_no_data) + "\n\n";
+            message.append(getString(R.string.qr_no_data)).append("\n\n");
         }
 
 
         // READ MORE
-        message = message + "\n\n" + getString(R.string.read_more_qr);
+        message.append("\n\n").append(getString(R.string.read_more_qr));
 
         AlertDialog.Builder builder = new AlertDialog.Builder(context, R.style.CustomDialog)
                 .setTitle(getString(R.string.QR_SCANNER))
@@ -464,8 +488,12 @@ public class QrReaderFragment extends FragmentGlobalAbstract implements ZXingSca
                 });
         AlertDialog alertDialog = builder.create();
         alertDialog.setOnShowListener(dialogInterface -> {
-            alertDialog.getButton(Dialog.BUTTON_POSITIVE).setTextColor(getResources().getColor(R.color.colorPrimary));
-            alertDialog.getButton(Dialog.BUTTON_NEGATIVE).setTextColor(getResources().getColor(R.color.colorPrimary));
+            if (getContext() != null && isAdded()) {
+                alertDialog.getButton(Dialog.BUTTON_POSITIVE).setTextColor(
+                        ResourcesCompat.getColor(getResources(), R.color.colorPrimary, getContext().getTheme()));
+                alertDialog.getButton(Dialog.BUTTON_NEGATIVE).setTextColor(
+                        ResourcesCompat.getColor(getResources(), R.color.colorPrimary, getContext().getTheme()));
+            }
         });
         alertDialog.show();
     }

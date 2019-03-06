@@ -2,8 +2,6 @@ package org.dhis2.data.forms;
 
 import android.content.ContentValues;
 import android.database.Cursor;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
 import com.google.android.gms.maps.model.LatLng;
 import com.squareup.sqlbrite2.BriteDatabase;
@@ -15,14 +13,13 @@ import org.dhis2.data.tuples.Trio;
 import org.dhis2.utils.DateUtils;
 import org.hisp.dhis.android.core.category.CategoryComboModel;
 import org.hisp.dhis.android.core.category.CategoryOptionComboModel;
+import org.hisp.dhis.android.core.common.ObjectStyleModel;
 import org.hisp.dhis.android.core.common.State;
-import org.hisp.dhis.android.core.common.ValueType;
-import org.hisp.dhis.android.core.common.ValueTypeDeviceRenderingModel;
+import org.hisp.dhis.android.core.common.ValueTypeDeviceRendering;
 import org.hisp.dhis.android.core.enrollment.EnrollmentModel;
 import org.hisp.dhis.android.core.event.EventModel;
 import org.hisp.dhis.android.core.event.EventStatus;
 import org.hisp.dhis.android.core.program.ProgramModel;
-import org.hisp.dhis.android.core.program.ProgramStageModel;
 import org.hisp.dhis.android.core.program.ProgramStageSectionModel;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityDataValueModel;
 import org.hisp.dhis.rules.RuleEngine;
@@ -37,22 +34,29 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
 import io.reactivex.Observable;
 import io.reactivex.functions.Consumer;
 
 import static android.text.TextUtils.isEmpty;
+import static org.dhis2.data.database.SqlConstants.FROM;
+import static org.dhis2.data.database.SqlConstants.LIMIT_1;
+import static org.dhis2.data.database.SqlConstants.PROGRAM_STAGE_TABLE;
+import static org.dhis2.data.database.SqlConstants.SELECT;
+import static org.dhis2.data.database.SqlConstants.WHERE;
 
 @SuppressWarnings({
         "PMD.AvoidDuplicateLiterals"
 })
 public class EventRepository implements FormRepository {
     private static final List<String> TITLE_TABLES = Arrays.asList(
-            ProgramModel.TABLE, ProgramStageModel.TABLE);
+            ProgramModel.TABLE, PROGRAM_STAGE_TABLE);
 
     private static final List<String> SECTION_TABLES = Arrays.asList(
-            EventModel.TABLE, ProgramModel.TABLE, ProgramStageModel.TABLE, ProgramStageSectionModel.TABLE);
+            EventModel.TABLE, ProgramModel.TABLE, PROGRAM_STAGE_TABLE, ProgramStageSectionModel.TABLE);
 
     private static final String SELECT_PROGRAM = "SELECT Program.*\n" +
             "FROM Program JOIN Event ON Event.program = Program.uid \n" +
@@ -67,34 +71,27 @@ public class EventRepository implements FormRepository {
             EventModel.TABLE, EventModel.Columns.PROGRAM, ProgramModel.TABLE, ProgramModel.Columns.UID,
             EventModel.TABLE, EventModel.Columns.UID);
 
-    private static final String SELECT_TITLE = "SELECT\n" +
+    private static final String SELECT_TITLE = SELECT +
             "  Program.displayName,\n" +
             "  ProgramStage.displayName\n" +
-            "FROM Event\n" +
+            FROM + EventModel.TABLE +
             "  JOIN Program ON Event.program = Program.uid\n" +
             "  JOIN ProgramStage ON Event.programStage = ProgramStage.uid\n" +
-            "WHERE Event.uid = ? " +
-            "LIMIT 1";
+            WHERE + "Event.uid = ? " +
+            LIMIT_1;
 
-    private static final String SELECT_SECTIONS = "SELECT\n" +
+    private static final String SELECT_SECTIONS = SELECT +
             "  Program.uid AS programUid,\n" +
             "  ProgramStage.uid AS programStageUid,\n" +
             "  ProgramStageSection.uid AS programStageSectionUid,\n" +
             "  ProgramStageSection.displayName AS programStageDisplayName,\n" +
             "  ProgramStageSection.mobileRenderType AS renderType,\n" +
             "  ProgramStageSection.sortOrder AS sectionOrder\n" +
-            "FROM Event\n" +
+            FROM + EventModel.TABLE +
             "  JOIN Program ON Event.program = Program.uid\n" +
             "  JOIN ProgramStage ON Event.programStage = ProgramStage.uid\n" +
             "  LEFT OUTER JOIN ProgramStageSection ON ProgramStageSection.programStage = Event.programStage\n" +
             "WHERE Event.uid = ? ORDER BY ProgramStageSection.sortOrder";
-
-    private static final String SELECT_EVENT_DATE = "SELECT\n" +
-            "  Event.eventDate, ProgramStage.periodType\n" +
-            "FROM Event\n" +
-            "JOIN ProgramStage ON ProgramStage.uid = Event.programStage\n" +
-            "WHERE Event.uid = ? " +
-            "LIMIT 1";
 
     private static final String SELECT_EVENT_STATUS = "SELECT\n" +
             "  Event.status\n" +
@@ -304,13 +301,12 @@ public class EventRepository implements FormRepository {
         };
     }
 
-    @NonNull
+    @Nullable
     @Override
     public Observable<Trio<String, String, String>> useFirstStageDuringRegistration() {
         return Observable.just(null);
     }
 
-    @NonNull
     @Override
     public Observable<String> autoGenerateEvents(String enrollmentUid) {
         return null;
@@ -336,11 +332,11 @@ public class EventRepository implements FormRepository {
 
     @Override
     public void deleteEvent() {
-        String DELETE_WHERE_RELATIONSHIP = String.format(
+        String deleteWhereRelationship = String.format(
                 "%s.%s = ",
                 EventModel.TABLE, EventModel.Columns.UID);
         String id = eventUid == null ? "" : eventUid;
-        briteDatabase.delete(EventModel.TABLE, DELETE_WHERE_RELATIONSHIP + "'" + id + "'");
+        briteDatabase.delete(EventModel.TABLE, deleteWhereRelationship + "'" + id + "'");
     }
 
     @Override
@@ -351,10 +347,10 @@ public class EventRepository implements FormRepository {
     @NonNull
     @Override
     public Observable<String> getTrackedEntityInstanceUid() {
-        String SELECT_TE = "SELECT " + EventModel.TABLE + "." + EventModel.Columns.TRACKED_ENTITY_INSTANCE +
+        String selectTe = "SELECT " + EventModel.TABLE + "." + EventModel.Columns.TRACKED_ENTITY_INSTANCE +
                 " FROM " + EventModel.TABLE +
                 " WHERE " + EventModel.Columns.UID + " = ? LIMIT 1";
-        return briteDatabase.createQuery(EnrollmentModel.TABLE, SELECT_TE, eventUid == null ? "" : eventUid).mapToOne(cursor -> cursor.getString(0));
+        return briteDatabase.createQuery(EnrollmentModel.TABLE, selectTe, eventUid == null ? "" : eventUid).mapToOne(cursor -> cursor.getString(0));
     }
 
     @Override
@@ -400,26 +396,12 @@ public class EventRepository implements FormRepository {
 
     @NonNull
     private FieldViewModel transform(@NonNull Cursor cursor) {
-        String uid = cursor.getString(0);
-        String label = cursor.getString(1);
-        ValueType valueType = ValueType.valueOf(cursor.getString(2));
-        boolean mandatory = cursor.getInt(3) == 1;
-        String optionSetUid = cursor.getString(4);
-        String dataValue = cursor.getString(5);
-        String optionCodeName = cursor.getString(6);
-        String section = cursor.getString(7);
-        Boolean allowFutureDates = cursor.getInt(8) == 1;
-        EventStatus status = EventStatus.valueOf(cursor.getString(9));
-        String formLabel = cursor.getString(10);
-        String description = cursor.getString(11);
-        if (!isEmpty(optionCodeName)) {
-            dataValue = optionCodeName;
-        }
-
-        ValueTypeDeviceRenderingModel fieldRendering = null;
-        Cursor rendering = briteDatabase.query("SELECT * FROM ValueTypeDeviceRendering WHERE uid = ?", uid);
-        if(rendering!=null && rendering.moveToFirst()){
-            fieldRendering = ValueTypeDeviceRenderingModel.create(cursor);
+        FieldViewModelUtils fieldViewModelUtils = new FieldViewModelUtils(cursor);
+        int optionCount = FieldViewModelUtils.getOptionCount(briteDatabase, fieldViewModelUtils.getOptionSetUid());
+        ValueTypeDeviceRendering fieldRendering = null;
+        Cursor rendering = briteDatabase.query("SELECT * FROM ValueTypeDeviceRendering WHERE uid = ?", fieldViewModelUtils.getUid());
+        if (rendering != null && rendering.moveToFirst()) {
+            fieldRendering = ValueTypeDeviceRendering.create(rendering);
             rendering.close();
         }
 
@@ -433,10 +415,17 @@ public class EventRepository implements FormRepository {
                 "",
                 "",
                 "");
-
-        return fieldFactory.create(uid, isEmpty(formLabel) ? label : formLabel, valueType,
-                mandatory, optionSetUid, dataValue, section, allowFutureDates,
-                status == EventStatus.ACTIVE, null, description, fieldRendering);
+        ObjectStyleModel objectStyle = ObjectStyleModel.builder().build();
+        try (Cursor objStyleCursor = briteDatabase.query("SELECT * FROM ObjectStyle WHERE uid = ?", fieldViewModelUtils.getUid())) {
+            if (objStyleCursor.moveToFirst())
+                objectStyle = ObjectStyleModel.create(objStyleCursor);
+        }
+        return fieldFactory.create(fieldViewModelUtils.getUid(),
+                isEmpty(fieldViewModelUtils.getFormLabel()) ? fieldViewModelUtils.getLabel() : fieldViewModelUtils.getFormLabel(),
+                fieldViewModelUtils.getValueType(), fieldViewModelUtils.isMandatory(), fieldViewModelUtils.getOptionSetUid(),
+                fieldViewModelUtils.getDataValue(), fieldViewModelUtils.getSection(), fieldViewModelUtils.getAllowFutureDates(),
+                fieldViewModelUtils.getEventStatus() == EventStatus.ACTIVE, null,
+                fieldViewModelUtils.getDescription(), fieldRendering, optionCount, objectStyle);
     }
 
     @NonNull
@@ -462,6 +451,7 @@ public class EventRepository implements FormRepository {
         }
     }
 
+    @SuppressWarnings({"squid:S1172", "squid:CommentedOutCodeLine"})
     private void updateProgramTable(Date lastUpdated, String programUid) {
         /*ContentValues program = new ContentValues();TODO: Crash if active
         program.put(EnrollmentModel.Columns.LAST_UPDATED, BaseIdentifiableObject.DATE_FORMAT.format(lastUpdated));

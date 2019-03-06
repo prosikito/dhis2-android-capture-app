@@ -24,6 +24,7 @@ import org.hisp.dhis.android.core.program.ProgramStageSectionRenderingType;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -33,7 +34,6 @@ import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import io.reactivex.Flowable;
-import io.reactivex.functions.Consumer;
 import io.reactivex.processors.FlowableProcessor;
 import io.reactivex.processors.PublishProcessor;
 
@@ -62,7 +62,7 @@ public class EventCaptureFormFragment extends FragmentGlobalAbstract {
     }
 
     @Override
-    public void onAttach(Context context) {
+    public void onAttach(@NonNull Context context) {
         super.onAttach(context);
         this.activity = (EventCaptureActivity) context;
         setRetainInstance(true);
@@ -94,14 +94,10 @@ public class EventCaptureFormFragment extends FragmentGlobalAbstract {
 
         });
 
-        return binding.getRoot();
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
         activity.getPresenter().initCompletionPercentage(sectionSelectorAdapter.completionPercentage());
         activity.getPresenter().subscribeToSection();
+
+        return binding.getRoot();
     }
 
     public void setSectionTitle(DataEntryArguments arguments, FormSectionViewModel formSectionViewModel) {
@@ -122,7 +118,7 @@ public class EventCaptureFormFragment extends FragmentGlobalAbstract {
         binding.sectionSelector.sectionProgress.getProgressDrawable().setColorFilter(ColorUtils.getPrimaryColor(activity, ColorUtils.ColorType.PRIMARY_LIGHT), PorterDuff.Mode.SRC_IN);
     }
 
-    public void setSingleSection(DataEntryArguments arguments, FormSectionViewModel formSectionViewModel) {
+    public void setSingleSection(DataEntryArguments arguments) {
         this.currentSection = "NO_SECTION";
         binding.currentSectionTitle.root.setVisibility(View.GONE);
 
@@ -151,28 +147,26 @@ public class EventCaptureFormFragment extends FragmentGlobalAbstract {
 
     }
 
-    @NonNull
-    public Consumer<List<FieldViewModel>> showFields() {
-        return updates -> {
-            if (currentSection.equals("NO_SECTION") ||
-                    (!updates.isEmpty() && updates.get(0).programStageSection().equals(currentSection))) {
-                dataEntryAdapter.swap(updates);
-                int completedValues = 0;
-                HashMap<String, Boolean> fields = new HashMap<>();
-                for (FieldViewModel fieldViewModel : updates) {
-                    fields.put(fieldViewModel.optionSet() == null ? fieldViewModel.uid() : fieldViewModel.optionSet(), !isEmpty(fieldViewModel.value()));
-                }
-                for (String key : fields.keySet())
-                    if (fields.get(key))
-                        completedValues++;
-                binding.currentSectionTitle.sectionValues.setText(String.format("%s/%s", completedValues, fields.keySet().size()));
+    public void showFields(List<FieldViewModel> updates) {
+        if (currentSection.equals("NO_SECTION") ||
+                (!updates.isEmpty() && updates.get(0).programStageSection().equals(currentSection))) {
+            dataEntryAdapter.swap(updates);
+            int completedValues = 0;
+            HashMap<String, Boolean> fields = new HashMap<>();
+            for (FieldViewModel fieldViewModel : updates) {
+                fields.put(fieldViewModel.optionSet() == null ? fieldViewModel.uid() : fieldViewModel.optionSet(), !isEmpty(fieldViewModel.value()));
             }
-        };
-
+            for (Map.Entry<String, Boolean> entry : fields.entrySet()) {
+                if (entry.getValue()) {
+                    completedValues++;
+                }
+            }
+            binding.currentSectionTitle.sectionValues.setText(String.format("%s/%s", completedValues, fields.keySet().size()));
+        }
     }
 
-    public Consumer<List<EventSectionModel>> setSectionSelector() {
-        return data -> sectionSelectorAdapter.swapData(currentSection, data);
+    public void setSectionSelector(List<EventSectionModel> data) {
+        sectionSelectorAdapter.swapData(data);
     }
 
     public FlowableProcessor<RowAction> dataEntryFlowable() {
@@ -181,7 +175,7 @@ public class EventCaptureFormFragment extends FragmentGlobalAbstract {
 
 
     public void showSectionSelector() {
-        if (binding.sectionRecycler.getAdapter().getItemCount() >= 0) {
+        if (binding.sectionRecycler.getAdapter().getItemCount() > 1) {
             binding.sectionRecycler.setVisibility(binding.sectionRecycler.getVisibility() == View.VISIBLE ? View.GONE : View.VISIBLE);
             binding.currentSectionTitle.root.setVisibility(binding.currentSectionTitle.root.getVisibility() == View.VISIBLE ? View.GONE : View.VISIBLE);
         }

@@ -6,6 +6,7 @@ import org.dhis2.data.tuples.Pair;
 import org.hisp.dhis.android.core.common.State;
 import org.hisp.dhis.android.core.event.EventStatus;
 
+import java.util.Date;
 import java.util.List;
 
 import androidx.annotation.NonNull;
@@ -26,6 +27,9 @@ public abstract class ProgramEventViewModel {
     public abstract String orgUnitName();
 
     @NonNull
+    public abstract Date date();
+
+    @NonNull
     public abstract State eventState();
 
     @NonNull
@@ -36,12 +40,15 @@ public abstract class ProgramEventViewModel {
 
     @NonNull
     public abstract Boolean isExpired();
-
     @NonNull
-    public static ProgramEventViewModel create(@NonNull String uid, @NonNull String orgUnitUid, @NonNull String orgUnitName,
+    public abstract String attributeOptionComboName();
+
+    @SuppressWarnings("squid:S00107")
+    @NonNull
+    public static ProgramEventViewModel create(@NonNull String uid, @NonNull String orgUnitUid, @NonNull String orgUnitName, @NonNull Date date,
                                                @NonNull State eventState, @NonNull List<Pair<String, String>> data, @NonNull EventStatus status,
-                                               @NonNull Boolean isExpired) {
-        return new AutoValue_ProgramEventViewModel(uid, orgUnitUid, orgUnitName, eventState, data, status, isExpired);
+                                               @NonNull Boolean isExpired, @NonNull String attributeOptionComboName) {
+        return new AutoValue_ProgramEventViewModel(uid, orgUnitUid, orgUnitName, date, eventState, data, status, isExpired,attributeOptionComboName);
     }
 
 }

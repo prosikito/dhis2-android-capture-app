@@ -24,11 +24,11 @@ import io.reactivex.processors.FlowableProcessor;
  */
 public class EventCaptureContract {
 
-    public interface View extends AbstractActivityContracts.View {
+    public interface EventCaptureView extends AbstractActivityContracts.View {
 
         void renderInitialInfo(String stageName, String eventDate, String orgUnit, String catOption);
 
-        EventCaptureContract.Presenter getPresenter();
+        EventCapturePresenter getPresenter();
 
         void setUp();
 
@@ -63,8 +63,8 @@ public class EventCaptureContract {
         void setProgramStage(String programStageUid);
     }
 
-    public interface Presenter extends AbstractActivityContracts.Presenter {
-        void init(EventCaptureContract.View view);
+    public interface EventCapturePresenter extends AbstractActivityContracts.Presenter {
+        void init(EventCaptureView view);
 
         void onBackClick();
 
@@ -122,6 +122,9 @@ public class EventCaptureContract {
         @NonNull
         Flowable<Result<RuleEffect>> calculate();
 
+        @NonNull
+        Flowable<Result<RuleEffect>> calculate(String lastUpdatedElement);
+
         Observable<Boolean> completeEvent();
 
         Flowable<EventStatus> eventStatus();
@@ -139,6 +142,8 @@ public class EventCaptureContract {
         Observable<String> programStage();
 
         boolean getAccessDataWrite();
+
+        void setLastUpdated(String lastUpdatedUid);
     }
 
 }

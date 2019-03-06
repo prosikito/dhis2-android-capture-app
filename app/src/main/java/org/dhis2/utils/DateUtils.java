@@ -1,12 +1,14 @@
 package org.dhis2.utils;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import android.content.Context;
+import android.graphics.drawable.Drawable;
 
+import org.dhis2.R;
 import org.hisp.dhis.android.core.event.EventModel;
 import org.hisp.dhis.android.core.event.EventStatus;
 import org.hisp.dhis.android.core.period.PeriodType;
 
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -14,6 +16,16 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
+
+import static org.dhis2.utils.Period.DAILY;
+import static org.dhis2.utils.Period.MONTHLY;
+import static org.dhis2.utils.Period.NONE;
+import static org.dhis2.utils.Period.WEEKLY;
+import static org.dhis2.utils.Period.YEARLY;
 
 /**
  * QUADRAM. Created by ppajuelo on 16/01/2018.
@@ -29,6 +41,10 @@ public class DateUtils {
     public static final String DATABASE_FORMAT_EXPRESSION_NO_MILLIS = "yyyy-MM-dd'T'HH:mm:ss";
     public static final String DATE_TIME_FORMAT_EXPRESSION = "yyyy-MM-dd HH:mm";
     public static final String DATE_FORMAT_EXPRESSION = "yyyy-MM-dd";
+    public static final String DATE_FORMAT_WEEK = "w yyyy";
+    public static final String DATE_FORMAT_MONTH = "MMM yyyy";
+    public static final String DATE_FORMAT_MONTH2 = "yyyy-MM";
+    public static final String DATE_FORMAT_YEAR = "yyyy";
 
     public Date[] getDateFromDateAndPeriod(Date date, Period period) {
         switch (period) {
@@ -201,7 +217,7 @@ public class DateUtils {
 
     /**********************
      COMPARE DATES REGION*/
-
+    @SuppressWarnings("squid:MissingDeprecatedCheck")
     @Deprecated
     public boolean hasExpired(@NonNull EventModel event, int expiryDays, int completeEventExpiryDays, @Nullable PeriodType expiryPeriodType) {
         Calendar expiredDate = Calendar.getInstance();
@@ -307,6 +323,7 @@ public class DateUtils {
         return new int[]{interval.getYears(), interval.getMonths(), interval.getDays()};
     }
 
+    @SuppressWarnings("squid:S3776")
     public Date getNewDate(List<EventModel> events, PeriodType periodType) {
         Calendar now = Calendar.getInstance();
         now.set(Calendar.HOUR_OF_DAY, 0);
@@ -584,11 +601,12 @@ public class DateUtils {
 
 
     /**
-     * @param currentDate      Date from which calculation will be carried out. Default value is today.
+     * @param currentDate      Date from which calculation will be carried out. Default VALUE is today.
      * @param expiryDays       Number of extra days to add events on previous period
      * @param expiryPeriodType Expiry Period
      * @return Min date to select
      */
+    @SuppressWarnings("squid:S3776")
     public Date expDate(@Nullable Date currentDate, int expiryDays, @Nullable PeriodType expiryPeriodType) {
 
         Calendar calendar = getCalendar();
@@ -761,6 +779,7 @@ public class DateUtils {
      * @param page        1 for next, 0 for now, -1 for previous
      * @return Next/Previous date calculated from the currentDate and Period
      */
+    @SuppressWarnings("squid:S3776")
     public Date getNextPeriod(PeriodType period, Date currentDate, int page) {
 
         Calendar calendar = Calendar.getInstance();
@@ -881,72 +900,72 @@ public class DateUtils {
             periodType = PeriodType.Daily;
         switch (periodType) {
             case Weekly:
-                formattedDate = new SimpleDateFormat("w yyyy", locale).format(initDate);
+                formattedDate = new SimpleDateFormat(DATE_FORMAT_WEEK, locale).format(initDate);
                 break;
             case WeeklyWednesday:
-                formattedDate = new SimpleDateFormat("w yyyy", locale).format(initDate);
+                formattedDate = new SimpleDateFormat(DATE_FORMAT_WEEK, locale).format(initDate);
                 break;
             case WeeklyThursday:
-                formattedDate = new SimpleDateFormat("w yyyy", locale).format(initDate);
+                formattedDate = new SimpleDateFormat(DATE_FORMAT_WEEK, locale).format(initDate);
                 break;
             case WeeklySaturday:
-                formattedDate = new SimpleDateFormat("w yyyy", locale).format(initDate);
+                formattedDate = new SimpleDateFormat(DATE_FORMAT_WEEK, locale).format(initDate);
                 break;
             case WeeklySunday:
-                formattedDate = new SimpleDateFormat("w yyyy", locale).format(initDate);
+                formattedDate = new SimpleDateFormat(DATE_FORMAT_WEEK, locale).format(initDate);
                 break;
             case BiWeekly:
                 formattedDate = String.format(periodString,
-                        new SimpleDateFormat("w yyyy", locale).format(initDate),
-                        new SimpleDateFormat("w yyyy", locale).format(endDate)
+                        new SimpleDateFormat(DATE_FORMAT_WEEK, locale).format(initDate),
+                        new SimpleDateFormat(DATE_FORMAT_WEEK, locale).format(endDate)
                 );
                 break;
             case Monthly:
-                formattedDate = new SimpleDateFormat("MMM yyyy", locale).format(initDate);
+                formattedDate = new SimpleDateFormat(DATE_FORMAT_MONTH, locale).format(initDate);
                 break;
             case BiMonthly:
                 formattedDate = String.format(periodString,
-                        new SimpleDateFormat("MMM yyyy", locale).format(initDate),
-                        new SimpleDateFormat("MMM yyyy", locale).format(endDate)
+                        new SimpleDateFormat(DATE_FORMAT_MONTH, locale).format(initDate),
+                        new SimpleDateFormat(DATE_FORMAT_MONTH, locale).format(endDate)
                 );
                 break;
             case Quarterly:
                 formattedDate = String.format(periodString,
-                        new SimpleDateFormat("MMM yyyy", locale).format(initDate),
-                        new SimpleDateFormat("MMM yyyy", locale).format(endDate)
+                        new SimpleDateFormat(DATE_FORMAT_MONTH, locale).format(initDate),
+                        new SimpleDateFormat(DATE_FORMAT_MONTH, locale).format(endDate)
                 );
                 break;
             case SixMonthly:
                 formattedDate = String.format(periodString,
-                        new SimpleDateFormat("MMM yyyy", locale).format(initDate),
-                        new SimpleDateFormat("MMM yyyy", locale).format(endDate)
+                        new SimpleDateFormat(DATE_FORMAT_MONTH, locale).format(initDate),
+                        new SimpleDateFormat(DATE_FORMAT_MONTH, locale).format(endDate)
                 );
                 break;
             case SixMonthlyApril:
                 formattedDate = String.format(periodString,
-                        new SimpleDateFormat("MMM yyyy", locale).format(initDate),
-                        new SimpleDateFormat("MMM yyyy", locale).format(endDate)
+                        new SimpleDateFormat(DATE_FORMAT_MONTH, locale).format(initDate),
+                        new SimpleDateFormat(DATE_FORMAT_MONTH, locale).format(endDate)
                 );
                 break;
             case Yearly:
-                formattedDate = new SimpleDateFormat("yyyy", locale).format(initDate);
+                formattedDate = new SimpleDateFormat(DATE_FORMAT_YEAR, locale).format(initDate);
                 break;
             case FinancialApril:
                 formattedDate = String.format(periodString,
-                        new SimpleDateFormat("MMM yyyy", locale).format(initDate),
-                        new SimpleDateFormat("MMM yyyy", locale).format(endDate)
+                        new SimpleDateFormat(DATE_FORMAT_MONTH, locale).format(initDate),
+                        new SimpleDateFormat(DATE_FORMAT_MONTH, locale).format(endDate)
                 );
                 break;
             case FinancialJuly:
                 formattedDate = String.format(periodString,
-                        new SimpleDateFormat("MMM yyyy", locale).format(initDate),
-                        new SimpleDateFormat("MMM yyyy", locale).format(endDate)
+                        new SimpleDateFormat(DATE_FORMAT_MONTH, locale).format(initDate),
+                        new SimpleDateFormat(DATE_FORMAT_MONTH, locale).format(endDate)
                 );
                 break;
             case FinancialOct:
                 formattedDate = String.format(periodString,
-                        new SimpleDateFormat("MMM yyyy", locale).format(initDate),
-                        new SimpleDateFormat("MMM yyyy", locale).format(endDate)
+                        new SimpleDateFormat(DATE_FORMAT_MONTH, locale).format(initDate),
+                        new SimpleDateFormat(DATE_FORMAT_MONTH, locale).format(endDate)
                 );
                 break;
             case Daily:
@@ -977,5 +996,99 @@ public class DateUtils {
 
         return completedDay != null &&
                 completedDay.getTime() + TimeUnit.DAYS.toMillis(compExpDays) < date.getTime();
+    }
+
+    public static Calendar parseDateToCalendar(String reportDate) throws ParseException {
+        Calendar cal = Calendar.getInstance();
+        Date date = DateUtils.databaseDateFormat().parse(reportDate);
+        cal.setTime(date);
+        cal.set(Calendar.HOUR_OF_DAY, 0);
+        cal.set(Calendar.MINUTE, 0);
+        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MILLISECOND, 0);
+
+        return cal;
+    }
+
+    public static String setSelectedDatesTextToShow(Period currentPeriod,
+                                                    List<Date> selectedDates,
+                                                    SimpleDateFormat weeklyFormat) {
+        SimpleDateFormat monthFormat = new SimpleDateFormat(DATE_FORMAT_MONTH2, Locale.getDefault());
+        SimpleDateFormat yearFormat = new SimpleDateFormat(DATE_FORMAT_YEAR, Locale.getDefault());
+        String textToShow;
+        if (currentPeriod == WEEKLY) {
+            textToShow = weeklyFormat.format(selectedDates.get(0)) + ", " + yearFormat.format(selectedDates.get(0));
+            if (selectedDates.size() > 1)
+                textToShow += "... " /*+ weeklyFormat.format(selectedDates.get(1))*/;
+        } else if (currentPeriod == MONTHLY) {
+            textToShow = monthFormat.format(selectedDates.get(0));
+            if (selectedDates.size() > 1)
+                textToShow += "... " /*+ monthFormat.format(selectedDates.get(1))*/;
+        } else {
+            textToShow = yearFormat.format(selectedDates.get(0));
+            if (selectedDates.size() > 1)
+                textToShow += "... " /*+ yearFormat.format(selectedDates.get(1))*/;
+        }
+
+        return textToShow;
+    }
+
+    public static String getNotSelectedDatesText(Period currentPeriod, SimpleDateFormat weeklyFormat) {
+        ArrayList<Date> date = new ArrayList<>();
+        date.add(new Date());
+
+        SimpleDateFormat monthFormat = new SimpleDateFormat(DATE_FORMAT_MONTH2, Locale.getDefault());
+        SimpleDateFormat yearFormat = new SimpleDateFormat(DATE_FORMAT_YEAR, Locale.getDefault());
+
+        String text = "";
+
+        switch (currentPeriod) {
+            case WEEKLY:
+                text = weeklyFormat.format(date.get(0)) + ", " + yearFormat.format(date.get(0));
+                break;
+            case MONTHLY:
+                text = monthFormat.format(date.get(0));
+                break;
+            case YEARLY:
+                text = yearFormat.format(date.get(0));
+                break;
+            default:
+                break;
+        }
+
+        return text;
+    }
+
+    public static Drawable getCurrentPeriodDrawable(Context context, Period currentPeriod) {
+        switch (currentPeriod) {
+            case NONE:
+                return ContextCompat.getDrawable(context, R.drawable.ic_view_day);
+            case DAILY:
+                return ContextCompat.getDrawable(context, R.drawable.ic_view_week);
+            case WEEKLY:
+                return ContextCompat.getDrawable(context, R.drawable.ic_view_month);
+            case MONTHLY:
+                return ContextCompat.getDrawable(context, R.drawable.ic_view_year);
+            case YEARLY:
+                return ContextCompat.getDrawable(context, R.drawable.ic_view_none);
+            default:
+                return null;
+        }
+    }
+
+    public static Period getCurrentPeriod(Period currentPeriod) {
+        switch (currentPeriod) {
+            case NONE:
+                return DAILY;
+            case DAILY:
+                return WEEKLY;
+            case WEEKLY:
+                return MONTHLY;
+            case MONTHLY:
+                return YEARLY;
+            case YEARLY:
+            default:
+                return NONE;
+        }
     }
 }

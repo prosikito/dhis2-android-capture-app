@@ -1,35 +1,34 @@
 package org.dhis2.usescases.general;
 
+import android.Manifest;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
+import android.content.pm.PackageManager;
 import android.content.res.TypedArray;
+import android.graphics.PorterDuff;
+import android.os.Build;
 import android.os.Bundle;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.core.app.ActivityOptionsCompat;
-import androidx.core.content.ContextCompat;
-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
-import androidx.core.widget.ContentLoadingProgressBar;
-import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.app.AppCompatActivity;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.Window;
 import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.ImageView;
 import android.widget.PopupMenu;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.crashlytics.android.Crashlytics;
-import com.google.firebase.analytics.FirebaseAnalytics;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import com.unnamed.b.atv.model.TreeNode;
+import com.unnamed.b.atv.view.AndroidTreeView;
 
 import org.dhis2.BuildConfig;
 import org.dhis2.R;
@@ -39,44 +38,56 @@ import org.dhis2.usescases.map.MapSelectorActivity;
 import org.dhis2.usescases.splash.SplashActivity;
 import org.dhis2.utils.ColorUtils;
 import org.dhis2.utils.Constants;
-import org.dhis2.utils.custom_views.CoordinatesView;
-import org.dhis2.utils.custom_views.CustomDialog;
 import org.dhis2.utils.HelpManager;
 import org.dhis2.utils.OnDialogClickListener;
+import org.dhis2.utils.Period;
 import org.dhis2.utils.SyncUtils;
+import org.dhis2.utils.custom_views.CoordinatesView;
+import org.dhis2.utils.custom_views.CustomDialog;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.List;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.app.ActivityOptionsCompat;
+import androidx.core.content.ContextCompat;
+import androidx.core.content.res.ResourcesCompat;
+import androidx.core.widget.ContentLoadingProgressBar;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import rx.Observable;
 import rx.subjects.BehaviorSubject;
+import timber.log.Timber;
+
+import static org.dhis2.usescases.eventsWithoutRegistration.eventInitial.EventInitialPresenterImpl.ACCESS_COARSE_LOCATION_PERMISSION_REQUEST;
 
 /**
  * QUADRAM. Created by Javi on 28/07/2017.
  */
-
+@SuppressWarnings("squid:MaximumInheritanceDepth")
 public abstract class ActivityGlobalAbstract extends AppCompatActivity implements AbstractActivityContracts.View, CoordinatesView.OnMapPositionClick {
 
     private BehaviorSubject<Status> lifeCycleObservable = BehaviorSubject.create();
     private CoordinatesView coordinatesView;
-    public ContentLoadingProgressBar progressBar;
-    private FirebaseAnalytics mFirebaseAnalytics;
+    private ContentLoadingProgressBar progressBar;
+
+    public ContentLoadingProgressBar getProgressBar() {
+        return progressBar;
+    }
 
     private BroadcastReceiver syncReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            if (intent.getAction() != null && intent.getAction().equals("action_sync")) {
-                if (intent.getExtras() != null) {
-                    if (progressBar != null)
-                        if (SyncUtils.isSyncRunning() && progressBar.getVisibility() == View.GONE)
-                            progressBar.setVisibility(View.VISIBLE);
-                        else if (!SyncUtils.isSyncRunning())
-                            progressBar.setVisibility(View.GONE);
-                }
-
-            }
+            if (intent.getAction() != null && intent.getAction().equals("action_sync") && intent.getExtras() != null && progressBar != null)
+                if (SyncUtils.isSyncRunning() && progressBar.getVisibility() == View.GONE)
+                    progressBar.setVisibility(View.VISIBLE);
+                else if (!SyncUtils.isSyncRunning())
+                    progressBar.setVisibility(View.GONE);
         }
     };
 
@@ -94,8 +105,6 @@ public abstract class ActivityGlobalAbstract extends AppCompatActivity implement
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
-        mFirebaseAnalytics = FirebaseAnalytics.getInstance(this);
-
         if (!getResources().getBoolean(R.bool.is_tablet))
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT);
 
@@ -150,6 +159,16 @@ public abstract class ActivityGlobalAbstract extends AppCompatActivity implement
     }
 
     public void showMoreOptions(View view) {
+        PopupMenu popupMenu = getMoreOptionsMenu(view);
+        popupMenu.getMenuInflater().inflate(R.menu.home_menu, popupMenu.getMenu());
+        popupMenu.setOnMenuItemClickListener(item -> {
+            showTutorial(false);
+            return false;
+        });
+        popupMenu.show();
+    }
+
+    protected PopupMenu getMoreOptionsMenu(View view) {
         PopupMenu popupMenu = new PopupMenu(this, view, Gravity.BOTTOM);
         try {
             Field[] fields = popupMenu.getClass().getDeclaredFields();
@@ -164,14 +183,9 @@ public abstract class ActivityGlobalAbstract extends AppCompatActivity implement
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            Timber.e(e);
         }
-        popupMenu.getMenuInflater().inflate(R.menu.home_menu, popupMenu.getMenu());
-        popupMenu.setOnMenuItemClickListener(item -> {
-            showTutorial(false);
-            return false;
-        });
-        popupMenu.show();
+        return popupMenu;
     }
 
     public Context getContext() {
@@ -291,7 +305,6 @@ public abstract class ActivityGlobalAbstract extends AppCompatActivity implement
             //TITLE
             final View titleView = LayoutInflater.from(getActivity()).inflate(R.layout.dialog_title, null);
             ((TextView) titleView.findViewById(R.id.dialogTitle)).setText(title);
-            int colorPrimary = ColorUtils.getPrimaryColor(getActivity(), ColorUtils.ColorType.PRIMARY);
             alertDialog.setCustomTitle(titleView);
 
             //BODY
@@ -321,13 +334,11 @@ public abstract class ActivityGlobalAbstract extends AppCompatActivity implement
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        switch (requestCode) {
-            case Constants.RQ_MAP_LOCATION_VIEW:
-                if (coordinatesView != null && resultCode == RESULT_OK && data.getExtras() != null) {
-                    coordinatesView.updateLocation(Double.valueOf(data.getStringExtra(MapSelectorActivity.LATITUDE)), Double.valueOf(data.getStringExtra(MapSelectorActivity.LONGITUDE)));
-                }
-                this.coordinatesView = null;
-                break;
+        if (requestCode == Constants.RQ_MAP_LOCATION_VIEW) {
+            if (coordinatesView != null && resultCode == RESULT_OK && data.getExtras() != null) {
+                coordinatesView.updateLocation(Double.valueOf(data.getStringExtra(MapSelectorActivity.LATITUDE)), Double.valueOf(data.getStringExtra(MapSelectorActivity.LONGITUDE)));
+            }
+            this.coordinatesView = null;
         }
         super.onActivityResult(requestCode, resultCode, data);
     }
@@ -360,5 +371,104 @@ public abstract class ActivityGlobalAbstract extends AppCompatActivity implement
                 progressBar.setVisibility(View.VISIBLE);
             else progressBar.setVisibility(View.GONE);
         }
+    }
+
+    public boolean checkLocationPermission() {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // Should we show an explanation?
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_COARSE_LOCATION)) {
+                // TODO CRIS:  Show an explanation to the user *asynchronously* -- don't block
+                // this thread waiting for the user's response! After the user
+                // sees the explanation, try again to request the permission.
+
+            } else {
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.ACCESS_COARSE_LOCATION},
+                        ACCESS_COARSE_LOCATION_PERMISSION_REQUEST);
+            }
+            return false;
+        }
+        return true;
+    }
+
+    protected int programTheme(String color) {
+        int programTheme = ColorUtils.getThemeFromColor(color);
+        SharedPreferences prefs = getAbstracContext().getSharedPreferences(
+                Constants.SHARE_PREFS, Context.MODE_PRIVATE);
+        if (programTheme != -1) {
+            prefs.edit().putInt(Constants.PROGRAM_THEME, programTheme).apply();
+        }
+        return programTheme;
+    }
+
+    protected int getPrimaryColorFromTheme() {
+        SharedPreferences prefs = getAbstracContext().getSharedPreferences(
+                Constants.SHARE_PREFS, Context.MODE_PRIVATE);
+        prefs.edit().remove(Constants.PROGRAM_THEME).apply();
+        int colorPrimary;
+        switch (prefs.getInt(Constants.THEME, R.style.AppTheme)) {
+            case R.style.AppTheme:
+                colorPrimary = R.color.colorPrimary;
+                break;
+            case R.style.RedTheme:
+                colorPrimary = R.color.colorPrimaryRed;
+                break;
+            case R.style.OrangeTheme:
+                colorPrimary = R.color.colorPrimaryOrange;
+                break;
+            case R.style.GreenTheme:
+                colorPrimary = R.color.colorPrimaryGreen;
+                break;
+            default:
+                colorPrimary = R.color.colorPrimary;
+                break;
+        }
+        return colorPrimary;
+    }
+
+    protected void applyColors() {
+        SharedPreferences prefs = getAbstracContext().getSharedPreferences(
+                Constants.SHARE_PREFS, Context.MODE_PRIVATE);
+        setTheme(prefs.getInt(Constants.PROGRAM_THEME, prefs.getInt(Constants.THEME, R.style.AppTheme)));
+
+        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP) {
+            Window window = getWindow();
+            window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+            TypedValue typedValue = new TypedValue();
+            TypedArray a = obtainStyledAttributes(typedValue.data, new int[]{R.attr.colorPrimaryDark});
+            int colorToReturn = a.getColor(0, 0);
+            a.recycle();
+            window.setStatusBarColor(colorToReturn);
+        }
+    }
+
+    protected void checkFilterEnabled(View filterLayout, ImageView filter,
+                                      Period currentPeriod,
+                                      boolean isFilteredByCatCombo,
+                                      boolean areAllOrgUnitsSelected) {
+        if (filterLayout.getVisibility() == View.VISIBLE) {
+            filter.setBackgroundColor(getPrimaryColor());
+            filter.setColorFilter(ResourcesCompat.getColor(getResources(), R.color.white, getTheme()), PorterDuff.Mode.SRC_IN);
+            filter.setBackgroundResource(0);
+        }
+        // when filter layout is hidden
+        else {
+            // not applied period filter
+            if (currentPeriod == Period.NONE && areAllOrgUnitsSelected && !isFilteredByCatCombo) {
+                filter.setBackgroundColor(getPrimaryColor());
+                filter.setColorFilter(ResourcesCompat.getColor(getResources(), R.color.white, getTheme()), PorterDuff.Mode.SRC_IN);
+                filter.setBackgroundResource(0);
+            }
+            // applied period filter
+            else {
+                filter.setBackgroundColor(ResourcesCompat.getColor(getResources(), R.color.white, getTheme()));
+                filter.setColorFilter(getPrimaryColor(), PorterDuff.Mode.SRC_IN);
+                filter.setBackgroundResource(R.drawable.white_circle);
+            }
+        }
+    }
+
+    protected boolean areAllOrgUnitsSelected(AndroidTreeView treeView, TreeNode treeNode) {
+        return treeNode != null && treeNode.getChildren().size() == treeView.getSelected().size();
     }
 }

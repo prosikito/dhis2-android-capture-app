@@ -12,7 +12,7 @@ import retrofit2.Response;
 
 public class LoginContracts {
 
-    public interface View extends AbstractActivityContracts.View {
+    public interface LoginView extends AbstractActivityContracts.View {
         ActivityLoginBinding getBinding();
 
         @UiThread
@@ -53,10 +53,12 @@ public class LoginContracts {
         void goToNextScreen();
 
         void switchPasswordVisibility();
+
+        void setUrl(String url);
     }
 
-    public interface Presenter {
-        void init(View view);
+    public interface LoginPresenter {
+        void init(LoginView view);
 
         void onServerChanged(CharSequence s, int start, int before, int count);
 
@@ -94,5 +96,4 @@ public class LoginContracts {
         Boolean canHandleBiometrics();
 
     }
-
 }

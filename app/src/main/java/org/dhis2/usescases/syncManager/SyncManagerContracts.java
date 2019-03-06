@@ -14,20 +14,24 @@ import io.reactivex.functions.Consumer;
 
 public class SyncManagerContracts {
 
-    interface View extends AbstractActivityContracts.View {
+    interface SyncManagerView extends AbstractActivityContracts.View {
 
         Consumer<Pair<Integer, Integer>> setSyncData();
 
         void wipeDatabase();
 
+        void deleteLocalData();
+
         void showTutorial();
 
         void showSyncErrors(List<D2Error> data);
+
+        void showLocalDataDeleted(boolean error);
     }
 
-    public interface Presenter {
+    public interface SyncManagerPresenter {
 
-        void init(SyncManagerContracts.View view);
+        void init(SyncManagerView view);
 
         void syncData(int seconds, String scheduleTag);
 
@@ -44,6 +48,8 @@ public class SyncManagerContracts {
         void onWipeData();
 
         void wipeDb();
+
+        void onDeleteLocalData();
 
         void deleteLocalData();
 

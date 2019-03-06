@@ -3,8 +3,6 @@ package org.dhis2.data.forms.dataentry.fields.edittext;
 import android.annotation.SuppressLint;
 import android.text.InputFilter;
 import android.text.InputType;
-import android.text.TextUtils;
-import android.text.method.DigitsKeyListener;
 import android.util.Patterns;
 import android.view.View;
 import android.view.ViewGroup;
@@ -23,9 +21,10 @@ import org.dhis2.data.forms.dataentry.fields.RowAction;
 import org.dhis2.data.tuples.Pair;
 import org.dhis2.utils.Constants;
 import org.dhis2.utils.Preconditions;
+import org.dhis2.utils.custom_views.CustomViewUtils;
 import org.dhis2.utils.custom_views.TextInputAutoCompleteTextView;
 import org.hisp.dhis.android.core.common.ValueType;
-import org.hisp.dhis.android.core.common.ValueTypeDeviceRenderingModel;
+import org.hisp.dhis.android.core.common.ValueTypeDeviceRendering;
 import org.hisp.dhis.android.core.common.ValueTypeRenderingType;
 import org.hisp.dhis.android.core.program.ProgramStageSectionRenderingType;
 
@@ -52,14 +51,15 @@ final class EditTextCustomHolder extends FormViewHolder {
     private final TextInputLayout inputLayout;
     private TextInputAutoCompleteTextView editText;
     private ImageView icon;
-    List<String> autoCompleteValues;
-    EditTextViewModel editTextModel;
+    private List<String> autoCompleteValues;
+    private EditTextViewModel editTextModel;
+    private Boolean isEditable;
 
     @SuppressLint("RxLeakedSubscription")
     EditTextCustomHolder(ViewGroup parent, ViewDataBinding binding, FlowableProcessor<RowAction> processor,
                          boolean isBgTransparent, String renderType, ObservableBoolean isEditable) {
         super(binding);
-
+        this.isEditable = isEditable.get();
         editText = binding.getRoot().findViewById(R.id.input_editText);
         icon = binding.getRoot().findViewById(R.id.renderImage);
 
@@ -69,17 +69,24 @@ final class EditTextCustomHolder extends FormViewHolder {
 
         editText.setOnFocusChangeListener((v, hasFocus) -> {
             if (!hasFocus && editTextModel != null && editTextModel.editable()) {
-
                 if (!isEmpty(editText.getText()) && validate()) {
                     checkAutocompleteRendering();
                     processor.onNext(RowAction.create(editTextModel.uid(), editText.getText().toString()));
 
                 } else
                     processor.onNext(RowAction.create(editTextModel.uid(), null));
-
-
             }
         });
+
+        if (this.isEditable) {
+            editText.setFocusable(true);
+            editText.setFocusableInTouchMode(true);
+            editText.setEnabled(true);
+        } else {
+            editText.setFocusable(false);
+            editText.setFocusableInTouchMode(false);
+            editText.setEnabled(false);
+        }
 
     }
 
@@ -94,65 +101,22 @@ final class EditTextCustomHolder extends FormViewHolder {
 
     private void setInputType(ValueType valueType) {
 
-        editText.setFocusable(editTextModel.editable());
-        editText.setEnabled(editTextModel.editable());
+        if (this.isEditable) {
+            editText.setFocusable(true);
+            editText.setFocusableInTouchMode(true);
+            editText.setEnabled(true);
+        } else {
+            editText.setFocusable(false);
+            editText.setFocusableInTouchMode(false);
+            editText.setEnabled(false);
+        }
 
         editText.setFilters(new InputFilter[]{});
 
         if (editTextModel.editable())
-            switch (valueType) {
-                case PHONE_NUMBER:
-                    editText.setInputType(InputType.TYPE_CLASS_PHONE);
-                    break;
-                case EMAIL:
-                    editText.setInputType(InputType.TYPE_CLASS_TEXT |
-                            InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS);
-                    break;
-                case TEXT:
-                    editText.setInputType(InputType.TYPE_CLASS_TEXT);
-                    editText.setLines(1);
-                    editText.setEllipsize(TextUtils.TruncateAt.END);
-                    break;
-                case LETTER:
-                    editText.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS);
-                    editText.setFilters(new InputFilter[]{
-                            new InputFilter.LengthFilter(1),
-                            (source, start, end, dest, dstart, dend) -> {
-                                if (source.equals(""))
-                                    return source;
-                                if (source.toString().matches("[a-zA-Z]"))
-                                    return source;
-                                return "";
-                            }});
-                    break;
-                case NUMBER:
-                    editText.setInputType(InputType.TYPE_CLASS_NUMBER |
-                            InputType.TYPE_NUMBER_FLAG_DECIMAL |
-                            InputType.TYPE_NUMBER_FLAG_SIGNED);
-                    break;
-                case INTEGER_NEGATIVE:
-                case INTEGER:
-                    editText.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_SIGNED);
-                    break;
-                case INTEGER_ZERO_OR_POSITIVE:
-                case INTEGER_POSITIVE:
-                    editText.setInputType(InputType.TYPE_CLASS_NUMBER);
-                    editText.setKeyListener(DigitsKeyListener.getInstance(false, false));
-                    break;
-                case UNIT_INTERVAL:
-                    editText.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
-                    break;
-                case PERCENTAGE:
-                    editText.setInputType(InputType.TYPE_CLASS_NUMBER);
-                    break;
-                case URL:
-                    editText.setInputType(InputType.TYPE_TEXT_VARIATION_WEB_EDIT_TEXT);
-                    break;
-                default:
-                    break;
-            }
+            CustomViewUtils.setInputType(valueType, editText);
         else {
-            editText.setInputType(0);
+            editText.setInputType(InputType.TYPE_NULL);
         }
     }
 
@@ -167,21 +131,40 @@ final class EditTextCustomHolder extends FormViewHolder {
                 editTextModel.value() == null ? "" : valueOf(editTextModel.value()));
     }
 
-    public void update(@NonNull FieldViewModel model) {
-        this.editTextModel = (EditTextViewModel) model;
-
-        Bindings.setObjectStyle(icon, itemView, editTextModel.uid());
-        editText.setEnabled(editTextModel.editable());
-        editText.setText(editTextModel.value() == null ?
-                null : valueOf(editTextModel.value()));
-
+    private void setErrors() {
         if (!isEmpty(editTextModel.warning())) {
             inputLayout.setError(editTextModel.warning());
         } else if (!isEmpty(editTextModel.error())) {
             inputLayout.setError(editTextModel.error());
         } else
             inputLayout.setError(null);
+    }
 
+    private void setEnabled() {
+        if (this.isEditable) {
+            editText.setFocusable(true);
+            editText.setFocusableInTouchMode(true);
+            editText.setEnabled(true);
+        } else {
+            editText.setFocusable(false);
+            editText.setFocusableInTouchMode(false);
+            editText.setEnabled(false);
+        }
+    }
+
+    public void update(@NonNull FieldViewModel model) {
+        this.editTextModel = (EditTextViewModel) model;
+
+        Bindings.setObjectStyle(icon, itemView, editTextModel.objectStyle());
+
+        setEnabled();
+
+        if (editTextModel.value() != null)
+            editText.post(() -> editText.setText(valueOf(editTextModel.value())));
+        else
+            editText.setText(null);
+
+        setErrors();
 
         editText.setSelection(editText.getText() == null ?
                 0 : editText.getText().length());
@@ -203,7 +186,7 @@ final class EditTextCustomHolder extends FormViewHolder {
         setRenderingType(editTextModel.fieldRendering());
     }
 
-    private void setRenderingType(ValueTypeDeviceRenderingModel renderingType) {
+    private void setRenderingType(ValueTypeDeviceRendering renderingType) {
         if (renderingType != null && renderingType.type() == ValueTypeRenderingType.AUTOCOMPLETE) {
             autoCompleteValues = getListFromPreference(editTextModel.uid());
             ArrayAdapter<String> autoCompleteAdapter = new ArrayAdapter<>(editText.getContext(), android.R.layout.simple_dropdown_item_1line, autoCompleteValues);
@@ -226,57 +209,85 @@ final class EditTextCustomHolder extends FormViewHolder {
         return gson.fromJson(json, type);
     }
 
+    private boolean validatePhoneNumber() {
+        if (Patterns.PHONE.matcher(editText.getText().toString()).matches())
+            return true;
+        else {
+            inputLayout.setError(editText.getContext().getString(R.string.invalid_phone_number));
+            return false;
+        }
+    }
+
+    private boolean validateEmail() {
+        if (Patterns.EMAIL_ADDRESS.matcher(editText.getText().toString()).matches())
+            return true;
+        else {
+            inputLayout.setError(editText.getContext().getString(R.string.invalid_email));
+            return false;
+        }
+    }
+
+    private boolean validateIntegerNegative() {
+        if (Integer.valueOf(editText.getText().toString()) < 0)
+            return true;
+        else {
+            inputLayout.setError(editText.getContext().getString(R.string.invalid_negative_number));
+            return false;
+        }
+    }
+
+    private boolean validateIntegerZeroOrPositive() {
+        if (Integer.valueOf(editText.getText().toString()) >= 0)
+            return true;
+        else {
+            inputLayout.setError(editText.getContext().getString(R.string.invalid_possitive_zero));
+            return false;
+        }
+    }
+
+    private boolean validateIntegerPositive() {
+        if (Integer.valueOf(editText.getText().toString()) > 0)
+            return true;
+        else {
+            inputLayout.setError(editText.getContext().getString(R.string.invalid_possitive));
+            return false;
+        }
+    }
+
+    private boolean validateUnitInterval() {
+        if (Float.valueOf(editText.getText().toString()) >= 0 && Float.valueOf(editText.getText().toString()) <= 1)
+            return true;
+        else {
+            inputLayout.setError(editText.getContext().getString(R.string.invalid_interval));
+            return false;
+        }
+    }
+
+    private boolean validatePercentage() {
+        if (Float.valueOf(editText.getText().toString()) >= 0 && Float.valueOf(editText.getText().toString()) <= 100)
+            return true;
+        else {
+            inputLayout.setError(editText.getContext().getString(R.string.invalid_percentage));
+            return false;
+        }
+    }
+
     private boolean validate() {
         switch (editTextModel.valueType()) {
             case PHONE_NUMBER:
-                if (Patterns.PHONE.matcher(editText.getText().toString()).matches())
-                    return true;
-                else {
-                    inputLayout.setError(editText.getContext().getString(R.string.invalid_phone_number));
-                    return false;
-                }
+                return validatePhoneNumber();
             case EMAIL:
-                if (Patterns.EMAIL_ADDRESS.matcher(editText.getText().toString()).matches())
-                    return true;
-                else {
-                    inputLayout.setError(editText.getContext().getString(R.string.invalid_email));
-                    return false;
-                }
+                return validateEmail();
             case INTEGER_NEGATIVE:
-                if (Integer.valueOf(editText.getText().toString()) < 0)
-                    return true;
-                else {
-                    inputLayout.setError(editText.getContext().getString(R.string.invalid_negative_number));
-                    return false;
-                }
+                return validateIntegerNegative();
             case INTEGER_ZERO_OR_POSITIVE:
-                if (Integer.valueOf(editText.getText().toString()) >= 0)
-                    return true;
-                else {
-                    inputLayout.setError(editText.getContext().getString(R.string.invalid_possitive_zero));
-                    return false;
-                }
+                return validateIntegerZeroOrPositive();
             case INTEGER_POSITIVE:
-                if (Integer.valueOf(editText.getText().toString()) > 0)
-                    return true;
-                else {
-                    inputLayout.setError(editText.getContext().getString(R.string.invalid_possitive));
-                    return false;
-                }
+                return validateIntegerPositive();
             case UNIT_INTERVAL:
-                if (Float.valueOf(editText.getText().toString()) >= 0 && Float.valueOf(editText.getText().toString()) <= 1)
-                    return true;
-                else {
-                    inputLayout.setError(editText.getContext().getString(R.string.invalid_interval));
-                    return false;
-                }
+                return validateUnitInterval();
             case PERCENTAGE:
-                if (Float.valueOf(editText.getText().toString()) >= 0 && Float.valueOf(editText.getText().toString()) <= 100)
-                    return true;
-                else {
-                    inputLayout.setError(editText.getContext().getString(R.string.invalid_percentage));
-                    return false;
-                }
+                return validatePercentage();
             default:
                 return true;
         }
@@ -284,6 +295,6 @@ final class EditTextCustomHolder extends FormViewHolder {
 
 
     public void dispose() {
-//        disposable.dispose();
+        // do nothing
     }
 }

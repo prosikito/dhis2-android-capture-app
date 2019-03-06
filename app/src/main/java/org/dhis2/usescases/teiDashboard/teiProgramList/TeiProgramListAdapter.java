@@ -1,9 +1,5 @@
 package org.dhis2.usescases.teiDashboard.teiProgramList;
 
-import androidx.databinding.DataBindingUtil;
-import androidx.databinding.ViewDataBinding;
-import androidx.annotation.NonNull;
-import androidx.recyclerview.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
 
@@ -13,20 +9,25 @@ import org.dhis2.usescases.main.program.ProgramViewModel;
 import java.util.ArrayList;
 import java.util.List;
 
+import androidx.annotation.NonNull;
+import androidx.databinding.DataBindingUtil;
+import androidx.databinding.ViewDataBinding;
+import androidx.recyclerview.widget.RecyclerView;
+
 /**
  * QUADRAM. Created by Cristian on 13/02/2018.
  */
 
 public class TeiProgramListAdapter extends RecyclerView.Adapter<TeiProgramListEnrollmentViewHolder> {
 
-    private TeiProgramListContract.Presenter presenter;
+    private TeiProgramListContract.TeiProgramListPresenter presenter;
     private List<TeiProgramListItem> listItems;
     private List<EnrollmentViewModel> activeEnrollments;
     private List<EnrollmentViewModel> inactiveEnrollments;
     private List<ProgramViewModel> programs;
     private List<ProgramViewModel> possibleEnrollmentPrograms;
 
-    TeiProgramListAdapter(TeiProgramListContract.Presenter presenter) {
+    TeiProgramListAdapter(TeiProgramListContract.TeiProgramListPresenter presenter) {
         this.presenter = presenter;
         this.listItems = new ArrayList<>();
         this.activeEnrollments = new ArrayList<>();
@@ -83,7 +84,7 @@ public class TeiProgramListAdapter extends RecyclerView.Adapter<TeiProgramListEn
     public void onBindViewHolder(@NonNull TeiProgramListEnrollmentViewHolder holder, int position) {
         switch (listItems.get(position).getViewType()) {
             case TeiProgramListItem.TeiProgramListItemViewType.ALL_PROGRAMS_DASHBOARD:
-                holder.bind(presenter,null,null);
+                holder.bind(presenter, null, null);
                 break;
             case TeiProgramListItem.TeiProgramListItemViewType.FIRST_TITLE:
                 holder.bind(presenter, null, null);
@@ -134,20 +135,14 @@ public class TeiProgramListAdapter extends RecyclerView.Adapter<TeiProgramListEn
         orderList();
     }
 
-    private void orderList() {
-        listItems.clear();
-
-        TeiProgramListItem allProgramsDashBoardItem = new TeiProgramListItem(null, null, TeiProgramListItem.TeiProgramListItemViewType.ALL_PROGRAMS_DASHBOARD);
-        listItems.add(allProgramsDashBoardItem);
-
-        TeiProgramListItem firstTeiProgramListItem = new TeiProgramListItem(null, null, TeiProgramListItem.TeiProgramListItemViewType.FIRST_TITLE);
-        listItems.add(firstTeiProgramListItem);
-
+    private void addFirstList() {
         for (EnrollmentViewModel enrollmentModel : activeEnrollments) {
             TeiProgramListItem teiProgramListItem = new TeiProgramListItem(enrollmentModel, null, TeiProgramListItem.TeiProgramListItemViewType.ACTIVE_ENROLLMENT);
             listItems.add(teiProgramListItem);
         }
+    }
 
+    private void addSecondList() {
         if (!inactiveEnrollments.isEmpty()) {
             TeiProgramListItem secondTeiProgramListItem = new TeiProgramListItem(null, null, TeiProgramListItem.TeiProgramListItemViewType.SECOND_TITLE);
             listItems.add(secondTeiProgramListItem);
@@ -157,9 +152,13 @@ public class TeiProgramListAdapter extends RecyclerView.Adapter<TeiProgramListEn
                 listItems.add(teiProgramListItem);
             }
         }
+    }
 
+    @SuppressWarnings("squid:S3776")
+    private void addActiveList() {
         boolean found;
         boolean active;
+
         for (ProgramViewModel programModel : programs) {
             found = false;
             active = false;
@@ -184,7 +183,9 @@ public class TeiProgramListAdapter extends RecyclerView.Adapter<TeiProgramListEn
             } else
                 possibleEnrollmentPrograms.add(programModel);
         }
+    }
 
+    private void addThirdList() {
         if (!possibleEnrollmentPrograms.isEmpty()) {
             TeiProgramListItem thirdTeiProgramListItem = new TeiProgramListItem(null, null, TeiProgramListItem.TeiProgramListItemViewType.THIRD_TITLE);
             listItems.add(thirdTeiProgramListItem);
@@ -194,6 +195,21 @@ public class TeiProgramListAdapter extends RecyclerView.Adapter<TeiProgramListEn
                 listItems.add(teiProgramListItem);
             }
         }
+    }
+
+    private void orderList() {
+        listItems.clear();
+
+        TeiProgramListItem allProgramsDashBoardItem = new TeiProgramListItem(null, null, TeiProgramListItem.TeiProgramListItemViewType.ALL_PROGRAMS_DASHBOARD);
+        listItems.add(allProgramsDashBoardItem);
+
+        TeiProgramListItem firstTeiProgramListItem = new TeiProgramListItem(null, null, TeiProgramListItem.TeiProgramListItemViewType.FIRST_TITLE);
+        listItems.add(firstTeiProgramListItem);
+
+        addFirstList();
+        addSecondList();
+        addActiveList();
+        addThirdList();
 
         notifyDataSetChanged();
     }

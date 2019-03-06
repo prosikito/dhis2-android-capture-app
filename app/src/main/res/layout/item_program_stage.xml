@@ -8,11 +8,11 @@
 
         <variable
             name="presenter"
-            type="org.dhis2.usescases.programStageSelection.ProgramStageSelectionContract.Presenter" />
+            type="org.dhis2.usescases.programStageSelection.ProgramStageSelectionContract.ProgramStageSelectionPresenter" />
 
         <variable
             name="programStage"
-            type="org.hisp.dhis.android.core.program.ProgramStageModel" />
+            type="org.hisp.dhis.android.core.program.ProgramStage" />
     </data>
 
     <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"

@@ -19,11 +19,11 @@ import java.util.List;
  */
 
 public class ProgramModelAdapter extends RecyclerView.Adapter<ProgramModelHolder> {
-    private final ProgramContract.Presenter presenter;
+    private final ProgramContract.ProgramPresenter presenter;
     private Period currentPeriod;
     private final List<ProgramViewModel> programList;
 
-    ProgramModelAdapter(ProgramContract.Presenter presenter, Period currentPeriod) {
+    ProgramModelAdapter(ProgramContract.ProgramPresenter presenter, Period currentPeriod) {
         this.presenter = presenter;
         this.programList = new ArrayList<>();
         this.currentPeriod = currentPeriod;
@@ -55,7 +55,7 @@ public class ProgramModelAdapter extends RecyclerView.Adapter<ProgramModelHolder
     }
 
     public void setData(List<ProgramViewModel> data) {
-        Collections.sort(data, (o1, o2) -> o2.count() - o1.count());
+//        Collections.sort(data, (o1, o2) -> o2.count() - o1.count()); //TODO: ADD ORDER TO QUERY (BY NAME OR COUNT)
         this.programList.clear();
         this.programList.addAll(data);
         notifyDataSetChanged();

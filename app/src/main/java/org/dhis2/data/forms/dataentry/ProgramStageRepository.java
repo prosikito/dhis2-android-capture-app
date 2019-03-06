@@ -2,22 +2,22 @@ package org.dhis2.data.forms.dataentry;
 
 import android.content.ContentValues;
 import android.database.Cursor;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import android.util.Log;
 
 import com.squareup.sqlbrite2.BriteDatabase;
 
+import org.dhis2.data.forms.FieldViewModelUtils;
 import org.dhis2.data.forms.dataentry.fields.FieldViewModel;
 import org.dhis2.data.forms.dataentry.fields.FieldViewModelFactory;
 import org.dhis2.utils.DateUtils;
+import org.hisp.dhis.android.core.common.ObjectStyleModel;
 import org.hisp.dhis.android.core.common.ValueType;
-import org.hisp.dhis.android.core.common.ValueTypeDeviceRenderingModel;
+import org.hisp.dhis.android.core.common.ValueTypeDeviceRendering;
 import org.hisp.dhis.android.core.event.EventModel;
 import org.hisp.dhis.android.core.event.EventStatus;
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnitModel;
 import org.hisp.dhis.android.core.program.ProgramModel;
-import org.hisp.dhis.android.core.program.ProgramStageModel;
+import org.hisp.dhis.android.core.program.ProgramStage;
 import org.hisp.dhis.android.core.program.ProgramStageSectionRenderingType;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityDataValueModel;
 
@@ -25,6 +25,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.reactivex.Observable;
 
@@ -145,37 +147,56 @@ final class ProgramStageRepository implements DataEntryRepository {
         ArrayList<FieldViewModel> renderList = new ArrayList<>();
 
         if (renderingType != ProgramStageSectionRenderingType.LISTING) {
-
             for (FieldViewModel fieldViewModel : fieldViewModels) {
-                if (!isEmpty(fieldViewModel.optionSet())) {
-                    Cursor cursor = briteDatabase.query(OPTIONS, fieldViewModel.optionSet() == null ? "" : fieldViewModel.optionSet());
-                    if (cursor != null && cursor.moveToFirst()) {
-                        for (int i = 0; i < cursor.getCount(); i++) {
-                            String uid = cursor.getString(0);
-                            String displayName = cursor.getString(1);
-                            String optionCode = cursor.getString(2);
-                            renderList.add(fieldFactory.create(
-                                    fieldViewModel.uid() + "." + uid, //fist
-                                    displayName + "-" + optionCode, ValueType.TEXT, false,
-                                    fieldViewModel.optionSet(), fieldViewModel.value(), fieldViewModel.programStageSection(),
-                                    fieldViewModel.allowFutureDate(), fieldViewModel.editable() == null ? false : fieldViewModel.editable(), renderingType, fieldViewModel.description(), null));
-
-                            cursor.moveToNext();
-                        }
-                        cursor.close();
-                    }
-
-
-                } else
-                    renderList.add(fieldViewModel);
+                renderList.addAll(parseRenderList(fieldViewModel));
             }
-
-
-        } else
+        } else {
             renderList.addAll(fieldViewModels);
+        }
+        return renderList;
+    }
+
+    private ArrayList<FieldViewModel> parseRenderList(FieldViewModel fieldViewModel) {
+        ArrayList<FieldViewModel> renderList = new ArrayList<>();
+
+        if (!isEmpty(fieldViewModel.optionSet())) {
+            Cursor cursor = briteDatabase.query(OPTIONS, fieldViewModel.optionSet() == null ? "" : fieldViewModel.optionSet());
+            if (cursor != null && cursor.moveToFirst()) {
+                int optionCount = cursor.getCount();
+                renderList.addAll(parseOptionCount(fieldViewModel, cursor, optionCount));
+                cursor.close();
+            }
+        } else {
+            renderList.add(fieldViewModel);
+        }
 
         return renderList;
+    }
 
+    private ArrayList<FieldViewModel> parseOptionCount(FieldViewModel fieldViewModel, Cursor cursor, int optionCount) {
+        ArrayList<FieldViewModel> renderList = new ArrayList<>();
+
+        for (int i = 0; i < optionCount; i++) {
+            String uid = cursor.getString(0);
+            String displayName = cursor.getString(1);
+            String optionCode = cursor.getString(2);
+
+            ObjectStyleModel objectStyle = ObjectStyleModel.builder().build();
+            try (Cursor objStyleCursor = briteDatabase.query("SELECT * FROM ObjectStyle WHERE uid = ?", fieldViewModel.uid())) {
+                if (objStyleCursor.moveToFirst())
+                    objectStyle = ObjectStyleModel.create(objStyleCursor);
+            }
+
+            renderList.add(fieldFactory.create(
+                    fieldViewModel.uid() + "." + uid, //fist
+                    displayName + "-" + optionCode, ValueType.TEXT, false,
+                    fieldViewModel.optionSet(), fieldViewModel.value(), fieldViewModel.programStageSection(),
+                    fieldViewModel.allowFutureDate(), fieldViewModel.editable() == null ? false : fieldViewModel.editable(), renderingType, fieldViewModel.description(), null, optionCount, objectStyle));
+
+            cursor.moveToNext();
+        }
+
+        return renderList;
     }
 
     @Override
@@ -199,30 +220,11 @@ final class ProgramStageRepository implements DataEntryRepository {
 
     @NonNull
     private FieldViewModel transform(@NonNull Cursor cursor) {
-        String uid = cursor.getString(0);
-        String label = cursor.getString(1);
-        ValueType valueType = ValueType.valueOf(cursor.getString(2));
-        boolean mandatory = cursor.getInt(3) == 1;
-        String optionSetUid = cursor.getString(4);
-        String dataValue = cursor.getString(5);
-        String optionCodeName = cursor.getString(6);
-        String section = cursor.getString(7);
-        Boolean allowFutureDates = cursor.getInt(8) == 1;
-        EventStatus eventStatus = EventStatus.valueOf(cursor.getString(9));
-        String formLabel = cursor.getString(10);
-        String description = cursor.getString(11);
-        if (!isEmpty(optionCodeName)) {
-            dataValue = optionCodeName;
-        }
+        FieldViewModelUtils fieldViewModelUtils = new FieldViewModelUtils(cursor);
 
-        ValueTypeDeviceRenderingModel fieldRendering = null;
-        Cursor rendering = briteDatabase.query("SELECT ValueTypeDeviceRendering.* FROM ValueTypeDeviceRendering" +
-                " JOIN ProgramStageDataElement ON ProgramStageDataElement.uid = ValueTypeDeviceRendering.uid" +
-                " WHERE ProgramStageDataElement.uid = ?", uid);
-        if (rendering != null && rendering.moveToFirst()) {
-            fieldRendering = ValueTypeDeviceRenderingModel.create(cursor);
-            rendering.close();
-        }
+        int optionCount = FieldViewModelUtils.getOptionCount(briteDatabase, fieldViewModelUtils.getOptionSetUid());
+
+        ValueTypeDeviceRendering fieldRendering = FieldViewModelUtils.getValueTypeDeviceRendering(briteDatabase, fieldViewModelUtils.getUid());
 
         Cursor eventCursor = briteDatabase.query("SELECT * FROM Event WHERE uid = ?", eventUid);
         eventCursor.moveToFirst();
@@ -230,18 +232,28 @@ final class ProgramStageRepository implements DataEntryRepository {
         eventCursor.close();
         Cursor programStageCursor = briteDatabase.query("SELECT * FROM ProgramStage WHERE uid = ?", eventModel.programStage());
         programStageCursor.moveToFirst();
-        ProgramStageModel programStageModel = ProgramStageModel.create(programStageCursor);
+        ProgramStage programStage = ProgramStage.create(programStageCursor);
         programStageCursor.close();
         Cursor programCursor = briteDatabase.query("SELECT * FROM Program WHERE uid = ?", eventModel.program());
         programCursor.moveToFirst();
         ProgramModel programModel = ProgramModel.create(programCursor);
         programCursor.close();
 
-        boolean hasExpired = DateUtils.getInstance().hasExpired(eventModel, programModel.expiryDays(), programModel.completeEventsExpiryDays(), programStageModel.periodType() != null ? programStageModel.periodType() : programModel.expiryPeriodType());
+        boolean hasExpired = DateUtils.getInstance().hasExpired(eventModel, programModel.expiryDays(), programModel.completeEventsExpiryDays(), programStage.periodType() != null ? programStage.periodType() : programModel.expiryPeriodType());
 
+        ObjectStyleModel objectStyle = ObjectStyleModel.builder().build();
+        try (Cursor objStyleCursor = briteDatabase.query("SELECT * FROM ObjectStyle WHERE uid = ?", fieldViewModelUtils.getUid())) {
+            if (objStyleCursor.moveToFirst())
+                objectStyle = ObjectStyleModel.create(objStyleCursor);
+        }
 
-        return fieldFactory.create(uid, isEmpty(formLabel) ? label : formLabel, valueType, mandatory, optionSetUid, dataValue, section,
-                allowFutureDates, accessDataWrite && eventStatus == EventStatus.ACTIVE && !hasExpired, renderingType, description, fieldRendering);
+        return fieldFactory.create(fieldViewModelUtils.getUid(),
+                isEmpty(fieldViewModelUtils.getFormLabel()) ? fieldViewModelUtils.getLabel() : fieldViewModelUtils.getFormLabel(),
+                fieldViewModelUtils.getValueType(), fieldViewModelUtils.isMandatory(), fieldViewModelUtils.getOptionSetUid(),
+                fieldViewModelUtils.getDataValue(), fieldViewModelUtils.getSection(),
+                fieldViewModelUtils.getAllowFutureDates(),
+                accessDataWrite && fieldViewModelUtils.getEventStatus() == EventStatus.ACTIVE && !hasExpired, renderingType,
+                fieldViewModelUtils.getDescription(), fieldRendering, optionCount, objectStyle);
     }
 
     @NonNull
@@ -249,10 +261,10 @@ final class ProgramStageRepository implements DataEntryRepository {
     private String prepareStatement() {
         String where;
         if (isEmpty(sectionUid)) {
-            where = String.format(Locale.US, "WHERE Event.uid = '%s'", eventUid == null ? "" : eventUid);
+            where = String.format(Locale.US, "WHERE Event.uid = '%s'", eventUid);
         } else {
             where = String.format(Locale.US, "WHERE Event.uid = '%s' AND " +
-                    "Field.section = '%s'", eventUid == null ? "" : eventUid, sectionUid == null ? "" : sectionUid);
+                    "Field.section = '%s'", eventUid, sectionUid);
         }
 
         return String.format(Locale.US, QUERY, where);

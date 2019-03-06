@@ -3,15 +3,8 @@ package org.dhis2.usescases.main;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-
-import androidx.databinding.DataBindingUtil;
-import androidx.databinding.ObservableInt;
 import android.graphics.PorterDuff;
 import android.os.Bundle;
-import androidx.annotation.NonNull;
-import androidx.fragment.app.Fragment;
-import androidx.core.content.res.ResourcesCompat;
-import android.view.MenuItem;
 import android.view.View;
 import android.widget.TextView;
 
@@ -35,14 +28,20 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import androidx.annotation.NonNull;
+import androidx.core.content.res.ResourcesCompat;
+import androidx.databinding.DataBindingUtil;
+import androidx.databinding.ObservableInt;
+import androidx.fragment.app.Fragment;
 import io.reactivex.functions.Consumer;
 
+@SuppressWarnings("squid:MaximumInheritanceDepth")
+public class MainActivity extends ActivityGlobalAbstract implements MainContracts.MainView {
 
-public class MainActivity extends ActivityGlobalAbstract implements MainContracts.View {
+    private ActivityMainBinding binding;
 
-    public ActivityMainBinding binding;
     @Inject
-    MainContracts.Presenter presenter;
+    MainContracts.MainPresenter presenter;
 
     private ProgramFragment programFragment;
 
@@ -74,16 +73,16 @@ public class MainActivity extends ActivityGlobalAbstract implements MainContract
 
             @Override
             public void onEmpty() {
-
+                // do nothing
             }
 
             @Override
             public void onPinChange(int pinLength, String intermediatePin) {
-
+                // do nothing
             }
         });
 
-        if(savedInstanceState != null) {
+        if (savedInstanceState != null) {
             int frag = savedInstanceState.getInt("Fragment");
             currentFragment.set(frag);
             binding.setCurrentFragment(currentFragment);
@@ -95,7 +94,7 @@ public class MainActivity extends ActivityGlobalAbstract implements MainContract
     }
 
     @Override
-    protected void onSaveInstanceState(Bundle outState) {
+    protected void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putInt("Fragment", fragId);
     }
@@ -144,15 +143,15 @@ public class MainActivity extends ActivityGlobalAbstract implements MainContract
 
     @Override
     public void showHideFilter() {
-        programFragment.binding.filterLayout.setVisibility(programFragment.binding.filterLayout.getVisibility() == View.VISIBLE ? View.GONE : View.VISIBLE);
+        programFragment.getBinding().filterLayout.setVisibility(programFragment.getBinding().filterLayout.getVisibility() == View.VISIBLE ? View.GONE : View.VISIBLE);
         checkFilterEnabled();
     }
 
     private void checkFilterEnabled() {
         int color = getPrimaryColor();
-        if (programFragment.binding.filterLayout.getVisibility() == View.VISIBLE) {
+        if (programFragment.getBinding().filterLayout.getVisibility() == View.VISIBLE) {
             binding.filter.setBackgroundColor(color);
-            binding.filter.setColorFilter(getResources().getColor(R.color.white), PorterDuff.Mode.SRC_IN);
+            binding.filter.setColorFilter(ResourcesCompat.getColor(getResources(), R.color.white, getTheme()), PorterDuff.Mode.SRC_IN);
             binding.filter.setBackgroundResource(0);
         }
         // when filter layout is hidden
@@ -160,7 +159,7 @@ public class MainActivity extends ActivityGlobalAbstract implements MainContract
             // not applied period filter
             if (programFragment.getCurrentPeriod() == Period.NONE && programFragment.areAllOrgUnitsSelected()) {
                 binding.filter.setBackgroundColor(color);
-                binding.filter.setColorFilter(getResources().getColor(R.color.white), PorterDuff.Mode.SRC_IN);
+                binding.filter.setColorFilter(ResourcesCompat.getColor(getResources(), R.color.white, getTheme()), PorterDuff.Mode.SRC_IN);
                 binding.filter.setBackgroundResource(0);
             }
             // applied period filter
@@ -247,7 +246,8 @@ public class MainActivity extends ActivityGlobalAbstract implements MainContract
 
     @Override
     public void showSyncErrors(List<D2Error> data) {
-        ErrorDialog.newInstace().setData(data).show(getSupportFragmentManager().beginTransaction(), "ErrorDialog");
+        if (!ErrorDialog.newInstace().isAdded())
+            ErrorDialog.newInstace().setData(data).show(getSupportFragmentManager().beginTransaction(), "ErrorDialog");
     }
 
     public void setTitle(String title) {
@@ -255,13 +255,8 @@ public class MainActivity extends ActivityGlobalAbstract implements MainContract
     }
 
     @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        return super.onOptionsItemSelected(item);
-    }
-
-    @Override
     public void showTutorial(boolean shaked) {
-        if(fragId == R.id.menu_home || fragId == R.id.sync_manager)
+        if (fragId == R.id.menu_home || fragId == R.id.sync_manager)
             super.showTutorial(shaked);
         else
             showToast(getString(R.string.no_intructions));

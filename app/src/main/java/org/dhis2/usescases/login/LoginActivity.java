@@ -2,7 +2,6 @@ package org.dhis2.usescases.login;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.os.PersistableBundle;
 import android.text.InputType;
 import android.view.View;
 import android.view.WindowManager;
@@ -16,36 +15,35 @@ import org.dhis2.databinding.ActivityLoginBinding;
 import org.dhis2.usescases.general.ActivityGlobalAbstract;
 import org.dhis2.usescases.main.MainActivity;
 import org.dhis2.usescases.sync.SyncActivity;
-import org.dhis2.utils.BiometricStorage;
 import org.dhis2.utils.ColorUtils;
 import org.dhis2.utils.Constants;
 import org.dhis2.utils.NetworkUtils;
-import org.dhis2.utils.OnDialogClickListener;
 import org.hisp.dhis.android.core.maintenance.D2ErrorCode;
 
 import java.util.List;
 
 import javax.inject.Inject;
 
-import androidx.appcompat.app.AlertDialog;
 import androidx.core.content.ContextCompat;
 import androidx.databinding.DataBindingUtil;
 import de.adorsys.android.securestoragelibrary.SecurePreferences;
 
+import static android.text.TextUtils.isEmpty;
 import static org.dhis2.utils.Constants.RQ_QR_SCANNER;
 
-
-public class LoginActivity extends ActivityGlobalAbstract implements LoginContracts.View {
+@SuppressWarnings("squid:MaximumInheritanceDepth")
+public class LoginActivity extends ActivityGlobalAbstract implements LoginContracts.LoginView {
 
     ActivityLoginBinding binding;
 
     @Inject
-    LoginContracts.Presenter presenter;
+    LoginContracts.LoginPresenter presenter;
 
     List<String> users;
     List<String> urls;
 
     private boolean isPinScreenVisible = false;
+    private String qrUrl;
 
 
     @Override
@@ -131,6 +129,11 @@ public class LoginActivity extends ActivityGlobalAbstract implements LoginContra
         binding.userPassEdit.setSelection(binding.userPassEdit.getText().length());
     }
 
+    @Override
+    public void setUrl(String url) {
+        binding.serverUrlEdit.setText(!isEmpty(qrUrl) ? qrUrl : url);
+    }
+
 
     @Override
     public ActivityLoginBinding getBinding() {
@@ -157,7 +160,7 @@ public class LoginActivity extends ActivityGlobalAbstract implements LoginContra
                 message = getString(R.string.login_error_error_response);
                 break;
             default:
-                message = String.format("%s\n%s", getString(R.string.login_error_default), defaultMessage);
+                message = String.format("%s%n%s", getString(R.string.login_error_default), defaultMessage);
                 break;
         }
 
@@ -232,12 +235,12 @@ public class LoginActivity extends ActivityGlobalAbstract implements LoginContra
 
             @Override
             public void onEmpty() {
-
+                // do nothing
             }
 
             @Override
             public void onPinChange(int pinLength, String intermediatePin) {
-
+                // do nothing
             }
         });
         binding.pinLayout.getRoot().setVisibility(View.VISIBLE);
@@ -283,31 +286,9 @@ public class LoginActivity extends ActivityGlobalAbstract implements LoginContra
             saveListToPreference(Constants.PREFS_USERS, users);
         }
 
-        if (false && presenter.canHandleBiometrics() && //TODO: Remove false when green light
-                (!BiometricStorage.areCredentialsSet() &&
-                        !BiometricStorage.areSameCredentials(
-                                binding.serverUrlEdit.getText().toString(),
-                                binding.userNameEdit.getText().toString(),
-                                binding.userPassEdit.getText().toString()))) {
-            showInfoDialog(getString(R.string.biometrics_security_title),
-                    getString(R.string.biometrics_security_text),
-                    new OnDialogClickListener() {
-                        @Override
-                        public void onPossitiveClick(AlertDialog alertDialog) {
-                            BiometricStorage.saveUserCredentials(
-                                    binding.serverUrlEdit.getText().toString(),
-                                    binding.userNameEdit.getText().toString(),
-                                    binding.userPassEdit.getText().toString());
-                            goToNextScreen();
-                        }
-
-                        @Override
-                        public void onNegativeClick(AlertDialog alertDialog) {
-                            goToNextScreen();
-                        }
-                    }).show();
-        } else
-            goToNextScreen();
+        //TODO: Uncomment when green light
+//        lo
+        goToNextScreen();
 
     }
 
@@ -324,21 +305,9 @@ public class LoginActivity extends ActivityGlobalAbstract implements LoginContra
     }
 
     @Override
-    public void onSaveInstanceState(Bundle outState, PersistableBundle outPersistentState) {
-        super.onSaveInstanceState(outState, outPersistentState);
-    }
-
-    @Override
-    public void onRestoreInstanceState(Bundle savedInstanceState, PersistableBundle persistentState) {
-        super.onRestoreInstanceState(savedInstanceState, persistentState);
-    }
-
-    @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == RQ_QR_SCANNER && resultCode == RESULT_OK) {
-            binding.serverUrlEdit.setText(data.getStringExtra(Constants.EXTRA_DATA));
+            qrUrl = data.getStringExtra(Constants.EXTRA_DATA);
         }
     }
-
-
 }

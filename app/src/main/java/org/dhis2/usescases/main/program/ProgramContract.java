@@ -1,20 +1,17 @@
 package org.dhis2.usescases.main.program;
 
-import androidx.annotation.UiThread;
+import com.unnamed.b.atv.model.TreeNode;
 
 import org.dhis2.data.tuples.Pair;
 import org.dhis2.usescases.general.AbstractActivityContracts;
 import org.dhis2.utils.Period;
-import com.unnamed.b.atv.model.TreeNode;
-
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnitModel;
-import org.hisp.dhis.android.core.program.ProgramModel;
 
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import io.reactivex.Observable;
+import androidx.annotation.UiThread;
 import io.reactivex.functions.Consumer;
 
 /**
@@ -22,13 +19,11 @@ import io.reactivex.functions.Consumer;
  */
 public class ProgramContract {
 
-    interface View extends AbstractActivityContracts.View {
+    interface ProgramView extends AbstractActivityContracts.View {
 
         void showRageDatePicker();
 
         void showTimeUnitPicker();
-
-        void setUpRecycler();
 
         void getSelectedPrograms(ArrayList<Date> dates, Period period, String orgUnitQuery);
 
@@ -52,10 +47,13 @@ public class ProgramContract {
 
         Date getChosenDateDay();
 
+        void orgUnitProgress(boolean showProgress);
+
+        Consumer<Pair<TreeNode, List<TreeNode>>> addNodeToTree();
     }
 
-    public interface Presenter {
-        void init(View view);
+    public interface ProgramPresenter {
+        void init(ProgramView view);
 
         void onItemClick(ProgramViewModel programModel, Period currentPeriod);
 
@@ -67,13 +65,15 @@ public class ProgramContract {
 
         void showDescription(String description);
 
-        Observable<Pair<Integer, String>> getNumberOfRecords(ProgramModel programModel);
-
         void getProgramsWithDates(ArrayList<Date> dates, Period period);
 
         void getProgramsOrgUnit(List<Date> dates, Period period, String orgUnitQuery);
 
         void getAllPrograms(String orgUnitQuery);
+
+        void onExpandOrgUnitNode(TreeNode treeNode,String parentUid);
+
+        List<TreeNode> transformToNode(List<OrganisationUnitModel> orgUnits);
 
         List<OrganisationUnitModel> getOrgUnits();
 

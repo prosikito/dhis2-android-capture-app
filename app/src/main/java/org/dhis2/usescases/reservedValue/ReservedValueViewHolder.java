@@ -7,16 +7,13 @@ import org.dhis2.BR;
 public class ReservedValueViewHolder extends RecyclerView.ViewHolder {
 
     private ItemReservedValueBinding binding;
-    private ReservedValueContracts.Presenter presenter;
 
-    public ReservedValueViewHolder(ItemReservedValueBinding binding, ReservedValueContracts.Presenter presenter) {
+    public ReservedValueViewHolder(ItemReservedValueBinding binding) {
         super(binding.getRoot());
         this.binding = binding;
-        this.presenter = presenter;
-
     }
 
-    public void bind(ReservedValueContracts.Presenter presenter, ReservedValueModel dataElement){
+    public void bind(ReservedValueContracts.ReservedValuePresenter presenter, ReservedValueModel dataElement){
         //TODO cambiarlo en el xml tambien
         binding.setVariable(BR.dataElement, dataElement);
         binding.setVariable(BR.presenter, presenter);
