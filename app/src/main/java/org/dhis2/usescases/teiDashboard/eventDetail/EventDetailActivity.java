@@ -50,11 +50,12 @@ import timber.log.Timber;
  * QUADRAM. Created by Cristian E. on 18/12/2017.
  */
 
-public class EventDetailActivity extends ActivityGlobalAbstract implements EventDetailContracts.View {
+public class EventDetailActivity extends ActivityGlobalAbstract implements EventDetailContracts.EventDetailView {
 
+    private static final String EVENT_DATA_ENTRY = "EVENT_DATA_ENTRY";
     ActivityEventDetailBinding binding;
     @Inject
-    EventDetailContracts.Presenter presenter;
+    EventDetailContracts.EventDetailPresenter eventDetailPresenter;
 
     EventDetailModel eventDetailModel;
     private String eventUid;
@@ -70,19 +71,19 @@ public class EventDetailActivity extends ActivityGlobalAbstract implements Event
         eventUid = getIntent().getStringExtra("EVENT_UID");
         binding = DataBindingUtil.setContentView(this, R.layout.activity_event_detail);
         binding.teiName.setText(getIntent().getStringExtra("TOOLBAR_TITLE"));
-        binding.setPresenter(presenter);
+        binding.setPresenter(eventDetailPresenter);
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        presenter.init(this);
-        presenter.getEventData(eventUid);
+        eventDetailPresenter.init(this);
+        eventDetailPresenter.getEventData(eventUid);
     }
 
     @Override
     protected void onPause() {
-        presenter.onDettach();
+        eventDetailPresenter.onDettach();
         super.onPause();
     }
 
@@ -95,7 +96,7 @@ public class EventDetailActivity extends ActivityGlobalAbstract implements Event
             finish();
         } else {
             this.eventDetailModel = eventDetailModel;
-            presenter.getExpiryDate(eventDetailModel.getEventModel().uid());
+            eventDetailPresenter.getExpiryDate(eventDetailModel.getEventModel().uid());
             binding.setEvent(eventDetailModel.getEventModel());
             binding.setStage(eventDetailModel.getProgramStage());
             binding.setEnrollmentActive(eventDetailModel.isEnrollmentActive());
@@ -117,15 +118,15 @@ public class EventDetailActivity extends ActivityGlobalAbstract implements Event
 
             supportStartPostponedEnterTransition();
 
-            if (getSupportFragmentManager().findFragmentByTag("EVENT_DATA_ENTRY") != null)
+            if (getSupportFragmentManager().findFragmentByTag(EVENT_DATA_ENTRY) != null)
                 getSupportFragmentManager().beginTransaction()
-                        .remove(getSupportFragmentManager().findFragmentByTag("EVENT_DATA_ENTRY"))
+                        .remove(getSupportFragmentManager().findFragmentByTag(EVENT_DATA_ENTRY))
                         .commit();
 
             getSupportFragmentManager().beginTransaction()
                     .replace(R.id.dataFragment, FormFragment.newInstance(
                             FormViewArguments.createForEvent(eventUid), false,
-                            false, true), "EVENT_DATA_ENTRY")
+                            false, true), EVENT_DATA_ENTRY)
                     .commit();
 
             if (!HelpManager.getInstance().isTutorialReadyForScreen(getClass().getName()))
@@ -162,7 +163,7 @@ public class EventDetailActivity extends ActivityGlobalAbstract implements Event
                 new DialogClickListener() {
                     @Override
                     public void onPositive() {
-                        presenter.deleteEvent();
+                        eventDetailPresenter.deleteEvent();
                     }
 
                     @Override
@@ -234,13 +235,13 @@ public class EventDetailActivity extends ActivityGlobalAbstract implements Event
     public void showCatOptionDialog() {
         new CategoryComboDialog(getAbstracContext(), eventDetailModel.getCatComboName(), eventDetailModel.getOptionComboList(), 123, selectedOption -> {
             binding.categoryCombo.setText(selectedOption.displayName());
-            presenter.changeCatOption(selectedOption);
+            eventDetailPresenter.changeCatOption(selectedOption);
         }, eventDetailModel.getProgramStage().displayName()).show();
     }
 
     @Override
     public void onBackPressed() {
-        presenter.back();
+        eventDetailPresenter.back();
     }
 
     @Override
@@ -304,7 +305,7 @@ public class EventDetailActivity extends ActivityGlobalAbstract implements Event
                     showTutorial(false);
                     break;
                 case R.id.menu_delete:
-                    presenter.confirmDeleteEvent();
+                    eventDetailPresenter.confirmDeleteEvent();
                     break;
                 default:
                     break;

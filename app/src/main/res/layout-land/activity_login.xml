@@ -9,8 +9,8 @@
 
         <variable
             name="presenter"
-            type="org.dhis2.usescases.login.LoginContracts.Presenter" />
-
+            type="org.dhis2.usescases.login.LoginContracts.LoginPresenter" />
+        
     </data>
 
     <androidx.constraintlayout.widget.ConstraintLayout

@@ -20,8 +20,6 @@ import org.dhis2.utils.custom_views.OptionSetPopUp;
 import org.hisp.dhis.android.core.option.OptionModel;
 import org.hisp.dhis.android.core.program.ProgramStageSectionRenderingType;
 
-import java.util.Map;
-
 import androidx.appcompat.widget.PopupMenu;
 import androidx.databinding.ViewDataBinding;
 import androidx.fragment.app.FragmentActivity;
@@ -45,7 +43,6 @@ public class SpinnerHolder extends FormViewHolder implements View.OnClickListene
 
     private SpinnerViewModel viewModel;
     private int numberOfOptions = 0;
-    private Map<String, OptionModel> options;
 
     SpinnerHolder(ViewDataBinding mBinding, FlowableProcessor<RowAction> processor, FlowableProcessor<Trio<String, String, Integer>> processorOptionSet, String renderType, boolean isSearchMode) {
         super(mBinding);
@@ -79,7 +76,7 @@ public class SpinnerHolder extends FormViewHolder implements View.OnClickListene
         editText.setFocusable(false);
         editText.setClickable(viewModel.editable());
 
-        editText.setText(viewModel.value()); //option code is already transformed to value in the fieldviewmodelfactory implementation
+        editText.setText(viewModel.value()); //option code is already transformed to VALUE in the fieldviewmodelfactory implementation
 
         if (!isEmpty(viewModel.warning())) {
             inputLayout.setError(viewModel.warning());
@@ -102,6 +99,7 @@ public class SpinnerHolder extends FormViewHolder implements View.OnClickListene
     }
 
     public void dispose() {
+        // unused
     }
 
     @Override
@@ -156,8 +154,5 @@ public class SpinnerHolder extends FormViewHolder implements View.OnClickListene
                 RowAction.create(viewModel.uid(), isSearchMode ? optionDisplayName + "_os_" + optionCode : optionCode, true)
         );
         viewModel.withValue(isSearchMode ? optionDisplayName : optionCode);
-      /*  View nextView;
-        if ((nextView = editText.focusSearch(View.FOCUS_DOWN)) != null)
-            nextView.requestFocus();*/
     }
 }

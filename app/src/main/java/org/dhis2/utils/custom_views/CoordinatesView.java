@@ -29,7 +29,7 @@ import androidx.databinding.DataBindingUtil;
 import androidx.databinding.ViewDataBinding;
 import io.reactivex.processors.FlowableProcessor;
 
-import static org.dhis2.usescases.eventsWithoutRegistration.eventInitial.EventInitialPresenter.ACCESS_COARSE_LOCATION_PERMISSION_REQUEST;
+import static org.dhis2.usescases.eventsWithoutRegistration.eventInitial.EventInitialEventInitialPresenter.ACCESS_COARSE_LOCATION_PERMISSION_REQUEST;
 
 /**
  * QUADRAM. Created by Administrador on 21/03/2018.
@@ -134,6 +134,9 @@ public class CoordinatesView extends FieldLayout implements View.OnClickListener
                 else
                     ((OnMapPositionClick) getContext()).onMapPositionClick(this);
                 break;
+            default:
+                break;
+
         }
     }
 

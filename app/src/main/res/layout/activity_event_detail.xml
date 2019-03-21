@@ -11,7 +11,7 @@
 
         <variable
             name="presenter"
-            type="org.dhis2.usescases.teiDashboard.eventDetail.EventDetailContracts.Presenter" />
+            type="org.dhis2.usescases.teiDashboard.eventDetail.EventDetailContracts.EventDetailPresenter" />
 
         <variable
             name="event"
@@ -123,7 +123,7 @@
                 android:layout_marginBottom="15dp"
                 android:background="@drawable/button_delete_selector"
                 android:minHeight="0dp"
-                android:onClick="@{view->presenter.eventStatus(view,event,stage)}"
+                android:onClick="@{dataSetTableContractView->presenter.eventStatus(dataSetTableContractView,event,stage)}"
                 android:textColor="@color/white_faf" />
             <!--END OF SCROLLING VIEW-->
 

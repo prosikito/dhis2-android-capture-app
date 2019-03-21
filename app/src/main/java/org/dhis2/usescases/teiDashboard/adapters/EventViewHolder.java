@@ -24,7 +24,7 @@ class EventViewHolder extends RecyclerView.ViewHolder {
         this.binding = binding;
     }
 
-    public void bind(TeiDashboardContracts.Presenter presenter, EventModel eventModel, ProgramStageModel programStage, EnrollmentModel enrollment, ProgramModel program) {
+    public void bind(TeiDashboardContracts.TeiDashboardPresenter teiDashboardPresenter, EventModel eventModel, ProgramStageModel programStage, EnrollmentModel enrollment, ProgramModel program) {
         binding.setVariable(BR.event, eventModel);
         binding.setVariable(BR.stage, programStage);
         binding.setVariable(BR.enrollment, enrollment);
@@ -36,9 +36,9 @@ class EventViewHolder extends RecyclerView.ViewHolder {
 
         itemView.setOnClickListener(view -> {
             if (eventModel.status() == EventStatus.SCHEDULE) {
-                presenter.onScheduleSelected(eventModel.uid(), binding.sharedView);
+                teiDashboardPresenter.onScheduleSelected(eventModel.uid(), binding.sharedView);
             } else
-                presenter.onEventSelected(eventModel.uid(), binding.sharedView);
+                teiDashboardPresenter.onEventSelected(eventModel.uid(), binding.sharedView);
         });
     }
 }

@@ -27,18 +27,20 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 import javax.inject.Inject;
 
 import androidx.annotation.Nullable;
 import androidx.databinding.DataBindingUtil;
 
-public class DataSetInitialActivity extends ActivityGlobalAbstract implements DataSetInitialContract.View {
+@SuppressWarnings("squid:MaximumInheritanceDepth")
+public class DataSetInitialActivity extends ActivityGlobalAbstract implements DataSetInitialContract.DataSetInitialView {
 
     private ActivityDatasetInitialBinding binding;
     View selectedView;
     @Inject
-    DataSetInitialContract.Presenter presenter;
+    DataSetInitialContract.DataSetInitialPresenter dataSetInitialPresenter;
 
     private HashMap<String, CategoryOptionModel> selectedCatOptions;
     private OrganisationUnitModel selectedOrgUnit;
@@ -52,24 +54,24 @@ public class DataSetInitialActivity extends ActivityGlobalAbstract implements Da
         ((App) getApplicationContext()).userComponent().plus(new DataSetInitialModule(dataSetUid)).inject(this);
 
         binding = DataBindingUtil.setContentView(this, R.layout.activity_dataset_initial);
-        binding.setPresenter(presenter);
+        binding.setPresenter(dataSetInitialPresenter);
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        presenter.init(this);
+        dataSetInitialPresenter.init(this);
     }
 
     @Override
     protected void onPause() {
-        presenter.onDettach();
+        dataSetInitialPresenter.onDettach();
         super.onPause();
     }
 
     @Override
     public void setAccessDataWrite(Boolean canWrite) {
-
+        // unused
     }
 
     @Override
@@ -84,7 +86,7 @@ public class DataSetInitialActivity extends ActivityGlobalAbstract implements Da
                 categoryComboBinding.inputLayout.setHint(categoryModel.displayName());
                 categoryComboBinding.inputEditText.setOnClickListener(view -> {
                     selectedView = view;
-                    presenter.onCatOptionClick(categoryModel.uid());
+                    dataSetInitialPresenter.onCatOptionClick(categoryModel.uid());
                 });
                 binding.catComboContainer.addView(categoryComboBinding.getRoot());
             }
@@ -96,7 +98,7 @@ public class DataSetInitialActivity extends ActivityGlobalAbstract implements Da
      */
     @Override
     public void showOrgUnitDialog(List<OrganisationUnitModel> data) {
-        OrgUnitDialog orgUnitDialog = OrgUnitDialog.getInstace().setMultiSelection(false);
+        OrgUnitDialog orgUnitDialog = OrgUnitDialog.getInstance().setMultiSelection(false);
         orgUnitDialog.setOrgUnits(data);
         orgUnitDialog.setTitle(getString(R.string.org_unit))
                 .setPossitiveListener(v -> {
@@ -186,8 +188,8 @@ public class DataSetInitialActivity extends ActivityGlobalAbstract implements Da
             visible = false;
         if (selectedPeriod == null)
             visible = false;
-        for (String key : selectedCatOptions.keySet()) {
-            if (selectedCatOptions.get(key) == null)
+        for (Map.Entry<String, CategoryOptionModel> entry : selectedCatOptions.entrySet()) {
+            if (entry.getValue() == null)
                 visible = false;
         }
 

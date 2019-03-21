@@ -17,8 +17,8 @@
 
         <variable
             name="presenter"
-            type="org.dhis2.usescases.main.MainContracts.Presenter" />
-
+            type="org.dhis2.usescases.main.MainContracts.MainPresenter" />
+        
         <variable
             name="currentFragment"
             type="androidx.databinding.ObservableInt" />

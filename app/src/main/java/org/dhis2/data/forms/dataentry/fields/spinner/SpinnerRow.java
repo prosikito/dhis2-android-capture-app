@@ -7,6 +7,7 @@ import org.dhis2.R;
 import org.dhis2.data.forms.dataentry.fields.Row;
 import org.dhis2.data.forms.dataentry.fields.RowAction;
 import org.dhis2.data.tuples.Trio;
+import org.jetbrains.annotations.NotNull;
 
 import androidx.annotation.NonNull;
 import androidx.databinding.DataBindingUtil;
@@ -37,8 +38,8 @@ public class SpinnerRow implements Row<SpinnerHolder, SpinnerViewModel> {
         this.isSearchMode = true;
     }
 
-    public SpinnerRow(LayoutInflater layoutInflater, FlowableProcessor<RowAction> processor,
-                      @NonNull FlowableProcessor<Integer> currentPosition, FlowableProcessor<Trio<String, String, Integer>> processorOptionSet, boolean isBackgroundTransparent, String renderType) {
+    public SpinnerRow(LayoutInflater layoutInflater, @NotNull FlowableProcessor<RowAction> processor,
+                      FlowableProcessor<Trio<String, String, Integer>> processorOptionSet, boolean isBackgroundTransparent, String renderType) {
         this.processor = processor;
         this.isBackgroundTransparent = isBackgroundTransparent;
         this.renderType = renderType;

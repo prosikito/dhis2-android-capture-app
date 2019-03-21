@@ -5,7 +5,6 @@ import android.view.ViewGroup;
 
 import org.dhis2.R;
 import org.dhis2.databinding.ItemProgramEventBinding;
-import org.hisp.dhis.android.core.event.EventModel;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,11 +19,11 @@ import androidx.recyclerview.widget.RecyclerView;
 
 public class ProgramEventDetailAdapter extends RecyclerView.Adapter<ProgramEventDetailViewHolder> {
 
-    private ProgramEventDetailContract.Presenter presenter;
+    private ProgramEventDetailContract.ProgramEventDetailPresenter programEventDetailPresenter;
     private List<ProgramEventViewModel> events;
 
-    ProgramEventDetailAdapter(ProgramEventDetailContract.Presenter presenter) {
-        this.presenter = presenter;
+    ProgramEventDetailAdapter(ProgramEventDetailContract.ProgramEventDetailPresenter programEventDetailPresenter) {
+        this.programEventDetailPresenter = programEventDetailPresenter;
         this.events = new ArrayList<>();
     }
 
@@ -38,7 +37,7 @@ public class ProgramEventDetailAdapter extends RecyclerView.Adapter<ProgramEvent
 
     @Override
     public void onBindViewHolder(@NonNull ProgramEventDetailViewHolder holder, int position) {
-        holder.bind(presenter, events.get(position));
+        holder.bind(programEventDetailPresenter, events.get(position));
     }
 
     @Override

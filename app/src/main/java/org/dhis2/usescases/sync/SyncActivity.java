@@ -19,7 +19,6 @@ import com.airbnb.lottie.LottieDrawable;
 import org.dhis2.App;
 import org.dhis2.Bindings.Bindings;
 import org.dhis2.R;
-import org.dhis2.data.tuples.Pair;
 import org.dhis2.databinding.ActivitySynchronizationBinding;
 import org.dhis2.usescases.general.ActivityGlobalAbstract;
 import org.dhis2.usescases.main.MainActivity;
@@ -30,12 +29,12 @@ import org.dhis2.utils.SyncUtils;
 import javax.inject.Inject;
 
 
-public class SyncActivity extends ActivityGlobalAbstract implements SyncContracts.View {
+public class SyncActivity extends ActivityGlobalAbstract implements SyncContracts.SyncView {
 
     ActivitySynchronizationBinding binding;
 
     @Inject
-    SyncContracts.Presenter presenter;
+    SyncContracts.SyncPresenter syncPresenter;
 
     private BroadcastReceiver syncReceiver = new BroadcastReceiver() {
         @Override
@@ -55,16 +54,16 @@ public class SyncActivity extends ActivityGlobalAbstract implements SyncContract
     protected void onCreate(Bundle savedInstanceState) {
         SyncComponent syncComponent = ((App) getApplicationContext()).syncComponent();
         if (syncComponent == null) {
-            // in case if we don't have cached presenter
+            // in case if we don't have cached syncPresenter
             syncComponent = ((App) getApplicationContext()).createSyncComponent();
         }
         syncComponent.inject(this);
         super.onCreate(savedInstanceState);
 
         binding = DataBindingUtil.setContentView(this, R.layout.activity_synchronization);
-        binding.setPresenter(presenter);
-        presenter.init(this);
-        presenter.syncMeta(getSharedPreferences().getInt(Constants.TIME_META, Constants.TIME_DAILY), Constants.META);
+        binding.setPresenter(syncPresenter);
+        syncPresenter.init(this);
+        syncPresenter.syncMeta(getSharedPreferences().getInt(Constants.TIME_META, Constants.TIME_DAILY), Constants.META);
     }
 
     @Override
@@ -104,13 +103,13 @@ public class SyncActivity extends ActivityGlobalAbstract implements SyncContract
 
             binding.metadataText.setText(getString(R.string.configuration_ready));
             Bindings.setDrawableEnd(binding.metadataText, ContextCompat.getDrawable(this, R.drawable.animator_done));
-            presenter.getTheme();
+            syncPresenter.getTheme();
             binding.eventsText.setText(getString(R.string.syncing_data));
             Bindings.setDrawableEnd(binding.eventsText, ContextCompat.getDrawable(this, R.drawable.animator_sync));
             binding.eventsText.setAlpha(1.0f);
 
         } else if (!SyncUtils.isSyncRunning(Constants.META)) {
-            presenter.syncMeta(getSharedPreferences().getInt(Constants.TIME_META, Constants.TIME_DAILY), Constants.META);
+            syncPresenter.syncMeta(getSharedPreferences().getInt(Constants.TIME_META, Constants.TIME_DAILY), Constants.META);
         }
     }
 
@@ -120,7 +119,7 @@ public class SyncActivity extends ActivityGlobalAbstract implements SyncContract
         if (binding.lottieView != null) {
             binding.lottieView.cancelAnimation();
         }
-        presenter.onDettach();
+        syncPresenter.onDettach();
         super.onStop();
     }
 
@@ -142,14 +141,14 @@ public class SyncActivity extends ActivityGlobalAbstract implements SyncContract
 
             binding.metadataText.setText(getString(R.string.configuration_ready));
             Bindings.setDrawableEnd(binding.metadataText, ContextCompat.getDrawable(this, R.drawable.animator_done));
-            presenter.getTheme();
-            presenter.syncData(getSharedPreferences().getInt(Constants.TIME_DATA, Constants.TIME_DAILY), Constants.DATA);
+            syncPresenter.getTheme();
+            syncPresenter.syncData(getSharedPreferences().getInt(Constants.TIME_DATA, Constants.TIME_DAILY), Constants.DATA);
 
         } else if (!intent.getBooleanExtra("dataSyncInProgress", true)) {
 
             binding.eventsText.setText(getString(R.string.data_ready));
             Bindings.setDrawableEnd(binding.eventsText, ContextCompat.getDrawable(this, R.drawable.animator_done));
-            presenter.syncReservedValues();
+            syncPresenter.syncReservedValues();
             startMain();
         }
     }

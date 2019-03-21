@@ -21,7 +21,6 @@ import androidx.work.ExistingWorkPolicy;
 import androidx.work.NetworkType;
 import androidx.work.OneTimeWorkRequest;
 import androidx.work.PeriodicWorkRequest;
-import androidx.work.WorkContinuation;
 import androidx.work.WorkManager;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
@@ -34,24 +33,24 @@ import timber.log.Timber;
  * QUADRAM. Created by lmartin on 21/03/2018.
  */
 
-public class SyncManagerPresenter implements SyncManagerContracts.Presenter {
+public class SyncManagerSyncManagerPresenter implements SyncManagerContracts.SyncManagerPresenter {
 
     private final D2 d2;
 
     private MetadataRepository metadataRepository;
     private CompositeDisposable compositeDisposable;
-    private SyncManagerContracts.View view;
+    private SyncManagerContracts.SyncManagerView syncManagerView;
     private FlowableProcessor<Boolean> checkData;
 
-    SyncManagerPresenter(MetadataRepository metadataRepository, D2 d2) {
+    SyncManagerSyncManagerPresenter(MetadataRepository metadataRepository, D2 d2) {
         this.metadataRepository = metadataRepository;
         this.d2 = d2;
         checkData = PublishProcessor.create();
     }
 
     @Override
-    public void init(SyncManagerContracts.View view) {
-        this.view = view;
+    public void init(SyncManagerContracts.SyncManagerView syncManagerView) {
+        this.syncManagerView = syncManagerView;
         this.compositeDisposable = new CompositeDisposable();
 
         compositeDisposable.add(
@@ -62,7 +61,7 @@ public class SyncManagerPresenter implements SyncManagerContracts.Presenter {
                         .subscribeOn(Schedulers.io())
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(
-                                view.setSyncData(),
+                                syncManagerView.setSyncData(),
                                 Timber::e
                         )
         );
@@ -147,7 +146,7 @@ public class SyncManagerPresenter implements SyncManagerContracts.Presenter {
 
     @Override
     public void resetSyncParameters() {
-        SharedPreferences prefs = view.getAbstracContext().getSharedPreferences(
+        SharedPreferences prefs = syncManagerView.getAbstracContext().getSharedPreferences(
                 Constants.SHARE_PREFS, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = prefs.edit();
 
@@ -164,7 +163,7 @@ public class SyncManagerPresenter implements SyncManagerContracts.Presenter {
     @Override
     public void onWipeData() {
 
-        view.wipeDatabase();
+        syncManagerView.wipeDatabase();
 
     }
 
@@ -175,11 +174,11 @@ public class SyncManagerPresenter implements SyncManagerContracts.Presenter {
             WorkManager.getInstance().pruneWork();
             d2.wipeModule().wipeEverything();
             // clearing cache data
-            deleteDir(view.getAbstracContext().getCacheDir());
+            deleteDir(syncManagerView.getAbstracContext().getCacheDir());
 
-            view.getAbstracContext().getSharedPreferences().edit().clear().apply();
+            syncManagerView.getAbstracContext().getSharedPreferences().edit().clear().apply();
 
-            view.startActivity(LoginActivity.class, null, true, true, null);
+            syncManagerView.startActivity(LoginActivity.class, null, true, true, null);
         } catch (Exception e) {
             Timber.e(e);
         }
@@ -187,7 +186,7 @@ public class SyncManagerPresenter implements SyncManagerContracts.Presenter {
 
     @Override
     public void onDeleteLocalData() {
-        view.deleteLocalData();
+        syncManagerView.deleteLocalData();
     }
 
     @Override
@@ -200,12 +199,12 @@ public class SyncManagerPresenter implements SyncManagerContracts.Presenter {
             error = true;
         }
 
-        view.showLocalDataDeleted(error);
+        syncManagerView.showLocalDataDeleted(error);
     }
 
     @Override
     public void onReservedValues() {
-        view.startActivity(ReservedValueActivity.class, null, false, false, null);
+        syncManagerView.startActivity(ReservedValueActivity.class, null, false, false, null);
     }
 
     @Override
@@ -215,7 +214,7 @@ public class SyncManagerPresenter implements SyncManagerContracts.Presenter {
                         .subscribeOn(Schedulers.io())
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(
-                                data -> view.showSyncErrors(data),
+                                data -> syncManagerView.showSyncErrors(data),
                                 Timber::e
 
                         )

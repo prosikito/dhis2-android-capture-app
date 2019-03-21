@@ -67,12 +67,13 @@ import static org.dhis2.utils.Period.YEARLY;
  * QUADRAM. Created by Cristian on 13/02/2018.
  */
 
-public class ProgramEventDetailActivity extends ActivityGlobalAbstract implements ProgramEventDetailContract.View {
+@SuppressWarnings("squid:MaximumInheritanceDepth")
+public class ProgramEventDetailActivity extends ActivityGlobalAbstract implements ProgramEventDetailContract.ProgramEventDetailView {
 
     private ActivityProgramEventDetailBinding binding;
 
     @Inject
-    ProgramEventDetailContract.Presenter presenter;
+    ProgramEventDetailContract.ProgramEventDetailPresenter programEventDetailPresenter;
 
     @Inject
     ProgramEventDetailAdapter adapter;
@@ -89,7 +90,7 @@ public class ProgramEventDetailActivity extends ActivityGlobalAbstract implement
     private StringBuilder orgUnitFilter = new StringBuilder();
     private boolean isFilteredByCatCombo = false;
     private String programId;
-    private static PublishProcessor<Integer> pageProcessor;
+    private PublishProcessor<Integer> pageProcessor;
     private EndlessRecyclerViewScrollListener endlessScrollListener;
 
     @Override
@@ -104,7 +105,7 @@ public class ProgramEventDetailActivity extends ActivityGlobalAbstract implement
         chosenDateYear.add(new Date());
 
         programId = getIntent().getStringExtra("PROGRAM_UID");
-        binding.setPresenter(presenter);
+        binding.setPresenter(programEventDetailPresenter);
 
         binding.drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED);
 
@@ -122,12 +123,12 @@ public class ProgramEventDetailActivity extends ActivityGlobalAbstract implement
     protected void onResume() {
         super.onResume();
         adapter.clearData();
-        presenter.init(this, programId, currentPeriod);
+        programEventDetailPresenter.init(this, programId, currentPeriod);
     }
 
     @Override
     protected void onPause() {
-        presenter.onDettach();
+        programEventDetailPresenter.onDettach();
         super.onPause();
         binding.treeViewContainer.removeAllViews();
     }
@@ -194,11 +195,9 @@ public class ProgramEventDetailActivity extends ActivityGlobalAbstract implement
                             }
                             binding.buttonPeriodText.setText(textToShow);
 
-                            presenter.setFilters(selectedDates, currentPeriod, orgUnitFilter.toString());
+                            programEventDetailPresenter.setFilters(selectedDates, currentPeriod, orgUnitFilter.toString());
                             endlessScrollListener.resetState(0);
                             pageProcessor.onNext(0);
-//                            presenter.getProgramEventsWithDates(selectedDates, currentPeriod, orgUnitFilter.toString());
-
                         } else {
                             ArrayList<Date> date = new ArrayList<>();
                             date.add(new Date());
@@ -223,10 +222,9 @@ public class ProgramEventDetailActivity extends ActivityGlobalAbstract implement
                             }
                             binding.buttonPeriodText.setText(text);
 
-                            presenter.setFilters(date, currentPeriod, orgUnitFilter.toString());
+                            programEventDetailPresenter.setFilters(date, currentPeriod, orgUnitFilter.toString());
                             endlessScrollListener.resetState(0);
                             pageProcessor.onNext(0);
-//                            presenter.getProgramEventsWithDates(date, currentPeriod, orgUnitFilter.toString());
                         }
                     },
                     Timber::d);
@@ -240,10 +238,9 @@ public class ProgramEventDetailActivity extends ActivityGlobalAbstract implement
                 ArrayList<Date> day = new ArrayList<>();
                 day.add(dates[0]);
 
-                presenter.setFilters(day, currentPeriod, orgUnitFilter.toString());
+                programEventDetailPresenter.setFilters(day, currentPeriod, orgUnitFilter.toString());
                 endlessScrollListener.resetState(0);
                 pageProcessor.onNext(0);
-//                presenter.getProgramEventsWithDates(day, currentPeriod, orgUnitFilter.toString());
                 binding.buttonPeriodText.setText(DateUtils.getInstance().formatDate(dates[0]));
                 chosenDateDay = dates[0];
             }, cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH));
@@ -284,10 +281,9 @@ public class ProgramEventDetailActivity extends ActivityGlobalAbstract implement
 
         switch (currentPeriod) {
             case NONE:
-                presenter.setFilters(null, currentPeriod, orgUnitFilter.toString());
+                programEventDetailPresenter.setFilters(null, currentPeriod, orgUnitFilter.toString());
                 endlessScrollListener.resetState(0);
                 pageProcessor.onNext(0);
-//                presenter.getProgramEventsWithDates(null, currentPeriod, orgUnitFilter.toString());
                 textToShow = getString(R.string.period);
                 break;
             case DAILY:
@@ -297,10 +293,9 @@ public class ProgramEventDetailActivity extends ActivityGlobalAbstract implement
                     textToShow = DateUtils.getInstance().formatDate(datesD.get(0));
                 if (!datesD.isEmpty() && datesD.size() > 1) textToShow += "... ";
 
-                presenter.setFilters(datesD, currentPeriod, orgUnitFilter.toString());
+                programEventDetailPresenter.setFilters(datesD, currentPeriod, orgUnitFilter.toString());
                 endlessScrollListener.resetState(0);
                 pageProcessor.onNext(0);
-//                presenter.getProgramEventsWithDates(datesD, currentPeriod, orgUnitFilter.toString());
                 break;
             case WEEKLY:
                 if (!chosenDateWeek.isEmpty()) {
@@ -310,10 +305,9 @@ public class ProgramEventDetailActivity extends ActivityGlobalAbstract implement
                 }
                 if (!chosenDateWeek.isEmpty() && chosenDateWeek.size() > 1) textToShow += "... ";
 
-                presenter.setFilters(chosenDateWeek, currentPeriod, orgUnitFilter.toString());
+                programEventDetailPresenter.setFilters(chosenDateWeek, currentPeriod, orgUnitFilter.toString());
                 endlessScrollListener.resetState(0);
                 pageProcessor.onNext(0);
-//                presenter.getProgramEventsWithDates(chosenDateWeek, currentPeriod, orgUnitFilter.toString());
                 break;
             case MONTHLY:
                 if (!chosenDateMonth.isEmpty()) {
@@ -322,20 +316,18 @@ public class ProgramEventDetailActivity extends ActivityGlobalAbstract implement
                 }
                 if (!chosenDateMonth.isEmpty() && chosenDateMonth.size() > 1) textToShow += "... ";
 
-                presenter.setFilters(chosenDateMonth, currentPeriod, orgUnitFilter.toString());
+                programEventDetailPresenter.setFilters(chosenDateMonth, currentPeriod, orgUnitFilter.toString());
                 endlessScrollListener.resetState(0);
                 pageProcessor.onNext(0);
-//                presenter.getProgramEventsWithDates(chosenDateMonth, currentPeriod, orgUnitFilter.toString());
                 break;
             case YEARLY:
                 if (!chosenDateYear.isEmpty())
                     textToShow = yearFormat.format(chosenDateYear.get(0));
                 if (!chosenDateYear.isEmpty() && chosenDateYear.size() > 1) textToShow += "... ";
 
-                presenter.setFilters(chosenDateYear, currentPeriod, orgUnitFilter.toString());
+                programEventDetailPresenter.setFilters(chosenDateYear, currentPeriod, orgUnitFilter.toString());
                 endlessScrollListener.resetState(0);
                 pageProcessor.onNext(0);
-//                presenter.getProgramEventsWithDates(chosenDateYear, currentPeriod, orgUnitFilter.toString());
                 break;
         }
 
@@ -375,7 +367,7 @@ public class ProgramEventDetailActivity extends ActivityGlobalAbstract implement
         treeView.setUseAutoToggle(false);
 
         binding.treeViewContainer.addView(treeView.getView());
-        if (presenter.getOrgUnits().size() < 25)
+        if (programEventDetailPresenter.getOrgUnits().size() < 25)
             treeView.expandAll();
 
         treeView.setDefaultNodeClickListener((node, value) -> {
@@ -385,7 +377,7 @@ public class ProgramEventDetailActivity extends ActivityGlobalAbstract implement
                 binding.buttonOrgUnit.setText(String.format(getString(R.string.org_unit_filter), treeView.getSelected().size()));
 
                 if (node.getChildren().isEmpty())
-                    presenter.onExpandOrgUnitNode(node, ((OrganisationUnitModel) node.getValue()).uid());
+                    programEventDetailPresenter.onExpandOrgUnitNode(node, ((OrganisationUnitModel) node.getValue()).uid());
                 else
                     node.setExpanded(node.isExpanded());
             }
@@ -428,7 +420,7 @@ public class ProgramEventDetailActivity extends ActivityGlobalAbstract implement
             binding.catCombo.setVisibility(View.GONE);
         } else {
             binding.catCombo.setVisibility(View.VISIBLE);
-            CatComboAdapter adapter = new CatComboAdapter(this,
+            CatComboAdapter adapterAux = new CatComboAdapter(this,
                     R.layout.spinner_layout,
                     R.id.spinner_text,
                     catComboListFinal,
@@ -436,19 +428,19 @@ public class ProgramEventDetailActivity extends ActivityGlobalAbstract implement
                     R.color.white_faf);
 
             binding.catCombo.setVisibility(View.VISIBLE);
-            binding.catCombo.setAdapter(adapter);
+            binding.catCombo.setAdapter(adapterAux);
 
             binding.catCombo.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
                 @Override
                 public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                     if (position == 0) {
                         isFilteredByCatCombo = false;
-                        presenter.clearCatComboFilters();
+                        programEventDetailPresenter.clearCatComboFilters();
                         endlessScrollListener.resetState();
                         pageProcessor.onNext(0);
                     } else {
                         isFilteredByCatCombo = true;
-                        presenter.onCatComboSelected(adapter.getItem(position - 1));
+                        programEventDetailPresenter.onCatComboSelected(adapterAux.getItem(position - 1));
                         endlessScrollListener.resetState();
                         pageProcessor.onNext(0);
                     }
@@ -456,8 +448,7 @@ public class ProgramEventDetailActivity extends ActivityGlobalAbstract implement
 
                 @Override
                 public void onNothingSelected(AdapterView<?> parent) {
-                   /* isFilteredByCatCombo = false;
-                    presenter.clearCatComboFilters();*/
+                    // unused
                 }
             });
         }
@@ -498,7 +489,7 @@ public class ProgramEventDetailActivity extends ActivityGlobalAbstract implement
 
     @Override
     public void apply() {
-        if (treeView.getSelected().size() > 0) {
+        if (treeView != null && !treeView.getSelected().isEmpty()) {
             binding.drawerLayout.closeDrawers();
             binding.drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED);
 
@@ -511,37 +502,35 @@ public class ProgramEventDetailActivity extends ActivityGlobalAbstract implement
                     orgUnitFilter.append(", ");
             }
 
-            if (treeView.getSelected().size() == 1) {
-                binding.buttonOrgUnit.setText(String.format(getString(R.string.org_unit_filter), treeView.getSelected().size()));
-            } else if (treeView.getSelected().size() > 1) {
+            if (treeView.getSelected().size() == 1 || treeView.getSelected().size() > 1) {
                 binding.buttonOrgUnit.setText(String.format(getString(R.string.org_unit_filter), treeView.getSelected().size()));
             }
 
             switch (currentPeriod) {
                 case NONE:
-                    presenter.setFilters(null, currentPeriod, orgUnitFilter.toString());
+                    programEventDetailPresenter.setFilters(null, currentPeriod, orgUnitFilter.toString());
                     endlessScrollListener.resetState(0);
                     pageProcessor.onNext(0);
                     break;
                 case DAILY:
                     ArrayList<Date> datesD = new ArrayList<>();
                     datesD.add(chosenDateDay);
-                    presenter.setFilters(datesD, currentPeriod, orgUnitFilter.toString());
+                    programEventDetailPresenter.setFilters(datesD, currentPeriod, orgUnitFilter.toString());
                     endlessScrollListener.resetState(0);
                     pageProcessor.onNext(0);
                     break;
                 case WEEKLY:
-                    presenter.setFilters(chosenDateWeek, currentPeriod, orgUnitFilter.toString());
+                    programEventDetailPresenter.setFilters(chosenDateWeek, currentPeriod, orgUnitFilter.toString());
                     endlessScrollListener.resetState(0);
                     pageProcessor.onNext(0);
                     break;
                 case MONTHLY:
-                    presenter.setFilters(chosenDateMonth, currentPeriod, orgUnitFilter.toString());
+                    programEventDetailPresenter.setFilters(chosenDateMonth, currentPeriod, orgUnitFilter.toString());
                     endlessScrollListener.resetState(0);
                     pageProcessor.onNext(0);
                     break;
                 case YEARLY:
-                    presenter.setFilters(chosenDateYear, currentPeriod, orgUnitFilter.toString());
+                    programEventDetailPresenter.setFilters(chosenDateYear, currentPeriod, orgUnitFilter.toString());
                     endlessScrollListener.resetState(0);
                     pageProcessor.onNext(0);
                     break;
@@ -582,7 +571,7 @@ public class ProgramEventDetailActivity extends ActivityGlobalAbstract implement
             HelpManager.getInstance().setScreenHelp(getClass().getName(), steps);
 
             if (!prefs.getBoolean("TUTO_PROGRAM_EVENT", false) && !BuildConfig.DEBUG) {
-                HelpManager.getInstance().showHelp();/* getAbstractActivity().fancyShowCaseQueue.show();*/
+                HelpManager.getInstance().showHelp();
                 prefs.edit().putBoolean("TUTO_PROGRAM_EVENT", true).apply();
             }
 

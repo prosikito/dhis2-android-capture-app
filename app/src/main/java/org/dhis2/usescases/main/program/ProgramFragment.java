@@ -61,11 +61,11 @@ import static org.dhis2.utils.Period.YEARLY;
  * Created by ppajuelo on 18/10/2017.f
  */
 
-public class ProgramFragment extends FragmentGlobalAbstract implements ProgramContract.View, OrgUnitInterface {
+public class ProgramFragment extends FragmentGlobalAbstract implements ProgramContract.ProgramView, OrgUnitInterface {
 
     private FragmentProgramBinding binding;
     @Inject
-    ProgramContract.Presenter presenter;
+    ProgramContract.ProgramPresenter programPresenter;
 
     private Period currentPeriod = NONE;
     private StringBuilder orgUnitFilter = new StringBuilder();
@@ -103,11 +103,11 @@ public class ProgramFragment extends FragmentGlobalAbstract implements ProgramCo
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         binding = DataBindingUtil.inflate(inflater, R.layout.fragment_program, container, false);
-        binding.setPresenter(presenter);
+        binding.setPresenter(programPresenter);
         chosenDateWeek.add(new Date());
         chosenDateMonth.add(new Date());
         chosenDateYear.add(new Date());
-        binding.programRecycler.setAdapter(new ProgramModelAdapter(presenter, currentPeriod));
+        binding.programRecycler.setAdapter(new ProgramModelAdapter(programPresenter, currentPeriod));
         binding.programRecycler.addItemDecoration(new DividerItemDecoration(getAbstracContext(), DividerItemDecoration.VERTICAL));
         binding.drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED);
         binding.orgUnitApply.setOnClickListener(view -> apply());
@@ -122,13 +122,13 @@ public class ProgramFragment extends FragmentGlobalAbstract implements ProgramCo
     @Override
     public void onResume() {
         super.onResume();
-        presenter.init(this);
+        programPresenter.init(this);
     }
 
     @Override
     public void onPause() {
         super.onPause();
-        presenter.dispose();
+        programPresenter.dispose();
         binding.treeViewContainer.removeAllViews();
         treeView = null;
     }
@@ -309,11 +309,11 @@ public class ProgramFragment extends FragmentGlobalAbstract implements ProgramCo
     public void getSelectedPrograms(ArrayList<Date> dates, Period period, String orgUnitQuery) {
         if (dates != null)
             if (orgUnitQuery.isEmpty())
-                presenter.getProgramsWithDates(dates, period);
+                programPresenter.getProgramsWithDates(dates, period);
             else
-                presenter.getProgramsOrgUnit(dates, period, orgUnitQuery);
+                programPresenter.getProgramsOrgUnit(dates, period, orgUnitQuery);
         else
-            presenter.getAllPrograms(orgUnitQuery);
+            programPresenter.getAllPrograms(orgUnitQuery);
     }
 
     @Override
@@ -368,18 +368,16 @@ public class ProgramFragment extends FragmentGlobalAbstract implements ProgramCo
             treeView.setUseAutoToggle(false);
 
             binding.treeViewContainer.addView(treeView.getView());
-            if (presenter.getOrgUnits().size() < 25)
+            if (programPresenter.getOrgUnits().size() < 25)
                 treeView.expandAll();
 
             treeView.setDefaultNodeClickListener((node, value) -> {
                 if (isAdded()) {
-                    if (treeView != null) {
-                        if ((treeView.getSelected().size() == 1 && !node.isSelected()) || treeView.getSelected().size() > 1) {
-                            binding.buttonOrgUnit.setText(String.format(getString(R.string.org_unit_filter), treeView.getSelected().size()));
-                        }
+                    if (treeView != null && (treeView.getSelected().size() == 1 && !node.isSelected()) || treeView.getSelected().size() > 1) {
+                        binding.buttonOrgUnit.setText(String.format(getString(R.string.org_unit_filter), treeView.getSelected().size()));
                     }
                     if (node.getChildren().isEmpty())
-                        presenter.onExpandOrgUnitNode(node, ((OrganisationUnitModel) node.getValue()).uid());
+                        programPresenter.onExpandOrgUnitNode(node, ((OrganisationUnitModel) node.getValue()).uid());
                     else
                         node.setExpanded(node.isExpanded());
                 }
@@ -391,7 +389,7 @@ public class ProgramFragment extends FragmentGlobalAbstract implements ProgramCo
 
 
     public boolean areAllOrgUnitsSelected() {
-        return treeNode != null && treeView != null && presenter.getOrgUnits().size() == treeView.getSelected().size();
+        return treeNode != null && treeView != null && programPresenter.getOrgUnits().size() == treeView.getSelected().size();
     }
 
     @Override
@@ -451,9 +449,7 @@ public class ProgramFragment extends FragmentGlobalAbstract implements ProgramCo
                         orgUnitFilter.append(", ");
                 }
 
-                if (treeView.getSelected().size() == 1) {
-                    binding.buttonOrgUnit.setText(String.format(getString(R.string.org_unit_filter), treeView.getSelected().size()));
-                } else if (treeView.getSelected().size() > 1) {
+                if ((treeView.getSelected().size() == 1) || (treeView.getSelected().size() > 1)) {
                     binding.buttonOrgUnit.setText(String.format(getString(R.string.org_unit_filter), treeView.getSelected().size()));
                 }
 

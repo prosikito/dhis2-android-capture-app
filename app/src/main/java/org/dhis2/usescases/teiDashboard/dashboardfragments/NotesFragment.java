@@ -1,11 +1,7 @@
 package org.dhis2.usescases.teiDashboard.dashboardfragments;
 
 import android.content.Context;
-import androidx.databinding.DataBindingUtil;
 import android.os.Bundle;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.fragment.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -19,9 +15,14 @@ import org.dhis2.usescases.teiDashboard.TeiDashboardContracts;
 import org.dhis2.usescases.teiDashboard.adapters.NotesAdapter;
 import org.dhis2.usescases.teiDashboard.mobile.TeiDashboardMobileActivity;
 import org.hisp.dhis.android.core.enrollment.note.NoteModel;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.databinding.DataBindingUtil;
+import androidx.fragment.app.Fragment;
 import io.reactivex.functions.Consumer;
 
 /**
@@ -29,13 +30,13 @@ import io.reactivex.functions.Consumer;
  */
 
 public class NotesFragment extends FragmentGlobalAbstract {
-    FragmentNotesBinding binding;
-    static NotesFragment instance;
+    private FragmentNotesBinding binding;
+    private static NotesFragment instance;
     private NotesAdapter noteAdapter;
-    TeiDashboardContracts.Presenter presenter;
-    ActivityGlobalAbstract activity;
+    private TeiDashboardContracts.TeiDashboardPresenter teiDashboardPresenter;
+    private ActivityGlobalAbstract activity;
 
-    static public NotesFragment getInstance() {
+    public static NotesFragment getInstance() {
         if (instance == null)
             instance = new NotesFragment();
 
@@ -43,10 +44,10 @@ public class NotesFragment extends FragmentGlobalAbstract {
     }
 
     @Override
-    public void onAttach(Context context) {
+    public void onAttach(@NotNull Context context) {
         super.onAttach(context);
         activity = (ActivityGlobalAbstract) context;
-        presenter = ((TeiDashboardMobileActivity) context).getPresenter();
+        teiDashboardPresenter = ((TeiDashboardMobileActivity) context).getPresenter();
     }
 
     @Nullable
@@ -54,8 +55,8 @@ public class NotesFragment extends FragmentGlobalAbstract {
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         binding = DataBindingUtil.inflate(inflater, R.layout.fragment_notes, container, false);
         noteAdapter = new NotesAdapter();
-        presenter.setNoteProcessor(noteAdapter.asFlowable());
-        presenter.subscribeToNotes(this);
+        teiDashboardPresenter.setNoteProcessor(noteAdapter.asFlowable());
+        teiDashboardPresenter.subscribeToNotes(this);
         binding.notesRecycler.setAdapter(noteAdapter);
         binding.buttonAdd.setOnClickListener(this::addNote);
         binding.buttonDelete.setOnClickListener(this::clearNote);
@@ -66,6 +67,8 @@ public class NotesFragment extends FragmentGlobalAbstract {
                     case MotionEvent.ACTION_UP:
                         v.getParent().requestDisallowInterceptTouchEvent(false);
                         break;
+                    default:
+                        break;
                 }
             }
             return false;
@@ -74,7 +77,7 @@ public class NotesFragment extends FragmentGlobalAbstract {
     }
 
     public void addNote(View view) {
-        if (presenter.hasProgramWritePermission()) {
+        if (teiDashboardPresenter.hasProgramWritePermission()) {
             noteAdapter.addNote(binding.editNote.getText().toString());
             clearNote(view);
         } else

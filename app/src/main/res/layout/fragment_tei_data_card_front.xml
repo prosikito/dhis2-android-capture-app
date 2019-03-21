@@ -17,7 +17,7 @@
 
         <variable
             name="presenter"
-            type="org.dhis2.usescases.teiDashboard.TeiDashboardContracts.Presenter" />
+            type="org.dhis2.usescases.teiDashboard.TeiDashboardContracts.TeiDashboardPresenter" />
 
         <variable
             name="dashboardModel"
@@ -67,7 +67,7 @@
             android:layout_marginStart="2.5dp"
             android:layout_marginEnd="5dp"
             android:gravity="center"
-            android:onClick="@{(view)->presenter.onShareClick(view)}"
+            android:onClick="@{(dataSetTableContractView)->presenter.onShareClick(dataSetTableContractView)}"
             android:padding="5dp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"

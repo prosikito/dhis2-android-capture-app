@@ -57,10 +57,10 @@ import timber.log.Timber;
  * QUADRAM. Created by Cristian on 01/03/2018.
  */
 
-public class EventInitialPresenter implements EventInitialContract.Presenter {
+public class EventInitialEventInitialPresenter implements EventInitialContract.EventInitialPresenter {
 
     public static final int ACCESS_COARSE_LOCATION_PERMISSION_REQUEST = 101;
-    static private EventInitialContract.View view;
+    private EventInitialContract.EventInitialView eventInitialView;
     private final MetadataRepository metadataRepository;
     private final EventInitialRepository eventInitialRepository;
     private final EventSummaryRepository eventSummaryRepository;
@@ -75,10 +75,10 @@ public class EventInitialPresenter implements EventInitialContract.Presenter {
     private String programStageId;
     private List<OrganisationUnitModel> orgUnits;
 
-    public EventInitialPresenter(@NonNull EventSummaryRepository eventSummaryRepository,
-                                 @NonNull EventInitialRepository eventInitialRepository,
-                                 @NonNull MetadataRepository metadataRepository,
-                                 @NonNull SchedulerProvider schedulerProvider) {
+    public EventInitialEventInitialPresenter(@NonNull EventSummaryRepository eventSummaryRepository,
+                                             @NonNull EventInitialRepository eventInitialRepository,
+                                             @NonNull MetadataRepository metadataRepository,
+                                             @NonNull SchedulerProvider schedulerProvider) {
 
         this.metadataRepository = metadataRepository;
         this.eventInitialRepository = eventInitialRepository;
@@ -87,15 +87,15 @@ public class EventInitialPresenter implements EventInitialContract.Presenter {
     }
 
     @Override
-    public void init(EventInitialContract.View mview, String programId, String eventId, String orgInitId, String programStageId) {
-        view = mview;
+    public void init(EventInitialContract.EventInitialView mview, String programId, String eventId, String orgInitId, String programStageId) {
+        eventInitialView = mview;
         this.eventId = eventId;
         this.programId = programId;
         this.programStageId = programStageId;
 
         compositeDisposable = new CompositeDisposable();
 
-        mFusedLocationClient = LocationServices.getFusedLocationProviderClient(view.getContext());
+        mFusedLocationClient = LocationServices.getFusedLocationProviderClient(eventInitialView.getContext());
 
         if (eventId != null) {
             compositeDisposable.add(
@@ -111,9 +111,9 @@ public class EventInitialPresenter implements EventInitialContract.Presenter {
                             .subscribe(quartetFlowable -> {
                                 this.programModel = quartetFlowable.val1();
                                 this.catCombo = quartetFlowable.val2();
-                                view.setEvent(quartetFlowable.val0());
-                                view.setProgram(quartetFlowable.val1());
-                                view.setCatComboOptions(catCombo, quartetFlowable.val3());
+                                eventInitialView.setEvent(quartetFlowable.val0());
+                                eventInitialView.setProgram(quartetFlowable.val1());
+                                eventInitialView.setCatComboOptions(catCombo, quartetFlowable.val3());
                             }, Timber::d)
             );
 
@@ -130,8 +130,8 @@ public class EventInitialPresenter implements EventInitialContract.Presenter {
                             .subscribe(trioFlowable -> {
                                 this.programModel = trioFlowable.val0();
                                 this.catCombo = trioFlowable.val1();
-                                view.setProgram(trioFlowable.val0());
-                                view.setCatComboOptions(catCombo, trioFlowable.val2());
+                                eventInitialView.setProgram(trioFlowable.val0());
+                                eventInitialView.setCatComboOptions(catCombo, trioFlowable.val2());
                             }, Timber::d)
             );
 
@@ -148,7 +148,7 @@ public class EventInitialPresenter implements EventInitialContract.Presenter {
                             .subscribeOn(Schedulers.io())
                             .observeOn(AndroidSchedulers.mainThread())
                             .subscribe(organisationUnitModel ->
-                                            view.setOrgUnit(organisationUnitModel.uid(), organisationUnitModel.displayName()),
+                                            eventInitialView.setOrgUnit(organisationUnitModel.uid(), organisationUnitModel.displayName()),
                                     Timber::d
                             ));
         }
@@ -158,7 +158,7 @@ public class EventInitialPresenter implements EventInitialContract.Presenter {
                         .subscribeOn(Schedulers.io())
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(
-                                view::setAccessDataWrite,
+                                eventInitialView::setAccessDataWrite,
                                 Timber::e
                         )
 
@@ -171,11 +171,11 @@ public class EventInitialPresenter implements EventInitialContract.Presenter {
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
-                        orgUnits -> {
-                            this.orgUnits = orgUnits;
-                            view.addTree(OrgUnitUtils.renderTree(view.getContext(), orgUnits, false));
+                        orgUnitsResult -> {
+                            this.orgUnits = orgUnitsResult;
+                            eventInitialView.addTree(OrgUnitUtils.renderTree(eventInitialView.getContext(), orgUnits, false));
                         },
-                        throwable -> view.renderError(throwable.getMessage())
+                        throwable -> eventInitialView.renderError(throwable.getMessage())
                 ));
     }
 
@@ -186,7 +186,7 @@ public class EventInitialPresenter implements EventInitialContract.Presenter {
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
-                        view::onEventSections,
+                        eventInitialView::onEventSections,
                         Timber::e
                 ));
     }
@@ -198,16 +198,16 @@ public class EventInitialPresenter implements EventInitialContract.Presenter {
 
     @Override
     public void onShareClick(View mView) {
-        view.showQR();
+        eventInitialView.showQR();
     }
 
     @Override
     public void deleteEvent(String trackedEntityInstance) {
         if (eventId != null) {
             eventInitialRepository.deleteEvent(eventId, trackedEntityInstance);
-            view.showEventWasDeleted();
+            eventInitialView.showEventWasDeleted();
         } else
-            view.displayMessage(view.getContext().getString(R.string.delete_event_error));
+            eventInitialView.displayMessage(eventInitialView.getContext().getString(R.string.delete_event_error));
     }
 
     @Override
@@ -221,7 +221,7 @@ public class EventInitialPresenter implements EventInitialContract.Presenter {
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
-                        objectStyleModel -> view.renderObjectStyle(objectStyleModel),
+                        objectStyleModel -> eventInitialView.renderObjectStyle(objectStyleModel),
                         Timber::e
                 )
         );
@@ -233,8 +233,8 @@ public class EventInitialPresenter implements EventInitialContract.Presenter {
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
-                        programStageModel -> view.setProgramStage(programStageModel),
-                        throwable -> view.showProgramStageSelection()
+                        programStageModel -> eventInitialView.setProgramStage(programStageModel),
+                        throwable -> eventInitialView.showProgramStageSelection()
                 ));
     }
 
@@ -244,14 +244,14 @@ public class EventInitialPresenter implements EventInitialContract.Presenter {
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
-                        programStageModel -> view.setProgramStage(programStageModel),
-                        throwable -> view.showProgramStageSelection()
+                        programStageModel -> eventInitialView.setProgramStage(programStageModel),
+                        throwable -> eventInitialView.showProgramStageSelection()
                 ));
     }
 
     @Override
     public void onBackClick() {
-        view.back();
+        eventInitialView.back();
     }
 
     @Override
@@ -260,13 +260,13 @@ public class EventInitialPresenter implements EventInitialContract.Presenter {
                             String latitude, String longitude, String trackedEntityInstance) {
         if (programModel != null)
             compositeDisposable.add(
-                    eventInitialRepository.createEvent(enrollmentUid, trackedEntityInstance, view.getContext(), programModel.uid(),
+                    eventInitialRepository.createEvent(enrollmentUid, trackedEntityInstance, eventInitialView.getContext(), programModel.uid(),
                             programStageModel, date, orgUnitUid,
                             categoryOptionComboUid, categoryOptionsUid,
                             latitude, longitude)
                             .subscribeOn(Schedulers.io())
                             .observeOn(AndroidSchedulers.mainThread())
-                            .subscribe(view::onEventCreated, t -> view.renderError(t.getMessage()))
+                            .subscribe(eventInitialView::onEventCreated, t -> eventInitialView.renderError(t.getMessage()))
             );
     }
 
@@ -275,19 +275,20 @@ public class EventInitialPresenter implements EventInitialContract.Presenter {
                                      String catComboUid, String catOptionUid,
                                      String latitude, String longitude) {
         compositeDisposable.add(
-                eventInitialRepository.createEvent(enrollmentUid, trackedEntityInstanceUid, view.getContext(),
-                        programModel.uid(), programStageModel, date, orgUnitUid,
+                eventInitialRepository.createEvent(enrollmentUid, trackedEntityInstanceUid, eventInitialView.getContext(),
+                        programModel.uid(),
+                        programStageModel, date, orgUnitUid,
                         catComboUid, catOptionUid,
                         latitude, longitude)
                         .switchMap(
-                                eventId -> eventInitialRepository.updateTrackedEntityInstance(eventId, trackedEntityInstanceUid, orgUnitUid)
+                                eventIdResult -> eventInitialRepository.updateTrackedEntityInstance(eventIdResult, trackedEntityInstanceUid, orgUnitUid)
                         )
                         .distinctUntilChanged()
                         .subscribeOn(Schedulers.io())
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(
-                                eventUid -> view.onEventCreated(eventUid),
-                                t -> view.renderError(t.getMessage())));
+                                eventUid -> eventInitialView.onEventCreated(eventUid),
+                                t -> eventInitialView.renderError(t.getMessage())));
     }
 
     @Override
@@ -296,13 +297,13 @@ public class EventInitialPresenter implements EventInitialContract.Presenter {
                               String latitude, String longitude) {
         if (programModel != null)
             compositeDisposable.add(
-                    eventInitialRepository.scheduleEvent(enrollmentUid, null, view.getContext(), programModel.uid(),
+                    eventInitialRepository.scheduleEvent(enrollmentUid, null, eventInitialView.getContext(), programModel.uid(),
                             programStageModel, dueDate, orgUnitUid,
                             categoryOptionComboUid, categoryOptionsUid,
                             latitude, longitude)
                             .subscribeOn(Schedulers.io())
                             .observeOn(AndroidSchedulers.mainThread())
-                            .subscribe(view::onEventCreated, t -> view.renderError(t.getMessage()))
+                            .subscribe(eventInitialView::onEventCreated, t -> eventInitialView.renderError(t.getMessage()))
             );
     }
 
@@ -315,7 +316,7 @@ public class EventInitialPresenter implements EventInitialContract.Presenter {
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
-                        (eventModel) -> view.onEventUpdated(eventModel.uid()),
+                        (eventModel) -> eventInitialView.onEventUpdated(eventModel.uid()),
                         error -> displayMessage(error.getLocalizedMessage())
 
                 ));
@@ -323,26 +324,20 @@ public class EventInitialPresenter implements EventInitialContract.Presenter {
 
     @Override
     public void onDateClick(@Nullable DatePickerDialog.OnDateSetListener listener) {
-        view.showDateDialog(listener);
+        eventInitialView.showDateDialog(listener);
     }
 
     @Override
     public void onOrgUnitButtonClick() {
-//        view.openDrawer();
-        view.showOrgUnitSelector(orgUnits);
+        eventInitialView.showOrgUnitSelector(orgUnits);
     }
 
     @Override
     public void onLocationClick() {
-        if (ActivityCompat.checkSelfPermission(view.getContext(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+        if (ActivityCompat.checkSelfPermission(eventInitialView.getContext(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             // Should we show an explanation?
-            if (ActivityCompat.shouldShowRequestPermissionRationale(view.getAbstractActivity(), Manifest.permission.ACCESS_COARSE_LOCATION)) {
-                // TODO CRIS:  Show an expanation to the user *asynchronously* -- don't block
-                // this thread waiting for the user's response! After the user
-                // sees the explanation, try again to request the permission.
-
-            } else {
-                ActivityCompat.requestPermissions(view.getAbstractActivity(),
+            if (!ActivityCompat.shouldShowRequestPermissionRationale(eventInitialView.getAbstractActivity(), Manifest.permission.ACCESS_COARSE_LOCATION)) {
+                ActivityCompat.requestPermissions(eventInitialView.getAbstractActivity(),
                         new String[]{Manifest.permission.ACCESS_COARSE_LOCATION},
                         ACCESS_COARSE_LOCATION_PERMISSION_REQUEST);
             }
@@ -350,14 +345,14 @@ public class EventInitialPresenter implements EventInitialContract.Presenter {
         }
         mFusedLocationClient.getLastLocation().addOnSuccessListener(location -> {
             if (location != null)
-                view.setLocation(location.getLatitude(), location.getLongitude());
+                eventInitialView.setLocation(location.getLatitude(), location.getLongitude());
         });
     }
 
     @Override
     public void onLocation2Click() {
-        Intent intent = new Intent(view.getContext(), MapSelectorActivity.class);
-        view.getAbstractActivity().startActivityForResult(intent, Constants.RQ_MAP_LOCATION);
+        Intent intent = new Intent(eventInitialView.getContext(), MapSelectorActivity.class);
+        eventInitialView.getAbstractActivity().startActivityForResult(intent, Constants.RQ_MAP_LOCATION);
     }
 
     @Override
@@ -366,7 +361,7 @@ public class EventInitialPresenter implements EventInitialContract.Presenter {
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
-                        catOption -> view.setCatOption(catOption),
+                        catOption -> eventInitialView.setCatOption(catOption),
                         Timber::d)
         );
     }
@@ -378,7 +373,7 @@ public class EventInitialPresenter implements EventInitialContract.Presenter {
 
     @Override
     public void displayMessage(String message) {
-        view.displayMessage(message);
+        eventInitialView.displayMessage(message);
     }
 
     @Override
@@ -387,11 +382,11 @@ public class EventInitialPresenter implements EventInitialContract.Presenter {
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
-                        orgUnits -> {
-                            this.orgUnits = orgUnits;
-                            view.addTree(OrgUnitUtils.renderTree(view.getContext(), orgUnits, true));
+                        orgUnitsResult -> {
+                            this.orgUnits = orgUnitsResult;
+                            eventInitialView.addTree(OrgUnitUtils.renderTree(eventInitialView.getContext(), orgUnits, true));
                         },
-                        throwable -> view.showNoOrgUnits()
+                        throwable -> eventInitialView.showNoOrgUnits()
                 ));
     }
 
@@ -402,7 +397,7 @@ public class EventInitialPresenter implements EventInitialContract.Presenter {
         if (programModel != null) {
             bundle.putString("program_id", programModel.uid());
         }
-        view.startActivity(EventSummaryActivity.class, bundle, false, false, null);
+        eventInitialView.startActivity(EventSummaryActivity.class, bundle, false, false, null);
     }
 
     @Override
@@ -417,7 +412,7 @@ public class EventInitialPresenter implements EventInitialContract.Presenter {
         compositeDisposable.add(viewModelsFlowable
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(view.showFields(sectionUid), throwable -> {
+                .subscribe(eventInitialView.showFields(sectionUid), throwable -> {
                     throw new OnErrorNotImplementedException(throwable);
                 }));
     }
@@ -448,14 +443,14 @@ public class EventInitialPresenter implements EventInitialContract.Presenter {
 
     private void applyRuleEffects(Map<String, FieldViewModel> fieldViewModels, Result<RuleEffect> calcResult) {
         //TODO: APPLY RULE EFFECTS TO ALL MODELS
-        view.setHideSection(null);
+        eventInitialView.setHideSection(null);
         for (RuleEffect ruleEffect : calcResult.items()) {
             RuleAction ruleAction = ruleEffect.ruleAction();
             if (ruleAction instanceof RuleActionShowWarning) {
                 RuleActionShowWarning showWarning = (RuleActionShowWarning) ruleAction;
                 FieldViewModel model = fieldViewModels.get(showWarning.field());
 
-                if (model != null && model instanceof EditTextViewModel) {
+                if (model instanceof EditTextViewModel) {
                     fieldViewModels.put(showWarning.field(),
                             ((EditTextViewModel) model).withWarning(showWarning.content()));
                 }
@@ -463,7 +458,7 @@ public class EventInitialPresenter implements EventInitialContract.Presenter {
                 RuleActionShowError showError = (RuleActionShowError) ruleAction;
                 FieldViewModel model = fieldViewModels.get(showError.field());
 
-                if (model != null && model instanceof EditTextViewModel) {
+                if (model instanceof EditTextViewModel) {
                     fieldViewModels.put(showError.field(),
                             ((EditTextViewModel) model).withError(showError.content()));
                 }
@@ -472,7 +467,7 @@ public class EventInitialPresenter implements EventInitialContract.Presenter {
                 fieldViewModels.remove(hideField.field());
             } else if (ruleAction instanceof RuleActionHideSection) {
                 RuleActionHideSection hideSection = (RuleActionHideSection) ruleAction;
-                view.setHideSection(hideSection.programStageSection());
+                eventInitialView.setHideSection(hideSection.programStageSection());
             }
         }
     }
@@ -485,7 +480,7 @@ public class EventInitialPresenter implements EventInitialContract.Presenter {
                         .subscribeOn(Schedulers.io())
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(date ->
-                                        view.setReportDate(date),
+                                        eventInitialView.setReportDate(date),
                                 Timber::d
                         )
         );

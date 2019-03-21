@@ -33,7 +33,7 @@ public class OptionSetPopUp {
         return instance;
     }
 
-    public static Boolean isCreated(){
+    public static Boolean isCreated() {
         return instance != null;
     }
 
@@ -75,6 +75,10 @@ public class OptionSetPopUp {
     }
 
     public void dismiss() {
+        destroyInstance();
+    }
+
+    private static void destroyInstance() {
         instance = null;
     }
 }

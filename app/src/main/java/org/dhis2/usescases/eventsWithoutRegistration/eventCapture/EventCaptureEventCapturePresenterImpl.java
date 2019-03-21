@@ -48,15 +48,16 @@ import static android.text.TextUtils.isEmpty;
 /**
  * QUADRAM. Created by ppajuelo on 19/11/2018.
  */
-public class EventCapturePresenterImpl implements EventCaptureContract.Presenter, RulesActionCallbacks {
+public class EventCaptureEventCapturePresenterImpl implements EventCaptureContract.EventCapturePresenter, RulesActionCallbacks {
 
+    private static final String NO_SECTION = "NO_SECTION";
     private final EventCaptureContract.EventCaptureRepository eventCaptureRepository;
     private final RulesUtilsProvider rulesUtils;
     private final DataEntryStore dataEntryStore;
     private final MetadataRepository metadataRepository;
     private final String eventUid;
     private CompositeDisposable compositeDisposable;
-    private EventCaptureContract.View view;
+    private EventCaptureContract.EventCaptureView eventCaptureView;
     private int currentPosition;
     private ObservableField<String> currentSection;
     private FlowableProcessor<Integer> currentSectionPosition;
@@ -75,7 +76,7 @@ public class EventCapturePresenterImpl implements EventCaptureContract.Presenter
     private final FlowableProcessor<String> sectionProcessor;
     private boolean isSubscribed;
 
-    public EventCapturePresenterImpl(String eventUid, EventCaptureContract.EventCaptureRepository eventCaptureRepository, MetadataRepository metadataRepository, RulesUtilsProvider rulesUtils, DataEntryStore dataEntryStore) {
+    public EventCaptureEventCapturePresenterImpl(String eventUid, EventCaptureContract.EventCaptureRepository eventCaptureRepository, MetadataRepository metadataRepository, RulesUtilsProvider rulesUtils, DataEntryStore dataEntryStore) {
         this.eventUid = eventUid;
         this.eventCaptureRepository = eventCaptureRepository;
         this.metadataRepository = metadataRepository;
@@ -94,9 +95,9 @@ public class EventCapturePresenterImpl implements EventCaptureContract.Presenter
     }
 
     @Override
-    public void init(EventCaptureContract.View view) {
+    public void init(EventCaptureContract.EventCaptureView eventCaptureView) {
         this.compositeDisposable = new CompositeDisposable();
-        this.view = view;
+        this.eventCaptureView = eventCaptureView;
 
         compositeDisposable.add(
                 Flowable.zip(
@@ -109,7 +110,7 @@ public class EventCapturePresenterImpl implements EventCaptureContract.Presenter
                         .subscribeOn(Schedulers.io())
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(
-                                data -> view.renderInitialInfo(data.val0(), data.val1(), data.val2(), data.val3()),
+                                data -> eventCaptureView.renderInitialInfo(data.val0(), data.val1(), data.val2(), data.val3()),
                                 Timber::e
                         )
 
@@ -120,7 +121,7 @@ public class EventCapturePresenterImpl implements EventCaptureContract.Presenter
                         .subscribeOn(Schedulers.io())
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(
-                                view::setProgramStage,
+                                eventCaptureView::setProgramStage,
                                 Timber::e
                         )
         );
@@ -146,7 +147,7 @@ public class EventCapturePresenterImpl implements EventCaptureContract.Presenter
                         .subscribe(
                                 data -> {
                                     this.sectionList = data;
-                                    view.setUp();
+                                    eventCaptureView.setUp();
                                 },
                                 Timber::e
                         )
@@ -181,7 +182,7 @@ public class EventCapturePresenterImpl implements EventCaptureContract.Presenter
                                     for (FieldViewModel fieldViewModel : fields)
                                         if (!isEmpty(fieldViewModel.value()))
                                             cont++;
-                                    eventSectionModels.add(EventSectionModel.create("NO_SECTION", "no_section", cont, fields.size()));
+                                    eventSectionModels.add(EventSectionModel.create(NO_SECTION, "no_section", cont, fields.size()));
                                 }
                             }
 
@@ -208,7 +209,7 @@ public class EventCapturePresenterImpl implements EventCaptureContract.Presenter
                                             fieldMap.put(fieldViewModel.programStageSection(), new ArrayList<>());
                                         fieldMap.get(fieldViewModel.programStageSection()).add(fieldViewModel);
                                     }
-                                    List<FieldViewModel> fieldsToShow = fieldMap.get(section.equals("NO_SECTION") ? null : section);
+                                    List<FieldViewModel> fieldsToShow = fieldMap.get(section.equals(NO_SECTION) ? null : section);
                                     return fieldsToShow != null ? fieldsToShow : new ArrayList<FieldViewModel>();
                                 }))
                         .observeOn(Schedulers.io())
@@ -223,7 +224,7 @@ public class EventCapturePresenterImpl implements EventCaptureContract.Presenter
     }
 
     private Flowable<List<FieldViewModel>> getFieldFlowable(@Nullable String sectionUid) {
-        if (sectionUid == null || sectionUid.equals("NO_SECTION")) {
+        if (sectionUid == null || sectionUid.equals(NO_SECTION)) {
             return Flowable.zip(
                     eventCaptureRepository.list(),
                     eventCaptureRepository.calculate().subscribeOn(Schedulers.computation()),
@@ -266,10 +267,10 @@ public class EventCapturePresenterImpl implements EventCaptureContract.Presenter
 
     @Override
     public void onBackClick() {
-        view.clearFocus();
+        eventCaptureView.clearFocus();
 
         new Handler().postDelayed(
-                () -> view.back(),
+                () -> eventCaptureView.back(),
                 1000);
     }
 
@@ -304,7 +305,7 @@ public class EventCapturePresenterImpl implements EventCaptureContract.Presenter
                                 } else {
                                     DataEntryArguments arguments =
                                             DataEntryArguments.forEvent(formSectionViewModel.uid(), formSectionViewModel.renderType());
-                                    EventCaptureFormFragment.getInstance().setSingleSection(arguments, formSectionViewModel);
+                                    EventCaptureFormFragment.getInstance().setSingleSection(arguments);
                                 }
 
                                 EventCaptureFormFragment.getInstance().setSectionProgress(
@@ -313,11 +314,13 @@ public class EventCapturePresenterImpl implements EventCaptureContract.Presenter
 
                                 List<FormSectionViewModel> finalSectionList = getFinalSections();
 
-                                return Flowable.just(finalSectionList.size() > 0 ?
-                                        finalSectionList.get(position).sectionUid() != null ?
-                                                finalSectionList.get(position).sectionUid() :
-                                                "NO_SECTION" :
-                                        "NO_SECTION");
+                                String section = finalSectionList.get(position).sectionUid() != null ?
+                                        finalSectionList.get(position).sectionUid() :
+                                        NO_SECTION;
+                                String sectionToReturn = finalSectionList.isEmpty() ?
+                                        NO_SECTION :
+                                        section;
+                                return Flowable.just(sectionToReturn);
                             })
                             .observeOn(Schedulers.io())
                             .observeOn(AndroidSchedulers.mainThread())
@@ -402,7 +405,7 @@ public class EventCapturePresenterImpl implements EventCaptureContract.Presenter
     @Override
     public void onNextSection() {
 
-        view.clearFocus();
+        eventCaptureView.clearFocus();
 
         new Handler().postDelayed(
                 () -> changeSection(),
@@ -419,19 +422,19 @@ public class EventCapturePresenterImpl implements EventCaptureContract.Presenter
             if (eventStatus != EventStatus.ACTIVE) {
                 setUpActionByStatus(eventStatus);
             } else if (!emptyMandatoryFields.isEmpty()) {
-                view.setMandatoryWarning(emptyMandatoryFields);
+                eventCaptureView.setMandatoryWarning(emptyMandatoryFields);
             } else if (!this.errors.isEmpty()) {
-                view.setShowError(errors);
+                eventCaptureView.setShowError(errors);
             } else {
                 compositeDisposable.add(
                         Observable.just(completeMessage != null ? completeMessage : "")
                                 .subscribeOn(Schedulers.io())
                                 .observeOn(AndroidSchedulers.mainThread())
-                                .filter(completeMessage -> !isEmpty(completeMessage))
+                                .filter(completeMessageResult -> !isEmpty(completeMessageResult))
                                 .subscribe(
-                                        data -> view.showMessageOnComplete(canComplete, completeMessage),
+                                        data -> eventCaptureView.showMessageOnComplete(canComplete, completeMessage),
                                         Timber::e,
-                                        () -> view.attemptToFinish(canComplete && eventCaptureRepository.isEnrollmentOpen())
+                                        () -> eventCaptureView.attemptToFinish(canComplete && eventCaptureRepository.isEnrollmentOpen())
                                 )
                 );
             }
@@ -442,15 +445,15 @@ public class EventCapturePresenterImpl implements EventCaptureContract.Presenter
         switch (eventStatus) {
             case COMPLETED:
                 if (!hasExpired && !eventCaptureRepository.isEnrollmentCancelled())
-                    view.attemptToReopen();
+                    eventCaptureView.attemptToReopen();
                 else
-                    view.finishDataEntry();
+                    eventCaptureView.finishDataEntry();
                 break;
             case OVERDUE:
-                view.attemptToSkip();
+                eventCaptureView.attemptToSkip();
                 break;
             case SKIPPED:
-                view.attemptToReschedule();
+                eventCaptureView.attemptToReschedule();
                 break;
             case SCHEDULE:
                 break;
@@ -518,9 +521,9 @@ public class EventCapturePresenterImpl implements EventCaptureContract.Presenter
                         .subscribe(
                                 success -> {
                                     if (addNew)
-                                        view.restartDataEntry();
+                                        eventCaptureView.restartDataEntry();
                                     else
-                                        view.finishDataEntry();
+                                        eventCaptureView.finishDataEntry();
                                 },
                                 Timber::e
                         ));
@@ -530,7 +533,7 @@ public class EventCapturePresenterImpl implements EventCaptureContract.Presenter
     public void reopenEvent() {
         if (eventCaptureRepository.reopenEvent()) {
             currentSectionPosition.onNext(0);
-            view.showSnackBar(R.string.event_reopened);
+            eventCaptureView.showSnackBar(R.string.event_reopened);
         }
     }
 
@@ -542,10 +545,10 @@ public class EventCapturePresenterImpl implements EventCaptureContract.Presenter
                 .subscribe(
                         result -> {
                             if (result)
-                                view.showSnackBar(R.string.event_was_deleted);
+                                eventCaptureView.showSnackBar(R.string.event_was_deleted);
                         },
                         Timber::e,
-                        () -> view.finishDataEntry()
+                        () -> eventCaptureView.finishDataEntry()
                 )
         );
     }
@@ -556,9 +559,9 @@ public class EventCapturePresenterImpl implements EventCaptureContract.Presenter
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
-                        result -> view.showSnackBar(R.string.event_was_skipped),
+                        result -> eventCaptureView.showSnackBar(R.string.event_was_skipped),
                         Timber::e,
-                        () -> view.finishDataEntry()
+                        () -> eventCaptureView.finishDataEntry()
                 )
         );
     }
@@ -570,7 +573,7 @@ public class EventCapturePresenterImpl implements EventCaptureContract.Presenter
                         .subscribeOn(Schedulers.io())
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(
-                                result -> view.finishDataEntry(),
+                                result -> eventCaptureView.finishDataEntry(),
                                 Timber::e
                         )
         );
@@ -593,7 +596,7 @@ public class EventCapturePresenterImpl implements EventCaptureContract.Presenter
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribeOn(Schedulers.io())
                         .subscribe(
-                                view.updatePercentage(),
+                                eventCaptureView.updatePercentage(),
                                 Timber::e
                         )
         );
@@ -607,14 +610,14 @@ public class EventCapturePresenterImpl implements EventCaptureContract.Presenter
 
     @Override
     public void displayMessage(String message) {
-        view.displayMessage(message);
+        eventCaptureView.displayMessage(message);
     }
 
     //region ruleActions
 
     @Override
     public void setCalculatedValue(String calculatedValueVariable, String value) {
-
+        // unused
     }
 
     @Override
@@ -622,8 +625,8 @@ public class EventCapturePresenterImpl implements EventCaptureContract.Presenter
         canComplete = false;
         if (!snackBarIsShowing) {
             snackBarIsShowing = true;
-            Snackbar.make(view.getSnackbarAnchor(), showError.content(), Snackbar.LENGTH_INDEFINITE)
-                    .setAction(view.getAbstracContext().getString(R.string.delete), v1 -> {
+            Snackbar.make(eventCaptureView.getSnackbarAnchor(), showError.content(), Snackbar.LENGTH_INDEFINITE)
+                    .setAction(eventCaptureView.getAbstracContext().getString(R.string.delete), v1 -> {
                         if (model != null)
                             save(model.uid(), null);
                     })
@@ -641,7 +644,7 @@ public class EventCapturePresenterImpl implements EventCaptureContract.Presenter
 
     @Override
     public void unsupportedRuleAction() {
-        view.displayMessage(view.getContext().getString(R.string.unsupported_program_rule));
+        eventCaptureView.displayMessage(eventCaptureView.getContext().getString(R.string.unsupported_program_rule));
     }
 
     @Override

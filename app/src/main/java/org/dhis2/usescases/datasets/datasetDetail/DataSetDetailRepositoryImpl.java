@@ -115,6 +115,8 @@ public class DataSetDetailRepositoryImpl implements DataSetDetailRepository {
                                     case TO_UPDATE:
                                         toUpdate = State.TO_UPDATE;
                                         break;
+                                    default:
+                                        break;
                                 }
                                 cursor.moveToNext();
                             }

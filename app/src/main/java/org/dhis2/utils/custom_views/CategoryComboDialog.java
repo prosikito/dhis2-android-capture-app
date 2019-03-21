@@ -91,7 +91,7 @@ public class CategoryComboDialog extends AlertDialog {
 
             @Override
             public void onNothingSelected(AdapterView<?> parent) {
-
+                // do nothing
             }
         });
 

@@ -9,7 +9,6 @@ import android.view.WindowManager;
 import android.widget.ArrayAdapter;
 
 import com.andrognito.pinlockview.PinLockListener;
-import com.crashlytics.android.Crashlytics;
 
 import org.dhis2.App;
 import org.dhis2.R;
@@ -36,13 +35,13 @@ import de.adorsys.android.securestoragelibrary.SecurePreferences;
 import static android.text.TextUtils.isEmpty;
 import static org.dhis2.utils.Constants.RQ_QR_SCANNER;
 
-
-public class LoginActivity extends ActivityGlobalAbstract implements LoginContracts.View {
+@SuppressWarnings("squid:MaximumInheritanceDepth")
+public class LoginActivity extends ActivityGlobalAbstract implements LoginContracts.LoginView {
 
     ActivityLoginBinding binding;
 
     @Inject
-    LoginContracts.Presenter presenter;
+    LoginContracts.LoginPresenter loginPresenter;
 
     List<String> users;
     List<String> urls;
@@ -56,14 +55,14 @@ public class LoginActivity extends ActivityGlobalAbstract implements LoginContra
 
         LoginComponent loginComponent = ((App) getApplicationContext()).loginComponent();
         if (loginComponent == null) {
-            // in case if we don't have cached presenter
+            // in case if we don't have cached loginPresenter
             loginComponent = ((App) getApplicationContext()).createLoginComponent();
         }
         loginComponent.inject(this);
 
         super.onCreate(savedInstanceState);
         binding = DataBindingUtil.setContentView(this, R.layout.activity_login);
-        binding.setPresenter(presenter);
+        binding.setPresenter(loginPresenter);
 
         setAutocompleteAdapters();
 
@@ -73,13 +72,13 @@ public class LoginActivity extends ActivityGlobalAbstract implements LoginContra
     @Override
     protected void onResume() {
         super.onResume();
-        presenter.init(this);
+        loginPresenter.init(this);
         NetworkUtils.isGooglePlayServicesAvailable(this);
     }
 
     @Override
     protected void onPause() {
-        presenter.onDestroy();
+        loginPresenter.onDestroy();
         super.onPause();
     }
 
@@ -165,7 +164,7 @@ public class LoginActivity extends ActivityGlobalAbstract implements LoginContra
                 message = getString(R.string.login_error_error_response);
                 break;
             default:
-                message = String.format("%s\n%s", getString(R.string.login_error_default), defaultMessage);
+                message = String.format("%s%n%s", getString(R.string.login_error_default), defaultMessage);
                 break;
         }
 
@@ -217,7 +216,7 @@ public class LoginActivity extends ActivityGlobalAbstract implements LoginContra
             binding.credentialLayout.setVisibility(View.GONE);
             binding.progressLayout.setVisibility(View.VISIBLE);
 
-            presenter.logIn(
+            loginPresenter.logIn(
                     binding.serverUrl.getEditText().getText().toString(),
                     binding.userName.getEditText().getText().toString(),
                     binding.userPass.getEditText().getText().toString()
@@ -254,17 +253,17 @@ public class LoginActivity extends ActivityGlobalAbstract implements LoginContra
         binding.pinLayout.pinLockView.setPinLockListener(new PinLockListener() {
             @Override
             public void onComplete(String pin) {
-                presenter.unlockSession(pin);
+                loginPresenter.unlockSession(pin);
             }
 
             @Override
             public void onEmpty() {
-
+                // unused
             }
 
             @Override
             public void onPinChange(int pinLength, String intermediatePin) {
-
+                // unused
             }
         });
         binding.pinLayout.getRoot().setVisibility(View.VISIBLE);
@@ -273,7 +272,7 @@ public class LoginActivity extends ActivityGlobalAbstract implements LoginContra
 
     @Override
     public void onLogoutClick(View android) {
-        presenter.logOut();
+        loginPresenter.logOut();
     }
 
     @Override
@@ -311,7 +310,7 @@ public class LoginActivity extends ActivityGlobalAbstract implements LoginContra
             saveListToPreference(Constants.PREFS_USERS, users);
         }
 
-        if (false && presenter.canHandleBiometrics() && //TODO: Remove false when green light
+        if (false && loginPresenter.canHandleBiometrics() && //TODO: Remove false when green light
                 (!BiometricStorage.areCredentialsSet() &&
                         !BiometricStorage.areSameCredentials(
                                 binding.serverUrlEdit.getText().toString(),

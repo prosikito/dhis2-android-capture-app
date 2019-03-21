@@ -26,8 +26,8 @@ public class ProgramStageSelectionViewHolder extends RecyclerView.ViewHolder {
         this.binding = binding;
     }
 
-    public void bind(ProgramStageSelectionContract.Presenter presenter, ProgramStageModel programStage, ObjectStyleModel data) {
-        binding.setVariable(BR.presenter, presenter);
+    public void bind(ProgramStageSelectionContract.ProgramStageSelectionPresenter programStageSelectionPresenter, ProgramStageModel programStage, ObjectStyleModel data) {
+        binding.setVariable(BR.presenter, programStageSelectionPresenter);
         binding.setVariable(BR.programStage, programStage);
         binding.executePendingBindings();
 
@@ -48,9 +48,9 @@ public class ProgramStageSelectionViewHolder extends RecyclerView.ViewHolder {
 
         itemView.setOnClickListener(view -> {
             if (programStage.accessDataWrite())
-                presenter.onProgramStageClick(programStage);
+                programStageSelectionPresenter.onProgramStageClick(programStage);
             else
-                presenter.displayMessage(null);
+                programStageSelectionPresenter.displayMessage(null);
         });
     }
 }

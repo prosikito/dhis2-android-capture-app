@@ -30,12 +30,12 @@ import androidx.databinding.DataBindingUtil;
  * QUADRAM. Created by Cristian on 13/02/2018.
  */
 
-public class TeiProgramListActivity extends ActivityGlobalAbstract implements TeiProgramListContract.View {
+public class TeiProgramListActivity extends ActivityGlobalAbstract implements TeiProgramListContract.TeiProgramListView {
 
     private ActivityTeiProgramListBinding binding;
 
     @Inject
-    TeiProgramListContract.Presenter presenter;
+    TeiProgramListContract.TeiProgramListPresenter teiProgramListPresenter;
     @Inject
     TeiProgramListAdapter adapter;
 
@@ -45,19 +45,19 @@ public class TeiProgramListActivity extends ActivityGlobalAbstract implements Te
         ((App) getApplicationContext()).userComponent().plus(new TeiProgramListModule(trackedEntityId)).inject(this);
         super.onCreate(savedInstanceState);
         binding = DataBindingUtil.setContentView(this, R.layout.activity_tei_program_list);
-        binding.setPresenter(presenter);
+        binding.setPresenter(teiProgramListPresenter);
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        presenter.init(this);
+        teiProgramListPresenter.init(this);
 
     }
 
     @Override
     protected void onPause() {
-        presenter.onDettach();
+        teiProgramListPresenter.onDettach();
         super.onPause();
     }
 
@@ -87,7 +87,7 @@ public class TeiProgramListActivity extends ActivityGlobalAbstract implements Te
 
     @Override
     public void goToEnrollmentScreen(String enrollmentUid, String programUid) {
-        SetProgramTheme(presenter.getProgramColor(programUid));
+        SetProgramTheme(teiProgramListPresenter.getProgramColor(programUid));
         Intent data = new Intent();
         data.putExtra("GO_TO_ENROLLMENT", enrollmentUid);
         setResult(RESULT_OK, data);
@@ -98,7 +98,7 @@ public class TeiProgramListActivity extends ActivityGlobalAbstract implements Te
     @Override
     public void changeCurrentProgram(String program) {
         if (program != null)
-            SetProgramTheme(presenter.getProgramColor(program));
+            SetProgramTheme(teiProgramListPresenter.getProgramColor(program));
         Intent data = new Intent();
         data.putExtra("CHANGE_PROGRAM", program);
         setResult(RESULT_OK, data);

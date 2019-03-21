@@ -29,6 +29,9 @@ import java.util.Set;
 import androidx.annotation.NonNull;
 import io.reactivex.Observable;
 
+import static org.dhis2.utils.SQLConstants.POINT;
+import static org.dhis2.utils.SQLConstants.SELECT;
+
 /**
  * QUADRAM. Created by ppajuelo on 02/11/2017.
  */
@@ -54,11 +57,11 @@ public class TeiProgramListRepositoryImpl implements TeiProgramListRepository {
     @NonNull
     @Override
     public Observable<List<EnrollmentViewModel>> activeEnrollments(String trackedEntityId) {
-        String SELECT_ACTIVE_ENROLLMENT_WITH_TEI_ID = "SELECT " +
+        String selectActiveEnrollmentWithTeiId = SELECT +
                 "Enrollment.uid," +
                 "Enrollment.enrollmentDate," +
                 "Enrollment.followup," +
-                "ObjectStyle.icon," +
+                ObjectStyleModel.TABLE + POINT + ObjectStyleModel.Columns.ICON + ", " +
                 "ObjectStyle.color," +
                 "Program.displayName AS programName," +
                 "Program.uid AS programUid," +
@@ -67,20 +70,20 @@ public class TeiProgramListRepositoryImpl implements TeiProgramListRepository {
                 "JOIN Program ON Program.uid = Enrollment.program " +
                 "JOIN OrganisationUnit ON OrganisationUnit.uid = Enrollment.organisationUnit " +
                 "WHERE Enrollment.trackedEntityInstance = ? AND Enrollment.status = 'ACTIVE'";
-        String[] TABLE_NAMES = new String[]{ProgramModel.TABLE, ObjectStyleModel.TABLE, OrganisationUnitProgramLinkModel.TABLE};
-        Set<String> TABLE_SET = new HashSet<>(Arrays.asList(TABLE_NAMES));
-        return briteDatabase.createQuery(TABLE_SET, SELECT_ACTIVE_ENROLLMENT_WITH_TEI_ID, trackedEntityId == null ? "" : trackedEntityId)
+        String[] tableNames = new String[]{ProgramModel.TABLE, ObjectStyleModel.TABLE, OrganisationUnitProgramLinkModel.TABLE};
+        Set<String> tableSet = new HashSet<>(Arrays.asList(tableNames));
+        return briteDatabase.createQuery(tableSet, selectActiveEnrollmentWithTeiId, trackedEntityId == null ? "" : trackedEntityId)
                 .mapToList(EnrollmentViewModel::fromCursor);
     }
 
     @NonNull
     @Override
     public Observable<List<EnrollmentViewModel>> otherEnrollments(String trackedEntityId) {
-        String SELECT_ACTIVE_ENROLLMENT_WITH_TEI_ID = "SELECT " +
+        String selectActiveEnrollmentWithTeiId = SELECT +
                 "Enrollment.uid," +
                 "Enrollment.enrollmentDate," +
                 "Enrollment.followup," +
-                "ObjectStyle.icon," +
+                ObjectStyleModel.TABLE + POINT + ObjectStyleModel.Columns.ICON + ", " +
                 "ObjectStyle.color," +
                 "Program.displayName AS programName," +
                 "Program.uid AS programUid," +
@@ -89,18 +92,18 @@ public class TeiProgramListRepositoryImpl implements TeiProgramListRepository {
                 "JOIN Program ON Program.uid = Enrollment.program " +
                 "JOIN OrganisationUnit ON OrganisationUnit.uid = Enrollment.organisationUnit " +
                 "WHERE Enrollment.trackedEntityInstance = ? AND Enrollment.status != 'ACTIVE'";
-        String[] TABLE_NAMES = new String[]{ProgramModel.TABLE, ObjectStyleModel.TABLE, OrganisationUnitProgramLinkModel.TABLE};
-        Set<String> TABLE_SET = new HashSet<>(Arrays.asList(TABLE_NAMES));
-        return briteDatabase.createQuery(TABLE_SET, SELECT_ACTIVE_ENROLLMENT_WITH_TEI_ID, trackedEntityId == null ? "" : trackedEntityId)
+        String[] tableNames = new String[]{ProgramModel.TABLE, ObjectStyleModel.TABLE, OrganisationUnitProgramLinkModel.TABLE};
+        Set<String> tableSet = new HashSet<>(Arrays.asList(tableNames));
+        return briteDatabase.createQuery(tableSet, selectActiveEnrollmentWithTeiId, trackedEntityId == null ? "" : trackedEntityId)
                 .mapToList(EnrollmentViewModel::fromCursor);
     }
 
 
-    private final static String PROGRAM_MODELS_FOR_TEI = "SELECT " +
+    private static final String PROGRAM_MODELS_FOR_TEI = SELECT +
             "Program.uid, " +
             "Program.displayName, " +
             "ObjectStyle.color, " +
-            "ObjectStyle.icon," +
+            ObjectStyleModel.TABLE + POINT + ObjectStyleModel.Columns.ICON + ", " +
             "Program.programType," +
             "Program.trackedEntityType," +
             "Program.description, " +
@@ -135,10 +138,10 @@ public class TeiProgramListRepositoryImpl implements TeiProgramListRepository {
     @NonNull
     @Override
     public Observable<List<ProgramModel>> alreadyEnrolledPrograms(String trackedEntityId) {
-        String SELECT_ENROLLED_PROGRAMS_WITH_TEI_ID = "SELECT * FROM " + ProgramModel.TABLE + " JOIN " + EnrollmentModel.TABLE +
+        String selectEnrolledProgramsWithTeiId = "SELECT * FROM " + ProgramModel.TABLE + " JOIN " + EnrollmentModel.TABLE +
                 " ON " + EnrollmentModel.TABLE + "." + EnrollmentModel.Columns.PROGRAM + "=" + ProgramModel.TABLE + "." + ProgramModel.Columns.UID +
                 " WHERE " + EnrollmentModel.TABLE + "." + EnrollmentModel.Columns.TRACKED_ENTITY_INSTANCE + "='%s' GROUP BY " + ProgramModel.TABLE + "." + ProgramModel.Columns.UID;
-        return briteDatabase.createQuery(EnrollmentModel.TABLE, String.format(SELECT_ENROLLED_PROGRAMS_WITH_TEI_ID, trackedEntityId == null ? "" : trackedEntityId))
+        return briteDatabase.createQuery(EnrollmentModel.TABLE, String.format(selectEnrolledProgramsWithTeiId, trackedEntityId == null ? "" : trackedEntityId))
                 .mapToList(ProgramModel::create);
     }
 
@@ -157,7 +160,7 @@ public class TeiProgramListRepositoryImpl implements TeiProgramListRepository {
                     State.TO_POST.toString());
 
             if (briteDatabase.update(TrackedEntityInstanceModel.TABLE, dataValue,
-                    TrackedEntityInstanceModel.Columns.UID + " = ? ", teiUid == null ? "" : teiUid) <= 0) {
+                    TrackedEntityInstanceModel.Columns.UID + " = ? ", teiUid) <= 0) {
                 String message = String.format(Locale.US, "Failed to update tracked entity " +
                                 "instance for uid=[%s]",
                         teiUid);

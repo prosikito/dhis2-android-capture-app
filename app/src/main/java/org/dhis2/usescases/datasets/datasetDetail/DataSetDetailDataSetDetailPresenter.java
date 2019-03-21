@@ -25,10 +25,10 @@ import io.reactivex.schedulers.Schedulers;
 import timber.log.Timber;
 
 
-public class DataSetDetailPresenter implements DataSetDetailContract.Presenter {
+public class DataSetDetailDataSetDetailPresenter implements DataSetDetailContract.DataSetDetailPresenter {
 
     private DataSetDetailRepository dataSetDetailRepository;
-    private DataSetDetailContract.View view;
+    private DataSetDetailContract.DataSetDetailView dataSetDetailView;
     private CategoryOptionComboModel categoryOptionComboModel;
     private MetadataRepository metadataRepository;
     private int lastSearchType;
@@ -49,24 +49,24 @@ public class DataSetDetailPresenter implements DataSetDetailContract.Presenter {
         int DATE_RANGES = 32;
     }
 
-    public DataSetDetailPresenter(DataSetDetailRepository dataSetDetailRepository, MetadataRepository metadataRepository) {
+    public DataSetDetailDataSetDetailPresenter(DataSetDetailRepository dataSetDetailRepository, MetadataRepository metadataRepository) {
         this.dataSetDetailRepository = dataSetDetailRepository;
         this.metadataRepository = metadataRepository;
         compositeDisposable = new CompositeDisposable();
     }
 
     @Override
-    public void init(DataSetDetailContract.View view) {
-        this.view = view;
+    public void init(DataSetDetailContract.DataSetDetailView dataSetDetailView) {
+        this.dataSetDetailView = dataSetDetailView;
         getOrgUnits(null);
         compositeDisposable.add(
-                view.dataSetPage()
+                dataSetDetailView.dataSetPage()
                         .startWith(0)
-                        .flatMap(page -> dataSetDetailRepository.dataSetGroups(view.dataSetUid(), selectedOrgUnits, selectedPeriodType, page))
+                        .flatMap(page -> dataSetDetailRepository.dataSetGroups(dataSetDetailView.dataSetUid(), selectedOrgUnits, selectedPeriodType, page))
                         .subscribeOn(Schedulers.io())
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(
-                                view::setData,
+                                dataSetDetailView::setData,
                                 Timber::d
                         )
         );
@@ -74,32 +74,32 @@ public class DataSetDetailPresenter implements DataSetDetailContract.Presenter {
 
     @Override
     public void onTimeButtonClick() {
-        view.showTimeUnitPicker();
+        dataSetDetailView.showTimeUnitPicker();
     }
 
     @Override
     public void onDateRangeButtonClick() {
-        view.showRageDatePicker();
+        dataSetDetailView.showRageDatePicker();
     }
 
     @Override
     public void onOrgUnitButtonClick() {
-        view.openDrawer();
+        dataSetDetailView.openDrawer();
     }
 
 
     @Override
     public void addDataSet() {
         Bundle bundle = new Bundle();
-        bundle.putString(Constants.DATA_SET_UID, view.dataSetUid());
+        bundle.putString(Constants.DATA_SET_UID, dataSetDetailView.dataSetUid());
 
-        view.startActivity(DataSetInitialActivity.class,bundle,false,false,null);
+        dataSetDetailView.startActivity(DataSetInitialActivity.class,bundle,false,false,null);
     }
 
     @Override
     public void onBackClick() {
-        if (view != null)
-            view.back();
+        if (dataSetDetailView != null)
+            dataSetDetailView.back();
     }
 
     @Override
@@ -115,7 +115,7 @@ public class DataSetDetailPresenter implements DataSetDetailContract.Presenter {
 
     @Override
     public void onDataSetClick(String eventId, String orgUnit) {
-
+        // unused
     }
 
     @Override
@@ -125,7 +125,7 @@ public class DataSetDetailPresenter implements DataSetDetailContract.Presenter {
 
     @Override
     public void showFilter() {
-        view.showHideFilter();
+        dataSetDetailView.showHideFilter();
     }
 
     @SuppressLint("CheckResult")
@@ -134,29 +134,20 @@ public class DataSetDetailPresenter implements DataSetDetailContract.Presenter {
         this.fromDate = fromDate;
         this.toDate = toDate;
         lastSearchType = LastSearchType.DATES;
-        /*Observable.just(dataSetDetailRepository.filteredDataSet(programId,
-                DateUtils.getInstance().formatDate(fromDate),
-                DateUtils.getInstance().formatDate(toDate),
-                categoryOptionComboModel)
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(
-                        list ->view.setData(getPeriodFromType(list)),
-                        Timber::e));*/
     }
 
     @Override
     public void getOrgUnits(Date date) {
         compositeDisposable.add(dataSetDetailRepository.orgUnits()
-                .map(orgUnits -> {
-                    this.orgUnits = orgUnits;
-                    return OrgUnitUtils.renderTree(view.getContext(), orgUnits, true);
+                .map(orgUnitsResult -> {
+                    orgUnits = orgUnitsResult;
+                    return OrgUnitUtils.renderTree(dataSetDetailView.getContext(), orgUnits, true);
                 })
                 .subscribeOn(Schedulers.computation())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
-                        treeNode -> view.addTree(treeNode),
-                        throwable -> view.renderError(throwable.getMessage())
+                        treeNode -> dataSetDetailView.addTree(treeNode),
+                        throwable -> dataSetDetailView.renderError(throwable.getMessage())
                 ));
     }
 
@@ -187,8 +178,8 @@ public class DataSetDetailPresenter implements DataSetDetailContract.Presenter {
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
-                        list ->view.setData(getPeriodFromType(list)),
-                        throwable -> view.renderError(throwable.getMessage())));*/
+                        list ->dataSetDetailView.setData(getPeriodFromType(list)),
+                        throwable -> dataSetDetailView.renderError(throwable.getMessage())));*/
     }
 
     @Override
@@ -198,6 +189,6 @@ public class DataSetDetailPresenter implements DataSetDetailContract.Presenter {
 
     @Override
     public void displayMessage(String message) {
-        view.displayMessage(message);
+        dataSetDetailView.displayMessage(message);
     }
 }

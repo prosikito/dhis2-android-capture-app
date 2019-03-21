@@ -35,6 +35,14 @@ import io.reactivex.Observable;
 import timber.log.Timber;
 
 import static android.text.TextUtils.isEmpty;
+import static org.dhis2.utils.SQLConstants.ALL;
+import static org.dhis2.utils.SQLConstants.AND;
+import static org.dhis2.utils.SQLConstants.FROM;
+import static org.dhis2.utils.SQLConstants.LIMIT_1;
+import static org.dhis2.utils.SQLConstants.NOT_EQUAL;
+import static org.dhis2.utils.SQLConstants.QUOTE;
+import static org.dhis2.utils.SQLConstants.SELECT;
+import static org.dhis2.utils.SQLConstants.WHERE;
 
 /**
  * QUADRAM. Created by Cristian on 22/03/2018.
@@ -46,7 +54,7 @@ public class EventInitialRepositoryImpl implements EventInitialRepository {
             "JOIN OrganisationUnitProgramLink ON OrganisationUnitProgramLink .organisationUnit = OrganisationUnit.uid " +
             "WHERE OrganisationUnitProgramLink .program = ?";
 
-    private static final String SELECT_ORG_UNITS_FILTERED = "SELECT * FROM " + OrganisationUnitModel.TABLE +
+    private static final String SELECT_ORG_UNITS_FILTERED = SELECT + ALL + FROM + OrganisationUnitModel.TABLE +
             " JOIN OrganisationUnitProgramLink ON OrganisationUnitProgramLink .organisationUnit = OrganisationUnit.uid " +
             " WHERE ("
             + OrganisationUnitModel.Columns.OPENING_DATE + " IS NULL OR " +
@@ -54,12 +62,6 @@ public class EventInitialRepositoryImpl implements EventInitialRepository {
             + OrganisationUnitModel.Columns.CLOSED_DATE + " IS NULL OR " +
             " date(" + OrganisationUnitModel.Columns.CLOSED_DATE + ") >= date(?)) " +
             "AND OrganisationUnitProgramLink .program = ?";
-
-    private static final String SELECT_CAT_OPTION_FROM_OPTION_COMBO = String.format(
-            "SELECT %s.%s FROM %s WHERE %s.%s = ?",
-            CategoryOptionComboCategoryOptionLinkModel.TABLE, CategoryOptionComboCategoryOptionLinkModel.Columns.CATEGORY_OPTION, CategoryOptionComboCategoryOptionLinkModel.TABLE,
-            CategoryOptionComboCategoryOptionLinkModel.TABLE, CategoryOptionComboCategoryOptionLinkModel.Columns.CATEGORY_OPTION_COMBO
-    );
 
     private final BriteDatabase briteDatabase;
     private final CodeGenerator codeGenerator;
@@ -76,8 +78,9 @@ public class EventInitialRepositoryImpl implements EventInitialRepository {
     @Override
     public Observable<EventModel> event(String eventId) {
         String id = eventId == null ? "" : eventId;
-        String SELECT_EVENT_WITH_ID = "SELECT * FROM " + EventModel.TABLE + " WHERE " + EventModel.Columns.UID + " = '" + id + "' AND " + EventModel.Columns.STATE + " != '" + State.TO_DELETE + "' LIMIT 1";
-        return briteDatabase.createQuery(EventModel.TABLE, SELECT_EVENT_WITH_ID)
+        String selectEventWithId = SELECT + ALL + FROM + EventModel.TABLE + WHERE + EventModel.Columns.UID + " = '" + id + "' AND " +
+                EventModel.Columns.STATE + NOT_EQUAL + QUOTE + State.TO_DELETE + QUOTE + LIMIT_1;
+        return briteDatabase.createQuery(EventModel.TABLE, selectEventWithId)
                 .mapToOne(EventModel::create);
     }
 
@@ -135,12 +138,6 @@ public class EventInitialRepositoryImpl implements EventInitialRepository {
         cal.set(Calendar.MINUTE, 0);
         cal.set(Calendar.SECOND, 0);
         cal.set(Calendar.MILLISECOND, 0);
-
-        //If we are creating a new event, do not schedule it
-        /*if (date != null && date.after(createDate))
-            return scheduleEvent(enrollmentUid, trackedEntityInstanceUid, context, programUid, programStage,
-                    date, orgUnitUid, categoryOptionsUid, categoryOptionComboUid, latitude, longitude);*/
-
 
         String uid = codeGenerator.generate();
 
@@ -248,8 +245,8 @@ public class EventInitialRepositoryImpl implements EventInitialRepository {
 
     @Override
     public Observable<String> updateTrackedEntityInstance(String eventId, String trackedEntityInstanceUid, String orgUnitUid) {
-        String TEI_QUERY = "SELECT * FROM TrackedEntityInstance WHERE TrackedEntityInstance.uid = ? LIMIT 1";
-        return briteDatabase.createQuery(TrackedEntityInstanceModel.TABLE, TEI_QUERY, trackedEntityInstanceUid == null ? "" : trackedEntityInstanceUid)
+        String teiQuery = "SELECT * FROM TrackedEntityInstance WHERE TrackedEntityInstance.uid = ? LIMIT 1";
+        return briteDatabase.createQuery(TrackedEntityInstanceModel.TABLE, teiQuery, trackedEntityInstanceUid == null ? "" : trackedEntityInstanceUid)
                 .mapToOne(TrackedEntityInstanceModel::create).distinctUntilChanged()
                 .map(trackedEntityInstanceModel -> {
                     ContentValues contentValues = trackedEntityInstanceModel.toContentValues();
@@ -271,15 +268,16 @@ public class EventInitialRepositoryImpl implements EventInitialRepository {
     @NonNull
     @Override
     public Observable<EventModel> newlyCreatedEvent(long rowId) {
-        String SELECT_EVENT_WITH_ROWID = "SELECT * FROM " + EventModel.TABLE + " WHERE " + EventModel.Columns.ID + " = '" + rowId + "'" + " AND " + EventModel.Columns.STATE + " != '" + State.TO_DELETE + "' LIMIT 1";
-        return briteDatabase.createQuery(EventModel.TABLE, SELECT_EVENT_WITH_ROWID).mapToOne(EventModel::create);
+        String selectEventWithRowid = SELECT + ALL + FROM + EventModel.TABLE + WHERE + EventModel.Columns.ID + " = '" + rowId + "'" + AND
+                + EventModel.Columns.STATE + NOT_EQUAL + QUOTE + State.TO_DELETE + QUOTE + LIMIT_1;
+        return briteDatabase.createQuery(EventModel.TABLE, selectEventWithRowid).mapToOne(EventModel::create);
     }
 
     @NonNull
     @Override
     public Observable<ProgramStageModel> programStage(String programUid) {
         String id = programUid == null ? "" : programUid;
-        String SELECT_PROGRAM_STAGE = "SELECT * FROM " + ProgramStageModel.TABLE + " WHERE " + ProgramStageModel.Columns.PROGRAM + " = '" + id + "' LIMIT 1";
+        String SELECT_PROGRAM_STAGE = SELECT + ALL + FROM + ProgramStageModel.TABLE + WHERE + ProgramStageModel.Columns.PROGRAM + " = '" + id + QUOTE + LIMIT_1;
         return briteDatabase.createQuery(ProgramStageModel.TABLE, SELECT_PROGRAM_STAGE)
                 .mapToOne(ProgramStageModel::create);
     }
@@ -288,7 +286,7 @@ public class EventInitialRepositoryImpl implements EventInitialRepository {
     @Override
     public Observable<ProgramStageModel> programStageWithId(String programStageUid) {
         String id = programStageUid == null ? "" : programStageUid;
-        String SELECT_PROGRAM_STAGE_WITH_ID = "SELECT * FROM " + ProgramStageModel.TABLE + " WHERE " + ProgramStageModel.Columns.UID + " = '" + id + "' LIMIT 1";
+        String SELECT_PROGRAM_STAGE_WITH_ID = SELECT + ALL + FROM + ProgramStageModel.TABLE + WHERE + ProgramStageModel.Columns.UID + " = '" + id + QUOTE + LIMIT_1;
         return briteDatabase.createQuery(ProgramStageModel.TABLE, SELECT_PROGRAM_STAGE_WITH_ID)
                 .mapToOne(ProgramStageModel::create);
     }
@@ -296,7 +294,8 @@ public class EventInitialRepositoryImpl implements EventInitialRepository {
 
     @NonNull
     @Override
-    public Observable<EventModel> editEvent(String trackedEntityInstance, String eventUid, String date, String orgUnitUid, String catComboUid, String catOptionCombo, String latitude, String longitude) {
+    public Observable<EventModel> editEvent(String trackedEntityInstance, String eventUid, String date,
+                                            String orgUnitUid, String catComboUid, String catOptionCombo, String latitude, String longitude) {
 
         Date currentDate = Calendar.getInstance().getTime();
         Date dueDate = null;
@@ -352,7 +351,7 @@ public class EventInitialRepositoryImpl implements EventInitialRepository {
                         "WHERE %s.%s = ? " +
                         "AND %s.%s = ? " +
                         "AND %s.%s = ? " +
-                        "AND " + EventModel.TABLE + "." + EventModel.Columns.STATE + " != '" + State.TO_DELETE + "'" +
+                        "AND " + EventModel.TABLE + "." + EventModel.Columns.STATE + NOT_EQUAL + QUOTE + State.TO_DELETE + "'" +
                         "AND " + EventModel.TABLE + "." + EventModel.Columns.EVENT_DATE + " > DATE() " +
                         "ORDER BY CASE WHEN %s.%s > %s.%s " +
                         "THEN %s.%s ELSE %s.%s END ASC",

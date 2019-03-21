@@ -33,6 +33,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 
 import androidx.annotation.NonNull;
@@ -41,6 +42,14 @@ import io.reactivex.Flowable;
 import io.reactivex.Observable;
 
 import static android.text.TextUtils.isEmpty;
+import static org.dhis2.utils.SQLConstants.AND;
+import static org.dhis2.utils.SQLConstants.FROM;
+import static org.dhis2.utils.SQLConstants.JOIN;
+import static org.dhis2.utils.SQLConstants.ON;
+import static org.dhis2.utils.SQLConstants.SELECT;
+import static org.dhis2.utils.SQLConstants.TABLE_POINT_COLUMN;
+import static org.dhis2.utils.SQLConstants.TABLE_POINT_COLUMN_EQUAL;
+import static org.dhis2.utils.SQLConstants.VARIABLE;
 
 /**
  * QUADRAM. Created by ppajuelo on 02/11/2017.
@@ -50,27 +59,29 @@ public class SearchRepositoryImpl implements SearchRepository {
 
     private final BriteDatabase briteDatabase;
 
-    private final String SELECT_PROGRAM_WITH_REGISTRATION = "SELECT * FROM " + ProgramModel.TABLE + " WHERE Program.programType='WITH_REGISTRATION' AND Program.trackedEntityType = ";
-    private final String SELECT_PROGRAM_ATTRIBUTES = "SELECT TrackedEntityAttribute.* FROM " + TrackedEntityAttributeModel.TABLE +
+    private static final String ATTR_QUERY = "ATTR_QUERY";
+
+    private static final String SELECT_PROGRAM_WITH_REGISTRATION = "SELECT * FROM " + ProgramModel.TABLE + " WHERE Program.programType='WITH_REGISTRATION' AND Program.trackedEntityType = ";
+    private static final String SELECT_PROGRAM_ATTRIBUTES = "SELECT TrackedEntityAttribute.* FROM " + TrackedEntityAttributeModel.TABLE +
             " INNER JOIN " + ProgramTrackedEntityAttributeModel.TABLE +
             " ON " + TrackedEntityAttributeModel.TABLE + "." + TrackedEntityAttributeModel.Columns.UID + " = " + ProgramTrackedEntityAttributeModel.TABLE + "." + ProgramTrackedEntityAttributeModel.Columns.TRACKED_ENTITY_ATTRIBUTE +
             " WHERE (" + ProgramTrackedEntityAttributeModel.TABLE + "." + ProgramTrackedEntityAttributeModel.Columns.SEARCHABLE + " = 1 OR TrackedEntityAttribute.uniqueProperty = '1')" +
-            " AND " + ProgramTrackedEntityAttributeModel.TABLE + "." + ProgramTrackedEntityAttributeModel.Columns.PROGRAM + " = ";
-    private final String SELECT_OPTION_SET = "SELECT * FROM " + OptionModel.TABLE + " WHERE Option.optionSet = ";
+            AND + ProgramTrackedEntityAttributeModel.TABLE + "." + ProgramTrackedEntityAttributeModel.Columns.PROGRAM + " = ";
+    private static final String SELECT_OPTION_SET = "SELECT * FROM " + OptionModel.TABLE + " WHERE Option.optionSet = ";
 
-    private final String SEARCH =
+    private static final String SEARCH =
             "SELECT TrackedEntityInstance.*" +
                     " FROM ((" + TrackedEntityInstanceModel.TABLE + " JOIN " + EnrollmentModel.TABLE + " ON " +
                     EnrollmentModel.TABLE + "." + EnrollmentModel.Columns.TRACKED_ENTITY_INSTANCE + " = " +
                     TrackedEntityInstanceModel.TABLE + "." + TrackedEntityInstanceModel.Columns.UID + ") " +
                     "%s)" +
                     " WHERE ";
-    private final String SEARCH_ATTR = " JOIN (ATTR_QUERY) tabla ON tabla.trackedEntityInstance = TrackedEntityInstance.uid";
+    private static final String SEARCH_ATTR = " JOIN (ATTR_QUERY) tabla ON tabla.trackedEntityInstance = TrackedEntityInstance.uid";
 
-    private final String PROGRAM_TRACKED_ENTITY_ATTRIBUTES_VALUES_PROGRAM_QUERY = String.format(
+    private static final String PROGRAM_TRACKED_ENTITY_ATTRIBUTES_VALUES_PROGRAM_QUERY = String.format(
             "SELECT %s.*, %s.%s, %s.%s FROM %s " +
-                    "JOIN %s ON %s.%s = %s.%s " +
-                    "JOIN %s ON %s.%s = %s.%s " +
+                    JOIN + VARIABLE + ON + TABLE_POINT_COLUMN_EQUAL + TABLE_POINT_COLUMN +
+                    JOIN + VARIABLE + ON + TABLE_POINT_COLUMN_EQUAL + TABLE_POINT_COLUMN +
                     "WHERE %s.%s = ? AND %s.%s = ? AND " +
                     "%s.%s = 1 " +
                     "ORDER BY %s.%s ASC",
@@ -81,9 +92,9 @@ public class SearchRepositoryImpl implements SearchRepository {
             ProgramTrackedEntityAttributeModel.TABLE, ProgramTrackedEntityAttributeModel.Columns.DISPLAY_IN_LIST,
             ProgramTrackedEntityAttributeModel.TABLE, ProgramTrackedEntityAttributeModel.Columns.SORT_ORDER);
 
-    private final String PROGRAM_TRACKED_ENTITY_ATTRIBUTES_VALUES_QUERY = String.format(
+    private static final String PROGRAM_TRACKED_ENTITY_ATTRIBUTES_VALUES_QUERY = String.format(
             "SELECT DISTINCT %s.*, TrackedEntityAttribute.valueType, TrackedEntityAttribute.optionSet, ProgramTrackedEntityAttribute.displayInList FROM %s " +
-                    "JOIN %s ON %s.%s = %s.%s " +
+                    JOIN + VARIABLE + ON + TABLE_POINT_COLUMN_EQUAL + TABLE_POINT_COLUMN +
                     "LEFT JOIN ProgramTrackedEntityAttribute ON ProgramTrackedEntityAttribute.trackedEntityAttribute = TrackedEntityAttribute.uid " +
                     "WHERE %s.%s = ? AND %s.%s = 1 ORDER BY %s.%s ASC",
             TrackedEntityAttributeValueModel.TABLE, TrackedEntityAttributeValueModel.TABLE,
@@ -93,7 +104,7 @@ public class SearchRepositoryImpl implements SearchRepository {
             TrackedEntityAttributeModel.TABLE, TrackedEntityAttributeModel.Columns.SORT_ORDER_IN_LIST_NO_PROGRAM
     );
 
-    private final String PROGRAM_COLOR_QUERY = String.format(
+    private static final String PROGRAM_COLOR_QUERY = String.format(
             "SELECT %s FROM %S " +
                     "WHERE %s = 'Program' AND %s = ?",
             ObjectStyleModel.Columns.COLOR, ObjectStyleModel.TABLE,
@@ -101,7 +112,7 @@ public class SearchRepositoryImpl implements SearchRepository {
             ObjectStyleModel.Columns.UID
     );
 
-    private final String PROGRAM_INFO = String.format(
+    private static final String PROGRAM_INFO = String.format(
             "SELECT %s.%s, %s.%s, %s.%s FROM %s " +
                     "LEFT JOIN %s ON %s.%s = %s.%s " +
                     "WHERE %s.%s = ?",
@@ -112,7 +123,7 @@ public class SearchRepositoryImpl implements SearchRepository {
             ProgramModel.TABLE, ProgramModel.Columns.UID
     );
 
-    private final String SELECT_TRACKED_ENTITY_TYPE_ATTRIBUTES = String.format(
+    private static final String SELECT_TRACKED_ENTITY_TYPE_ATTRIBUTES = String.format(
             "SELECT %s.* FROM %s " +
                     "JOIN %s ON %s.trackedEntityAttribute = %s.%s " +
                     "WHERE %s.trackedEntityType = ? AND %s.searchable = 1",
@@ -189,7 +200,7 @@ public class SearchRepositoryImpl implements SearchRepository {
         }
 
         String attrQuery = "(SELECT TrackedEntityAttributeValue.trackedEntityInstance FROM TrackedEntityAttributeValue WHERE " +
-                "TrackedEntityAttributeValue.trackedEntityAttribute = 'ATTR_ID' AND TrackedEntityAttributeValue.value LIKE 'ATTR_VALUE%') t";
+                "TrackedEntityAttributeValue.trackedEntityAttribute = 'ATTR_ID' AND TrackedEntityAttributeValue.VALUE LIKE 'ATTR_VALUE%') t";
         StringBuilder attr = new StringBuilder("");
 
         for (int i = 0; i < queryData.keySet().size(); i++) {
@@ -209,10 +220,10 @@ public class SearchRepositoryImpl implements SearchRepository {
         }
 
         String search = String.format(SEARCH, queryData.size() == 0 ? "" : SEARCH_ATTR);
-        search = search.replace("ATTR_QUERY", "SELECT t1.trackedEntityInstance FROM" + attr) + teiTypeWHERE + " AND " + teiRelationship;
+        search = search.replace(ATTR_QUERY, SELECT + "t1.trackedEntityInstance" + FROM + attr) + teiTypeWHERE + AND + teiRelationship;
         if (selectedProgram != null && !selectedProgram.uid().isEmpty()) {
             String programWHERE = "Enrollment.program = '" + selectedProgram.uid() + "'";
-            search += " AND " + programWHERE;
+            search += AND + programWHERE;
         }
         if (enrollmentDateWHERE != null)
             search += " AND" + enrollmentDateWHERE;
@@ -248,7 +259,7 @@ public class SearchRepositoryImpl implements SearchRepository {
         }
 
         String attrQuery = "(SELECT TrackedEntityAttributeValue.trackedEntityInstance FROM TrackedEntityAttributeValue WHERE " +
-                "TrackedEntityAttributeValue.trackedEntityAttribute = 'ATTR_ID' AND TrackedEntityAttributeValue.value LIKE 'ATTR_VALUE%') t";
+                "TrackedEntityAttributeValue.trackedEntityAttribute = 'ATTR_ID' AND TrackedEntityAttributeValue.VALUE LIKE 'ATTR_VALUE%') t";
         StringBuilder attr = new StringBuilder("");
 
         for (int i = 0; i < queryData.keySet().size(); i++) {
@@ -268,12 +279,12 @@ public class SearchRepositoryImpl implements SearchRepository {
 
         String search = String.format(SEARCH, queryData.size() == 0 ? "" : SEARCH_ATTR);
         if (listSize > 0)
-            search = search.replace("ATTR_QUERY", "SELECT t1.trackedEntityInstance FROM" + attr) + teiTypeWHERE + " AND " + teiRelationship + " AND (TrackedEntityInstance.state = 'TO_POST' OR TrackedEntityInstance.state = 'TO_UPDATE')";
+            search = search.replace(ATTR_QUERY, SELECT + "t1.trackedEntityInstance" + FROM + attr) + teiTypeWHERE + AND + teiRelationship + " AND (TrackedEntityInstance.state = 'TO_POST' OR TrackedEntityInstance.state = 'TO_UPDATE')";
         else
-            search = search.replace("ATTR_QUERY", "SELECT t1.trackedEntityInstance FROM" + attr) + teiTypeWHERE + " AND " + teiRelationship;
+            search = search.replace(ATTR_QUERY, SELECT + "t1.trackedEntityInstance" + FROM + attr) + teiTypeWHERE + AND + teiRelationship;
         if (selectedProgram != null && !selectedProgram.uid().isEmpty()) {
             String programWHERE = "Enrollment.program = '" + selectedProgram.uid() + "'";
-            search += " AND " + programWHERE;
+            search += AND + programWHERE;
         }
         if (enrollmentDateWHERE != null)
             search += " AND" + enrollmentDateWHERE;
@@ -293,7 +304,9 @@ public class SearchRepositoryImpl implements SearchRepository {
 
     @NonNull
     @Override
-    public Observable<String> saveToEnroll(@NonNull String teiType, @NonNull String orgUnit, @NonNull String programUid, @Nullable String teiUid, HashMap<String, String> queryData, Date enrollmentDate) {
+    public Observable<String> saveToEnroll(@NonNull String teiType, @NonNull String orgUnit,
+                                           @NonNull String programUid, @Nullable String teiUid,
+                                           HashMap<String, String> queryData, Date enrollmentDate) {
         Date currentDate = Calendar.getInstance().getTime();
         return Observable.defer(() -> {
             TrackedEntityInstanceModel trackedEntityInstanceModel = null;
@@ -317,8 +330,8 @@ public class SearchRepositoryImpl implements SearchRepository {
                     return Observable.error(new SQLiteConstraintException(message));
                 }
 
-                for (String key : queryData.keySet()) {
-                    String dataValue = queryData.get(key);
+                for (Map.Entry<String, String> entry : queryData.entrySet()) {
+                    String dataValue = entry.getValue();
                     if (dataValue.contains("_os_"))
                         dataValue = dataValue.split("_os_")[1];
                     TrackedEntityAttributeValueModel attributeValueModel =
@@ -326,7 +339,7 @@ public class SearchRepositoryImpl implements SearchRepository {
                                     .created(currentDate)
                                     .lastUpdated(currentDate)
                                     .value(dataValue)
-                                    .trackedEntityAttribute(key)
+                                    .trackedEntityAttribute(entry.getKey())
                                     .trackedEntityInstance(generatedUid)
                                     .build();
                     if (briteDatabase.insert(TrackedEntityAttributeValueModel.TABLE,
@@ -481,11 +494,11 @@ public class SearchRepositoryImpl implements SearchRepository {
         String overdueProgram = " AND Enrollment.program = ?";
         Cursor hasOverdueCursor;
         if (selectedProgram == null) {
-            String teiId = tei != null && tei.getTei() != null && tei.getTei().uid() != null ? tei.getTei().uid() : "";
+            String teiId = tei.getTei() != null && tei.getTei().uid() != null ? tei.getTei().uid() : "";
             hasOverdueCursor = briteDatabase.query(overdueQuery,
                     teiId, EventStatus.SKIPPED.name());
         } else {
-            String teiId = tei != null && tei.getTei() != null && tei.getTei().uid() != null ? tei.getTei().uid() : "";
+            String teiId = tei.getTei() != null && tei.getTei().uid() != null ? tei.getTei().uid() : "";
             String progId = selectedProgram.uid() != null ? selectedProgram.uid() : "";
             hasOverdueCursor = briteDatabase.query(overdueQuery + overdueProgram,
                     teiId,
@@ -493,8 +506,7 @@ public class SearchRepositoryImpl implements SearchRepository {
                     progId);
         }
         if (hasOverdueCursor != null && hasOverdueCursor.moveToNext()) {
-            if (tei != null)
-                tei.setHasOverdue(true);
+            tei.setHasOverdue(true);
             hasOverdueCursor.close();
         }
     }

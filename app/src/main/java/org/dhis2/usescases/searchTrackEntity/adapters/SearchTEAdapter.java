@@ -24,12 +24,12 @@ import java.util.List;
 public class SearchTEAdapter extends RecyclerView.Adapter<SearchTEViewHolder> {
 
     private final MetadataRepository metadataRepository;
-    private SearchTEContractsModule.Presenter presenter;
+    private SearchTEContractsModule.SearchTEPresenter searchTEPresenter;
     private List<TrackedEntityInstanceModel> trackedEntityInstances;
     private List<SearchTeiModel> teis;
 
-    public SearchTEAdapter(SearchTEContractsModule.Presenter presenter, MetadataRepository metadataRepository) {
-        this.presenter = presenter;
+    public SearchTEAdapter(SearchTEContractsModule.SearchTEPresenter searchTEPresenter, MetadataRepository metadataRepository) {
+        this.searchTEPresenter = searchTEPresenter;
         this.metadataRepository = metadataRepository;
         this.trackedEntityInstances = new ArrayList<>();
         this.teis = new ArrayList<>();
@@ -53,8 +53,8 @@ public class SearchTEAdapter extends RecyclerView.Adapter<SearchTEViewHolder> {
 
     @Override
     public void onBindViewHolder(@NonNull SearchTEViewHolder holder, int position) {
-//        holder.bind(presenter, trackedEntityInstances.get(position), metadataRepository);
-        holder.bind(presenter, teis.get(position));
+//        holder.bind(searchTEPresenter, trackedEntityInstances.get(position), metadataRepository);
+        holder.bind(searchTEPresenter, teis.get(position));
     }
 
     @Override

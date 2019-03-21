@@ -20,21 +20,21 @@ public class ProgramEventDetailModule {
 
     @Provides
     @PerActivity
-    ProgramEventDetailContract.View provideView(ProgramEventDetailActivity activity) {
+    ProgramEventDetailContract.ProgramEventDetailView provideView(ProgramEventDetailActivity activity) {
         return activity;
     }
 
     @Provides
     @PerActivity
-    ProgramEventDetailContract.Presenter providesPresenter(@NonNull ProgramEventDetailRepository programEventDetailRepository,
-                                                           @NonNull MetadataRepository metadataRepository) {
-        return new ProgramEventDetailPresenter(programEventDetailRepository, metadataRepository);
+    ProgramEventDetailContract.ProgramEventDetailPresenter providesPresenter(@NonNull ProgramEventDetailRepository programEventDetailRepository,
+                                                                             @NonNull MetadataRepository metadataRepository) {
+        return new ProgramEventDetailProgramEventDetailPresenter(programEventDetailRepository, metadataRepository);
     }
 
     @Provides
     @PerActivity
-    ProgramEventDetailAdapter provideProgramEventDetailAdapter(ProgramEventDetailContract.Presenter presenter) {
-        return new ProgramEventDetailAdapter(presenter);
+    ProgramEventDetailAdapter provideProgramEventDetailAdapter(ProgramEventDetailContract.ProgramEventDetailPresenter programEventDetailPresenter) {
+        return new ProgramEventDetailAdapter(programEventDetailPresenter);
     }
 
     @Provides

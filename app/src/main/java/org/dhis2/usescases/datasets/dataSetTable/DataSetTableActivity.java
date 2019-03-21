@@ -1,9 +1,6 @@
 package org.dhis2.usescases.datasets.dataSetTable;
 
-import androidx.databinding.DataBindingUtil;
 import android.os.Bundle;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
 import org.dhis2.App;
 import org.dhis2.R;
@@ -19,7 +16,12 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
-public class DataSetTableActivity extends ActivityGlobalAbstract implements DataSetTableContract.View {
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.databinding.DataBindingUtil;
+
+@SuppressWarnings("squid:MaximumInheritanceDepth")
+public class DataSetTableActivity extends ActivityGlobalAbstract implements DataSetTableContract.DataSetTableView {
 
     String orgUnitUid;
     String periodTypeName;
@@ -27,9 +29,8 @@ public class DataSetTableActivity extends ActivityGlobalAbstract implements Data
     String catCombo;
 
     @Inject
-    DataSetTableContract.Presenter presenter;
+    DataSetTableContract.DataSetTablePresenter dataSetTableContractPresenter;
     private ActivityDatasetTableBinding binding;
-    private DataSetSectionAdapter viewPagerAdapter;
 
     public static Bundle getBundle(@NonNull String dataSetUid,
                                    @NonNull String orgUnitUid,
@@ -57,24 +58,24 @@ public class DataSetTableActivity extends ActivityGlobalAbstract implements Data
         ((App) getApplicationContext()).userComponent().plus(new DataSetTableModule(dataSetUid)).inject(this);
 
         binding = DataBindingUtil.setContentView(this, R.layout.activity_dataset_table);
-        binding.setPresenter(presenter);
+        binding.setPresenter(dataSetTableContractPresenter);
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        presenter.init(this, orgUnitUid, periodTypeName, periodInitialDate, catCombo);
+        dataSetTableContractPresenter.init(this, orgUnitUid, periodTypeName, periodInitialDate, catCombo);
     }
 
     @Override
     protected void onPause() {
-        presenter.onDettach();
+        dataSetTableContractPresenter.onDettach();
         super.onPause();
     }
 
     @Override
     public void setDataElements(Map<String, List<DataElementModel>> dataElements, Map<String, List<CategoryOptionComboModel>> catOptions) {
-        viewPagerAdapter = new DataSetSectionAdapter(getSupportFragmentManager());
+        DataSetSectionAdapter viewPagerAdapter = new DataSetSectionAdapter(getSupportFragmentManager());
         binding.viewPager.setAdapter(viewPagerAdapter);
         binding.tabLayout.setupWithViewPager(binding.viewPager);
         viewPagerAdapter.swapData(dataElements);
@@ -85,7 +86,7 @@ public class DataSetTableActivity extends ActivityGlobalAbstract implements Data
         binding.dataSetName.setText(data.displayName());
     }
 
-    public DataSetTableContract.Presenter getPresenter() {
-        return presenter;
+    public DataSetTableContract.DataSetTablePresenter getDataSetTableContractPresenter() {
+        return dataSetTableContractPresenter;
     }
 }

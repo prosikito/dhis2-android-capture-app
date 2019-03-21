@@ -89,7 +89,7 @@ public class FormAdapter extends RecyclerView.Adapter {
         rows = new ArrayList<>();
 
         rows.add(EDITTEXT, new EditTextRow(layoutInflater, processor, false));
-        rows.add(BUTTON, new FileRow(layoutInflater, processor, false));
+        rows.add(BUTTON, new FileRow(layoutInflater, false));
         rows.add(CHECKBOX, new RadioButtonRow(layoutInflater, processor, false));
         rows.add(SPINNER, new SpinnerRow(layoutInflater, processor, processorOptionSet, false));
         rows.add(COORDINATES, new CoordinateRow(layoutInflater, processor, false));

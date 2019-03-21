@@ -30,10 +30,10 @@ public class TeiProgramListEnrollmentViewHolder extends RecyclerView.ViewHolder 
         this.binding = binding;
     }
 
-    public void bind(TeiProgramListContract.Presenter presenter, EnrollmentViewModel enrollment, ProgramViewModel programModel) {
+    public void bind(TeiProgramListContract.TeiProgramListPresenter teiProgramListPresenter, EnrollmentViewModel enrollment, ProgramViewModel programModel) {
         binding.setVariable(BR.enrollment, enrollment);
         binding.setVariable(BR.program, programModel);
-        binding.setVariable(BR.presenter, presenter);
+        binding.setVariable(BR.presenter, teiProgramListPresenter);
 
         if (enrollment != null) {
 

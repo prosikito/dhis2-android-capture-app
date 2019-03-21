@@ -18,6 +18,7 @@ import org.hisp.dhis.android.core.program.ProgramRuleActionType;
 import org.hisp.dhis.android.core.program.ProgramRuleModel;
 import org.hisp.dhis.android.core.program.ProgramRuleVariableModel;
 import org.hisp.dhis.android.core.program.ProgramRuleVariableSourceType;
+import org.hisp.dhis.android.core.program.ProgramStageModel;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttributeValueModel;
 import org.hisp.dhis.rules.models.Rule;
 import org.hisp.dhis.rules.models.RuleAction;
@@ -51,10 +52,8 @@ import org.hisp.dhis.rules.models.RuleVariablePreviousEvent;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
-import java.util.Collection;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 
 import javax.annotation.Nonnull;
 
@@ -64,11 +63,20 @@ import io.reactivex.Flowable;
 import io.reactivex.Observable;
 
 import static android.text.TextUtils.isEmpty;
+import static org.dhis2.utils.SQLConstants.AND;
+import static org.dhis2.utils.SQLConstants.EQUAL;
+import static org.dhis2.utils.SQLConstants.FROM;
+import static org.dhis2.utils.SQLConstants.JOIN;
+import static org.dhis2.utils.SQLConstants.NOT_EQUAL;
+import static org.dhis2.utils.SQLConstants.ON;
+import static org.dhis2.utils.SQLConstants.POINT;
+import static org.dhis2.utils.SQLConstants.QUOTE;
+import static org.dhis2.utils.SQLConstants.SELECT;
 
 
-@SuppressWarnings("PMD")
+@SuppressWarnings({"PMD", "squid:MaximumInheritanceDepth"})
 public final class RulesRepository {
-    private static final String QUERY_RULES = "SELECT\n" +
+    private static final String QUERY_RULES = SELECT +
             "  ProgramRule.uid, \n" +
             "  ProgramRule.programStage,\n" +
             "  ProgramRule.priority,\n" +
@@ -76,7 +84,7 @@ public final class RulesRepository {
             "FROM ProgramRule\n" +
             "WHERE program = ?;";
 
-    private static final String QUERY_VARIABLES = "SELECT\n" +
+    private static final String QUERY_VARIABLES = SELECT +
             "  name,\n" +
             "  programStage,\n" +
             "  programRuleVariableSourceType,\n" +
@@ -106,7 +114,7 @@ public final class RulesRepository {
             "  \"TEI_ATTRIBUTE\"\n" +
             ");";
 
-    private static final String QUERY_ACTIONS = "SELECT\n" +
+    private static final String QUERY_ACTIONS = SELECT +
             "  ProgramRuleAction.programRule,\n" +
             "  ProgramRuleAction.programStage,\n" +
             "  ProgramRuleAction.programStageSection,\n" +
@@ -141,53 +149,57 @@ public final class RulesRepository {
     /**
      * Query all events except current one from a program without registration
      */
-    private static final String QUERY_OTHER_EVENTS = "SELECT Event.uid,\n" +
-            "  Event.programStage,\n" +
-            "  Event.status,\n" +
-            "  Event.eventDate,\n" +
-            "  Event.dueDate,\n" +
-            "  Event.organisationUnit,\n" +
-            "  ProgramStage.displayName\n" +
-            "FROM Event\n" +
-            "JOIN ProgramStage ON ProgramStage.uid = Event.programStage\n" +
+    private static final String QUERY_OTHER_EVENTS = SELECT + EventModel.TABLE + POINT + EventModel.Columns.UID + ",\n" +
+            " " + EventModel.TABLE + POINT + EventModel.Columns.PROGRAM_STAGE + ",\n" +
+            " " + EventModel.TABLE + POINT + EventModel.Columns.STATUS + ",\n" +
+            " " + EventModel.TABLE + POINT + EventModel.Columns.EVENT_DATE + ",\n" +
+            " " + EventModel.TABLE + POINT + EventModel.Columns.DUE_DATE + ",\n" +
+            " " + EventModel.TABLE + POINT + EventModel.Columns.ORGANISATION_UNIT + ",\n" +
+            " " + ProgramStageModel.TABLE + POINT + ProgramStageModel.Columns.DISPLAY_NAME + "\n" +
+            FROM + EventModel.TABLE + "\n" +
+            JOIN + ProgramStageModel.TABLE + ON + ProgramStageModel.TABLE + POINT + ProgramStageModel.Columns.UID + EQUAL +
+            EventModel.TABLE + POINT + EventModel.Columns.PROGRAM_STAGE + "\n" +
             "WHERE Event.program = ? AND Event.uid != ? AND Event.eventDate <= ? \n" +
-            " AND " + EventModel.TABLE + "." + EventModel.Columns.STATE + " != '" + State.TO_DELETE + "' ORDER BY Event.eventDate DESC,Event.lastUpdated DESC LIMIT 10";
+            AND + EventModel.TABLE + "." + EventModel.Columns.STATE + NOT_EQUAL + QUOTE + State.TO_DELETE +
+            QUOTE + " ORDER BY Event.eventDate DESC,Event.lastUpdated DESC LIMIT 10";
 
     /**
      * Query all events except current one from an enrollment
      */
-    private static final String QUERY_OTHER_EVENTS_ENROLLMENTS = "SELECT Event.uid,\n" +
-            "  Event.programStage,\n" +
-            "  Event.status,\n" +
-            "  Event.eventDate,\n" +
-            "  Event.dueDate,\n" +
-            "  Event.organisationUnit,\n" +
-            "  ProgramStage.displayName\n" +
-            "FROM Event\n" +
-            "JOIN ProgramStage ON ProgramStage.uid = Event.programStage\n" +
+    private static final String QUERY_OTHER_EVENTS_ENROLLMENTS = SELECT + EventModel.TABLE + POINT + EventModel.Columns.UID + ",\n" +
+            " " + EventModel.TABLE + POINT + EventModel.Columns.PROGRAM_STAGE + ",\n" +
+            " " + EventModel.TABLE + POINT + EventModel.Columns.STATUS + ",\n" +
+            " " + EventModel.TABLE + POINT + EventModel.Columns.EVENT_DATE + ",\n" +
+            " " + EventModel.TABLE + POINT + EventModel.Columns.DUE_DATE + ",\n" +
+            " " + EventModel.TABLE + POINT + EventModel.Columns.ORGANISATION_UNIT + ",\n" +
+            " " + ProgramStageModel.TABLE + POINT + ProgramStageModel.Columns.DISPLAY_NAME + "\n" +
+            FROM + EventModel.TABLE + "\n" +
+            JOIN + ProgramStageModel.TABLE + ON + ProgramStageModel.TABLE + POINT + ProgramStageModel.Columns.UID + EQUAL +
+            EventModel.TABLE + POINT + EventModel.Columns.PROGRAM_STAGE + "\n" +
             "WHERE Event.enrollment = ? AND Event.uid != ? AND Event.eventDate <= ?\n" +
-            " AND " + EventModel.TABLE + "." + EventModel.Columns.STATE + " != '" + State.TO_DELETE + "' ORDER BY Event.eventDate DESC,Event.lastUpdated DESC LIMIT 10";
+            AND + EventModel.TABLE + "." + EventModel.Columns.STATE + NOT_EQUAL + QUOTE + State.TO_DELETE + "' ORDER BY Event.eventDate DESC,Event.lastUpdated DESC LIMIT 10";
 
     /**
      * Query all events from an enrollment
      */
-    private static final String QUERY_EVENTS_ENROLLMENTS = "SELECT Event.uid,\n" +
-            "  Event.programStage,\n" +
-            "  Event.status,\n" +
-            "  Event.eventDate,\n" +
-            "  Event.dueDate,\n" +
-            "  Event.organisationUnit,\n" +
-            "  ProgramStage.displayName\n" +
-            "FROM Event\n" +
-            "JOIN ProgramStage ON ProgramStage.uid = Event.programStage\n" +
+    private static final String QUERY_EVENTS_ENROLLMENTS = SELECT + EventModel.TABLE + POINT + EventModel.Columns.UID + ",\n" +
+            " " + EventModel.TABLE + POINT + EventModel.Columns.PROGRAM_STAGE + ",\n" +
+            " " + EventModel.TABLE + POINT + EventModel.Columns.STATUS + ",\n" +
+            " " + EventModel.TABLE + POINT + EventModel.Columns.EVENT_DATE + ",\n" +
+            " " + EventModel.TABLE + POINT + EventModel.Columns.DUE_DATE + ",\n" +
+            " " + EventModel.TABLE + POINT + EventModel.Columns.ORGANISATION_UNIT + ",\n" +
+            " " + ProgramStageModel.TABLE + POINT + ProgramStageModel.Columns.DISPLAY_NAME + "\n" +
+            FROM + EventModel.TABLE + "\n" +
+            JOIN + ProgramStageModel.TABLE + ON + ProgramStageModel.TABLE + POINT + ProgramStageModel.Columns.UID + EQUAL +
+            EventModel.TABLE + POINT + EventModel.Columns.PROGRAM_STAGE + "\n" +
             "WHERE Event.enrollment = ?\n" +
-            " AND " + EventModel.TABLE + "." + EventModel.Columns.STATE + " != '" + State.TO_DELETE + "' ORDER BY Event.eventDate,Event.lastUpdated DESC LIMIT 10";
+            AND + EventModel.TABLE + "." + EventModel.Columns.STATE + NOT_EQUAL + QUOTE + State.TO_DELETE + "' ORDER BY Event.eventDate,Event.lastUpdated DESC LIMIT 10";
 
     private static final String QUERY_VALUES = "SELECT " +
             "  Event.eventDate," +
             "  Event.programStage," +
             "  TrackedEntityDataValue.dataElement," +
-            "  TrackedEntityDataValue.value," +
+            "  TrackedEntityDataValue.VALUE," +
             "  ProgramRuleVariable.useCodeForOptionSet," +
             "  Option.code," +
             "  Option.name" +
@@ -195,10 +207,10 @@ public final class RulesRepository {
             "  INNER JOIN Event ON TrackedEntityDataValue.event = Event.uid " +
             "  INNER JOIN DataElement ON DataElement.uid = TrackedEntityDataValue.dataElement " +
             "  LEFT JOIN ProgramRuleVariable ON ProgramRuleVariable.dataElement = DataElement.uid " +
-            "  LEFT JOIN Option ON (Option.optionSet = DataElement.optionSet AND Option.code = TrackedEntityDataValue.value) " +
-            " WHERE Event.uid = ? AND value IS NOT NULL AND " + EventModel.TABLE + "." + EventModel.Columns.STATE + " != '" + State.TO_DELETE + "';";
+            "  LEFT JOIN Option ON (Option.optionSet = DataElement.optionSet AND Option.code = TrackedEntityDataValue.VALUE) " +
+            " WHERE Event.uid = ? AND VALUE IS NOT NULL AND " + EventModel.TABLE + "." + EventModel.Columns.STATE + NOT_EQUAL + QUOTE + State.TO_DELETE + "';";
 
-    private static final String QUERY_ENROLLMENT = "SELECT\n" +
+    private static final String QUERY_ENROLLMENT = SELECT +
             "  Enrollment.uid,\n" +
             "  Enrollment.incidentDate,\n" +
             "  Enrollment.enrollmentDate,\n" +
@@ -210,9 +222,9 @@ public final class RulesRepository {
             "WHERE Enrollment.uid = ? \n" +
             "LIMIT 1;";
 
-    private static final String QUERY_ATTRIBUTE_VALUES = "SELECT\n" +
+    private static final String QUERY_ATTRIBUTE_VALUES = SELECT +
             "  Field.id,\n" +
-            "  Value.value,\n" +
+            "  Value.VALUE,\n" +
             "  ProgramRuleVariable.useCodeForOptionSet,\n" +
             "  Option.code,\n" +
             "  Option.name\n" +
@@ -229,8 +241,8 @@ public final class RulesRepository {
             "    Value.trackedEntityAttribute = Field.id\n" +
             "        AND Value.trackedEntityInstance = Enrollment.trackedEntityInstance)\n" +
             "  LEFT JOIN ProgramRuleVariable ON ProgramRuleVariable.trackedEntityAttribute = Field.id " +
-            "  LEFT JOIN Option ON (Option.optionSet = Field.optionSet AND Option.code = Value.value) " +
-            "WHERE Enrollment.uid = ? AND Value.value IS NOT NULL;";
+            "  LEFT JOIN Option ON (Option.optionSet = Field.optionSet AND Option.code = Value.VALUE) " +
+            "WHERE Enrollment.uid = ? AND Value.VALUE IS NOT NULL;";
 
     @NonNull
     private final BriteDatabase briteDatabase;
@@ -271,26 +283,6 @@ public final class RulesRepository {
     }
 
     @NonNull
-    private static List<Rule> mapActionsToRules(
-            @NonNull List<Quartet<String, String, Integer, String>> rawRules,
-            @NonNull Map<String, Collection<RuleAction>> ruleActions) {
-        List<Rule> rules = new ArrayList<>();
-
-        for (Quartet<String, String, Integer, String> rawRule : rawRules) {
-            Collection<RuleAction> actions = ruleActions.get(rawRule.val0());
-
-            if (actions == null) {
-                actions = new ArrayList<>();
-            }
-
-           /* rules.add(Rule.create(rawRule.val1(), rawRule.val2(),
-                    rawRule.val3(), new ArrayList<>(actions)));*/
-        }
-
-        return rules;
-    }
-
-    @NonNull
     private static List<Rule> mapActionsToRulesNew(
             @NonNull List<Quartet<String, String, Integer, String>> rawRules, //ProgramRule uid, stage, priority and condition
             @NonNull List<Pair<String, RuleAction>> ruleActions) {
@@ -303,10 +295,6 @@ public final class RulesRepository {
                 if (pair.val0().equals(rawRule.val0()))
                     pairActions.add(pair.val1());
             }
-
-            /*if (actions == null) {
-                actions = new ArrayList<>();
-            }*/
             rules.add(Rule.create(rawRule.val1(), rawRule.val2(),
                     rawRule.val3(), new ArrayList<>(pairActions), rawRule.val0())); //TODO: Change val0 to Rule Name
         }
@@ -342,7 +330,7 @@ public final class RulesRepository {
         String attributeType = cursor.getString(5);
         String elementType = cursor.getString(6);
 
-        // String representation of value type.
+        // String representation of VALUE type.
         RuleValueType mimeType = null;
         if (!isEmpty(attributeType)) {
             mimeType = convertType(attributeType);
@@ -388,7 +376,7 @@ public final class RulesRepository {
         String attributeType = cursor.getString(5);
         String elementType = cursor.getString(6);
 
-        // String representation of value type.
+        // String representation of VALUE type.
         RuleValueType mimeType = null;
         if (!isEmpty(attributeType)) {
             mimeType = convertType(attributeType);
@@ -450,6 +438,7 @@ public final class RulesRepository {
         return create(actionType, programStage, section, attribute, dataElement, location, content, data, option, optionGroup);
     }
 
+    @SuppressWarnings("squid:S00107")
     @NonNull
     public static RuleAction create(ProgramRuleActionType actionType, String programStage, String section, String attribute,
                                     String dataElement, String location, String content, String data, String option, String optionGroup) {
@@ -561,7 +550,7 @@ public final class RulesRepository {
                                                         String optionCode = cursor.getString(5);
                                                         String optionName = cursor.getString(6);
                                                         if (!isEmpty(optionCode) && !isEmpty(optionName))
-                                                            value = useCode ? optionCode : optionName; //If de has optionSet then check if value should be code or name for program rules
+                                                            value = useCode ? optionCode : optionName; //If de has optionSet then check if VALUE should be code or name for program rules
                                                         dataValues.add(RuleDataValue.create(eventDateV, programStage,
                                                                 dataElement, value));
                                                         dataValueCursor.moveToNext();
@@ -596,7 +585,7 @@ public final class RulesRepository {
                     String orgUnit = cursor.getString(5);
                     String orgUnitCode = getOrgUnitCode(orgUnit);
                     String programStageName = cursor.getString(6);
-                    RuleEvent.Status status = cursor.getString(2).equals(RuleEvent.Status.VISITED.toString())? RuleEvent.Status.ACTIVE : RuleEvent.Status.valueOf(cursor.getString(2)); //TODO: WHAT?
+                    RuleEvent.Status status = cursor.getString(2).equals(RuleEvent.Status.VISITED.toString()) ? RuleEvent.Status.ACTIVE : RuleEvent.Status.valueOf(cursor.getString(2)); //TODO: WHAT?
 
                     try (Cursor dataValueCursor = briteDatabase.query(QUERY_VALUES, eventUid)) {
                         if (dataValueCursor != null && dataValueCursor.moveToFirst()) {
@@ -609,7 +598,7 @@ public final class RulesRepository {
                                 String optionCode = cursor.getString(5);
                                 String optionName = cursor.getString(6);
                                 if (!isEmpty(optionCode) && !isEmpty(optionName))
-                                    value = useCode ? optionCode : optionName; //If de has optionSet then check if value should be code or name for program rules
+                                    value = useCode ? optionCode : optionName; //If de has optionSet then check if VALUE should be code or name for program rules
                                 dataValues.add(RuleDataValue.create(eventDateV, programStage,
                                         dataElement, value));
                                 dataValueCursor.moveToNext();

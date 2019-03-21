@@ -38,7 +38,7 @@ final class EnrollmentRepository implements DataEntryRepository {
             "  Field.type,\n" +
             "  Field.mandatory,\n" +
             "  Field.optionSet,\n" +
-            "  Value.value,\n" +
+            "  Value.VALUE,\n" +
             "  Option.displayName,\n" +
             "  Field.allowFutureDate,\n" +
             "  Field.generated,\n" +
@@ -66,7 +66,7 @@ final class EnrollmentRepository implements DataEntryRepository {
             "    Value.trackedEntityAttribute = Field.id\n" +
             "        AND Value.trackedEntityInstance = Enrollment.trackedEntityInstance)\n" +
             "  LEFT OUTER JOIN Option ON (\n" +
-            "    Field.optionSet = Option.optionSet AND Value.value = Option.code\n" +
+            "    Field.optionSet = Option.optionSet AND Value.VALUE = Option.code\n" +
             "  )\n" +
             "WHERE Enrollment.uid = ?";
 
@@ -97,22 +97,18 @@ final class EnrollmentRepository implements DataEntryRepository {
     @Override
     public Observable<List<FieldViewModel>> list() {
         return briteDatabase
-                .createQuery(TrackedEntityAttributeValueModel.TABLE, QUERY, enrollment == null ? "" : enrollment)
+                .createQuery(TrackedEntityAttributeValueModel.TABLE, QUERY, enrollment)
                 .mapToList(this::transform);
     }
 
     public List<FieldViewModel> fieldList() {
         List<FieldViewModel> list = new ArrayList<>();
-        Cursor listCursor = briteDatabase.query(QUERY, enrollment);
-        try {
+        try (Cursor listCursor = briteDatabase.query(QUERY, enrollment)) {
             listCursor.moveToFirst();
             do {
                 list.add(transform(listCursor));
             } while (listCursor.moveToNext());
 
-        } finally {
-            if (listCursor != null)
-                listCursor.close();
         }
 
         return list;
@@ -179,18 +175,18 @@ final class EnrollmentRepository implements DataEntryRepository {
                             dataValue = d2.trackedEntityModule().reservedValueManager.getValue(uid, pattern == null || pattern.contains("OU") ? null : orgUnitUid);
                         }
 
-                    String INSERT = "INSERT INTO TrackedEntityAttributeValue\n" +
+                    String insert = "INSERT INTO TrackedEntityAttributeValue\n" +
                             "(lastUpdated, value, trackedEntityAttribute, trackedEntityInstance)\n" +
                             "VALUES (?,?,?,?)";
                     SQLiteStatement updateStatement = briteDatabase.getWritableDatabase()
-                            .compileStatement(INSERT);
+                            .compileStatement(insert);
                     sqLiteBind(updateStatement, 1, BaseIdentifiableObject.DATE_FORMAT
                             .format(Calendar.getInstance().getTime()));
                     sqLiteBind(updateStatement, 2, dataValue == null ? "" : dataValue);
                     sqLiteBind(updateStatement, 3, uid == null ? "" : uid);
                     sqLiteBind(updateStatement, 4, teiUid == null ? "" : teiUid);
 
-                    long insert = briteDatabase.executeInsert(
+                    briteDatabase.executeInsert(
                             TrackedEntityAttributeValueModel.TABLE, updateStatement);
                     updateStatement.clearBindings();
                 }

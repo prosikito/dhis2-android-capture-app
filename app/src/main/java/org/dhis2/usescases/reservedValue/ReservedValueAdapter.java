@@ -14,11 +14,11 @@ import org.dhis2.databinding.ItemReservedValueBinding;
 
 public class ReservedValueAdapter extends RecyclerView.Adapter<ReservedValueViewHolder> {
 
-    private ReservedValueContracts.Presenter presenter;
+    private ReservedValueContracts.ReservedValuePresenter reservedValuePresenter;
     private List<ReservedValueModel> dataElements;
 
-    public ReservedValueAdapter(ReservedValueContracts.Presenter presenter) {
-        this.presenter = presenter;
+    public ReservedValueAdapter(ReservedValueContracts.ReservedValuePresenter reservedValuePresenter) {
+        this.reservedValuePresenter = reservedValuePresenter;
         dataElements = new ArrayList<>();
     }
 
@@ -27,12 +27,12 @@ public class ReservedValueAdapter extends RecyclerView.Adapter<ReservedValueView
     public ReservedValueViewHolder onCreateViewHolder(@NonNull ViewGroup viewGroup, int viewType) {
         LayoutInflater inflater = LayoutInflater.from(viewGroup.getContext());
         ItemReservedValueBinding binding = DataBindingUtil.inflate(inflater, R.layout.item_reserved_value, viewGroup, false);
-        return new ReservedValueViewHolder(binding, presenter);
+        return new ReservedValueViewHolder(binding);
     }
 
     @Override
     public void onBindViewHolder(@NonNull ReservedValueViewHolder holder, int position) {
-        holder.bind(presenter, dataElements.get(position));
+        holder.bind(reservedValuePresenter, dataElements.get(position));
     }
 
     @Override

@@ -9,6 +9,7 @@ import org.dhis2.utils.DateUtils;
 import org.dhis2.utils.custom_views.OrgUnitDialog;
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnitModel;
 import org.hisp.dhis.android.core.program.ProgramModel;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -25,21 +26,21 @@ import timber.log.Timber;
  * QUADRAM. Created by Cristian on 06/03/2018.
  */
 
-public class TeiProgramListInteractor implements TeiProgramListContract.Interactor {
+public class TeiProgramListTeiProgramListInteractor implements TeiProgramListContract.TeiProgramListInteractor {
 
-    private TeiProgramListContract.View view;
+    private TeiProgramListContract.TeiProgramListView teiProgramListView;
     private String trackedEntityId;
     private CompositeDisposable compositeDisposable;
     private final TeiProgramListRepository teiProgramListRepository;
     private Date selectedEnrollmentDate;
 
-    TeiProgramListInteractor(TeiProgramListRepository teiProgramListRepository) {
+    TeiProgramListTeiProgramListInteractor(TeiProgramListRepository teiProgramListRepository) {
         this.teiProgramListRepository = teiProgramListRepository;
     }
 
     @Override
-    public void init(TeiProgramListContract.View view, String trackedEntityId) {
-        this.view = view;
+    public void init(TeiProgramListContract.TeiProgramListView teiProgramListView, String trackedEntityId) {
+        this.teiProgramListView = teiProgramListView;
         this.trackedEntityId = trackedEntityId;
         compositeDisposable = new CompositeDisposable();
 
@@ -52,7 +53,7 @@ public class TeiProgramListInteractor implements TeiProgramListContract.Interact
     public void enroll(String programUid, String uid) {
         selectedEnrollmentDate = Calendar.getInstance().getTime();
 
-        OrgUnitDialog orgUnitDialog = OrgUnitDialog.getInstace().setMultiSelection(false);
+        OrgUnitDialog orgUnitDialog = OrgUnitDialog.getInstance().setMultiSelection(false);
         orgUnitDialog.setTitle("Enrollment Org Unit")
                 .setPossitiveListener(v -> {
                     if (orgUnitDialog.getSelectedOrgUnit() != null)
@@ -66,7 +67,7 @@ public class TeiProgramListInteractor implements TeiProgramListContract.Interact
         int month = c.get(Calendar.MONTH);
         int day = c.get(Calendar.DAY_OF_MONTH);
 
-        DatePickerDialog dateDialog = new DatePickerDialog(view.getContext(), (
+        DatePickerDialog dateDialog = new DatePickerDialog(teiProgramListView.getContext(), (
                 (datePicker, year1, month1, day1) -> {
                     Calendar selectedCalendar = Calendar.getInstance();
                     selectedCalendar.set(Calendar.YEAR, year1);
@@ -98,7 +99,7 @@ public class TeiProgramListInteractor implements TeiProgramListContract.Interact
                                         if (orgUnits.size() > 1) {
                                             orgUnitDialog.setOrgUnits(orgUnits);
                                             if (!orgUnitDialog.isAdded())
-                                                orgUnitDialog.show(view.getAbstracContext().getSupportFragmentManager(), "OrgUnitEnrollment");
+                                                orgUnitDialog.show(teiProgramListView.getAbstracContext().getSupportFragmentManager(), "OrgUnitEnrollment");
                                         } else
                                             enrollInOrgUnit(orgUnits.get(0).uid(), programUid, uid, selectedEnrollmentDate);
                                     },
@@ -118,7 +119,7 @@ public class TeiProgramListInteractor implements TeiProgramListContract.Interact
         if (selectedProgram != null) {
             dateDialog.setTitle(selectedProgram.enrollmentDateLabel());
         }
-        dateDialog.setButton(DialogInterface.BUTTON_NEGATIVE, view.getContext().getString(R.string.date_dialog_clear), (dialog, which) -> {
+        dateDialog.setButton(DialogInterface.BUTTON_NEGATIVE, teiProgramListView.getContext().getString(R.string.date_dialog_clear), (dialog, which) -> {
             dialog.dismiss();
         });
         dateDialog.show();
@@ -135,7 +136,7 @@ public class TeiProgramListInteractor implements TeiProgramListContract.Interact
                         .subscribeOn(Schedulers.io())
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(enrollmentUid -> {
-                                    view.goToEnrollmentScreen(enrollmentUid, programUid);
+                                    teiProgramListView.goToEnrollmentScreen(enrollmentUid, programUid);
                                 },
                                 Timber::d)
         );
@@ -150,7 +151,7 @@ public class TeiProgramListInteractor implements TeiProgramListContract.Interact
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
-                        view::setActiveEnrollments,
+                        teiProgramListView::setActiveEnrollments,
                         Timber::d)
         );
     }
@@ -160,7 +161,7 @@ public class TeiProgramListInteractor implements TeiProgramListContract.Interact
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
-                        view::setOtherEnrollments,
+                        teiProgramListView::setOtherEnrollments,
                         Timber::d)
         );
     }
@@ -200,11 +201,11 @@ public class TeiProgramListInteractor implements TeiProgramListContract.Interact
                 programListToPrint.add(programModel1);
             }
         }
-        view.setPrograms(programListToPrint);
+        teiProgramListView.setPrograms(programListToPrint);
     }
 
     @Override
-    public String getProgramColor(String uid) {
+    public String getProgramColor(@NotNull String uid) {
         return teiProgramListRepository.getProgramColor(uid);
     }
 

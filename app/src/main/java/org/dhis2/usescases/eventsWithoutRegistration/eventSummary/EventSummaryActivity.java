@@ -22,7 +22,6 @@ import org.dhis2.utils.HelpManager;
 import org.dhis2.utils.custom_views.CustomDialog;
 import org.dhis2.utils.custom_views.ProgressBarAnimation;
 import org.hisp.dhis.android.core.event.EventModel;
-import org.hisp.dhis.android.core.event.EventStatus;
 import org.hisp.dhis.android.core.program.ProgramModel;
 
 import java.util.ArrayList;
@@ -44,8 +43,8 @@ import static android.text.TextUtils.isEmpty;
 /**
  * QUADRAM. Created by Cristian on 01/03/2018.
  */
-
-public class EventSummaryActivity extends ActivityGlobalAbstract implements EventSummaryContract.View, ProgressBarAnimation.OnUpdate {
+@SuppressWarnings("squid:MaximumInheritanceDepth")
+public class EventSummaryActivity extends ActivityGlobalAbstract implements EventSummaryContract.EventSummaryView, ProgressBarAnimation.OnUpdate {
 
     private static final int PROGRESS_TIME = 2000;
 
@@ -55,9 +54,8 @@ public class EventSummaryActivity extends ActivityGlobalAbstract implements Even
     private Map<String, View> sections = new HashMap<>();
 
     @Inject
-    EventSummaryContract.Presenter presenter;
+    EventSummaryContract.EventSummaryPresenter eventSummaryPresenter;
     private ActivityEventSummaryBinding binding;
-    private int completionPercent;
     private int totalFields;
     private int totalCompletedFields;
     private int fieldsToCompleteBeforeClosing;
@@ -84,7 +82,7 @@ public class EventSummaryActivity extends ActivityGlobalAbstract implements Even
 
         super.onCreate(savedInstanceState);
         binding = DataBindingUtil.setContentView(this, R.layout.activity_event_summary);
-        binding.setPresenter(presenter);
+        binding.setPresenter(eventSummaryPresenter);
 
         binding.actionButton.setOnClickListener(v -> finish());
     }
@@ -92,13 +90,13 @@ public class EventSummaryActivity extends ActivityGlobalAbstract implements Even
     @Override
     protected void onResume() {
         super.onResume();
-        presenter.init(this, programId, eventId);
+        eventSummaryPresenter.init(this, programId, eventId);
 
     }
 
     @Override
     protected void onPause() {
-        presenter.onDettach();
+        eventSummaryPresenter.onDettach();
         super.onPause();
     }
 
@@ -122,7 +120,7 @@ public class EventSummaryActivity extends ActivityGlobalAbstract implements Even
             ((TextView) inflatedLayout.findViewById(R.id.section_title)).setText(formSectionViewModel.label());
             binding.eventSectionRows.addView(inflatedLayout);
             sections.put(formSectionViewModel.sectionUid(), inflatedLayout);
-            presenter.getSectionCompletion(formSectionViewModel.sectionUid());
+            eventSummaryPresenter.getSectionCompletion(formSectionViewModel.sectionUid());
         }
     }
 
@@ -173,7 +171,7 @@ public class EventSummaryActivity extends ActivityGlobalAbstract implements Even
                     @Override
                     public void onPositive() {
                         if (canComplete)
-                            presenter.doOnComple();
+                            eventSummaryPresenter.doOnComple();
                         dialog.dismiss();
                     }
 
@@ -185,16 +183,15 @@ public class EventSummaryActivity extends ActivityGlobalAbstract implements Even
         if (!isEmpty(messageOnComplete))
             dialog.show();
         else
-            presenter.doOnComple();
+            eventSummaryPresenter.doOnComple();
     }
 
     @Override
     public void accessDataWrite(Boolean canWrite) {
 
-        if (DateUtils.getInstance().isEventExpired(null, eventModel.completedDate(), programModel.completeEventsExpiryDays())){
+        if (DateUtils.getInstance().isEventExpired(null, eventModel.completedDate(), programModel.completeEventsExpiryDays())) {
             binding.actionButton.setVisibility(View.GONE);
-        }
-        else {
+        } else {
             switch (eventModel.status()) {
                 case ACTIVE:
                     binding.actionButton.setText(getString(R.string.complete_and_close));
@@ -212,6 +209,8 @@ public class EventSummaryActivity extends ActivityGlobalAbstract implements Even
                 case COMPLETED:
                     binding.actionButton.setText(getString(R.string.re_open));
                     binding.actionButton.setVisibility(canWrite ? View.VISIBLE : View.GONE);
+                    break;
+                default:
                     break;
             }
         }
@@ -261,18 +260,18 @@ public class EventSummaryActivity extends ActivityGlobalAbstract implements Even
 
                 StringBuilder missingString = new StringBuilder(missingMandatoryFields.isEmpty() ? "" : "These fields are mandatory. Please check their values to be able to complete the event.");
                 for (String missinField : missingMandatoryFields) {
-                    missingString.append(String.format("\n- %s", missinField));
+                    missingString.append(String.format("%n- %s", missinField));
                 }
 
                 StringBuilder errorString = new StringBuilder(errorFields.isEmpty() ? "" : "These fields contain errors. Please check their values to be able to complete the event.");
                 for (String errorField : errorFields) {
-                    errorString.append(String.format("\n- %s", errorField));
+                    errorString.append(String.format("%n- %s", errorField));
                 }
 
-                String finalMessage = missingString.append("\n").append(errorString.toString()).toString();
-
-                sectionView.findViewById(R.id.section_info).setOnClickListener(view ->
-                        showInfoDialog("Error", finalMessage)
+                sectionView.findViewById(R.id.section_info).setOnClickListener(view -> {
+                            String finalMessage = missingString.append("\n").append(errorString.toString()).toString();
+                            showInfoDialog("Error", finalMessage);
+                        }
                 );
             }
 
@@ -280,7 +279,7 @@ public class EventSummaryActivity extends ActivityGlobalAbstract implements Even
 
         binding.summaryHeader.setText(String.format(getString(R.string.event_summary_header), String.valueOf(totalCompletedFields), String.valueOf(totalFields)));
         float completionPerone = (float) totalCompletedFields / (float) totalFields;
-        completionPercent = (int) (completionPerone * 100);
+        int completionPercent = (int) (completionPerone * 100);
         ProgressBarAnimation gainAnim = new ProgressBarAnimation(binding.progressGains, 0, completionPercent, false, this);
         gainAnim.setDuration(PROGRESS_TIME);
         binding.progressGains.startAnimation(gainAnim);

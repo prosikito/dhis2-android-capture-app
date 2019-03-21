@@ -22,11 +22,11 @@ import java.util.List;
 
 public class ProgramStageSelectionAdapter extends RecyclerView.Adapter<ProgramStageSelectionViewHolder> {
 
-    private ProgramStageSelectionContract.Presenter presenter;
+    private ProgramStageSelectionContract.ProgramStageSelectionPresenter programStageSelectionPresenter;
     private List<Pair<ProgramStageModel, ObjectStyleModel>> programStageModels;
 
-    ProgramStageSelectionAdapter(@NonNull ProgramStageSelectionContract.Presenter presenter) {
-        this.presenter = presenter;
+    ProgramStageSelectionAdapter(@NonNull ProgramStageSelectionContract.ProgramStageSelectionPresenter programStageSelectionPresenter) {
+        this.programStageSelectionPresenter = programStageSelectionPresenter;
     }
 
     public void setProgramStageModels(List<Pair<ProgramStageModel, ObjectStyleModel>> programStageModels) {
@@ -44,7 +44,7 @@ public class ProgramStageSelectionAdapter extends RecyclerView.Adapter<ProgramSt
     public void onBindViewHolder(ProgramStageSelectionViewHolder holder, int position) {
         ProgramStageModel programStageModel = programStageModels.get(position).val0();
         ObjectStyleModel objectStyleModel = programStageModels.get(position).val1();
-        holder.bind(presenter, programStageModel, objectStyleModel);
+        holder.bind(programStageSelectionPresenter, programStageModel, objectStyleModel);
     }
 
     @Override

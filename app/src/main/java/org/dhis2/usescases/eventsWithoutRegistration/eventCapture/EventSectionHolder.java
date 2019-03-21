@@ -1,7 +1,5 @@
 package org.dhis2.usescases.eventsWithoutRegistration.eventCapture;
 
-import androidx.databinding.ObservableBoolean;
-import androidx.databinding.ObservableField;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -18,12 +16,12 @@ public class EventSectionHolder extends RecyclerView.ViewHolder {
         this.binding = binding;
     }
 
-    public void bind(EventSectionModel sectionModel, EventCaptureContract.Presenter presenter) {
+    public void bind(EventSectionModel sectionModel, EventCaptureContract.EventCapturePresenter eventCapturePresenter) {
         binding.sectionTitle.setText(sectionModel.sectionName());
         binding.setOrder(getAdapterPosition());
         binding.setSectionUid(sectionModel.sectionUid());
-        binding.setCurrentSection(presenter.getCurrentSection());
-        binding.setPresenter(presenter);
+        binding.setCurrentSection(eventCapturePresenter.getCurrentSection());
+        binding.setPresenter(eventCapturePresenter);
 
         binding.sectionValues.setText(String.format("%s/%s", sectionModel.numberOfCompletedFields(), sectionModel.numberOfTotalFields()));
     }

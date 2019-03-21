@@ -39,11 +39,11 @@ import static org.dhis2.utils.Constants.PROGRAM_UID;
  * QUADRAM. Created by Cristian on 13/02/2018.
  */
 
-public class ProgramEventDetailPresenter implements ProgramEventDetailContract.Presenter {
+public class ProgramEventDetailProgramEventDetailPresenter implements ProgramEventDetailContract.ProgramEventDetailPresenter {
 
     private final ProgramEventDetailRepository eventRepository;
     private final MetadataRepository metaRepository;
-    private ProgramEventDetailContract.View view;
+    private ProgramEventDetailContract.ProgramEventDetailView programEventDetailView;
     protected ProgramModel program;
     protected String programId;
     private CompositeDisposable compositeDisposable;
@@ -57,7 +57,7 @@ public class ProgramEventDetailPresenter implements ProgramEventDetailContract.P
     private String orgUnitQuery;
     private Period currentPeriod;
 
-    ProgramEventDetailPresenter(
+    ProgramEventDetailProgramEventDetailPresenter(
             @NonNull ProgramEventDetailRepository programEventDetailRepository,
             @NonNull MetadataRepository metadataRepository) {
         this.eventRepository = programEventDetailRepository;
@@ -65,8 +65,8 @@ public class ProgramEventDetailPresenter implements ProgramEventDetailContract.P
     }
 
     @Override
-    public void init(ProgramEventDetailContract.View mview, String programId, Period period) {
-        view = mview;
+    public void init(ProgramEventDetailContract.ProgramEventDetailView mview, String programId, Period period) {
+        programEventDetailView = mview;
         compositeDisposable = new CompositeDisposable();
         this.programId = programId;
         this.currentPeriod = period;
@@ -77,8 +77,8 @@ public class ProgramEventDetailPresenter implements ProgramEventDetailContract.P
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
                         programModel -> {
-                            view.setProgram(programModel);
-                            view.setWritePermission(programModel.accessDataWrite());
+                            programEventDetailView.setProgram(programModel);
+                            programEventDetailView.setWritePermission(programModel.accessDataWrite());
                             getCatCombo(programModel);
                         },
                         Timber::d)
@@ -87,23 +87,23 @@ public class ProgramEventDetailPresenter implements ProgramEventDetailContract.P
         compositeDisposable.add(
                 parentOrgUnit
                         .flatMap(orgUnit -> eventRepository.orgUnits(orgUnit.val1()).toFlowable(BackpressureStrategy.LATEST)
-                                .map(orgUnits1 -> OrgUnitUtils.createNode(view.getContext(), orgUnits, true))
+                                .map(orgUnits1 -> OrgUnitUtils.createNode(programEventDetailView.getContext(), orgUnits, true))
                                 .map(nodeList -> Pair.create(orgUnit.val0(), nodeList)))
                         .subscribeOn(Schedulers.io())
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(
-                                view.addNodeToTree(),
+                                programEventDetailView.addNodeToTree(),
                                 Timber::e
                         ));
 
         compositeDisposable.add(
-                view.currentPage()
+                programEventDetailView.currentPage()
                         .startWith(0)
                         .flatMap(page -> eventRepository.filteredProgramEvents(programId, dates, currentPeriod, categoryOptionComboModel, orgUnitQuery, page).distinctUntilChanged())
                         .subscribeOn(Schedulers.io())
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(
-                                view::setData,
+                                programEventDetailView::setData,
                                 Timber::e));
 
     }
@@ -117,25 +117,25 @@ public class ProgramEventDetailPresenter implements ProgramEventDetailContract.P
                 })
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(catComboOptions -> view.setCatComboOptions(mCatCombo, catComboOptions), Timber::d)
+                .subscribe(catComboOptions -> programEventDetailView.setCatComboOptions(mCatCombo, catComboOptions), Timber::d)
         );
     }
 
     @Override
     public void onTimeButtonClick() {
-        view.showTimeUnitPicker();
+        programEventDetailView.showTimeUnitPicker();
     }
 
     @Override
     public void onDateRangeButtonClick() {
-        view.showRageDatePicker();
+        programEventDetailView.showRageDatePicker();
     }
 
     @Override
     public void onOrgUnitButtonClick() {
-        view.openDrawer();
+        programEventDetailView.openDrawer();
         if (orgUnits.isEmpty()) {
-            view.orgUnitProgress(true);
+            programEventDetailView.orgUnitProgress(true);
             compositeDisposable.add(
                     eventRepository.orgUnits()
                             .subscribeOn(Schedulers.computation())
@@ -143,10 +143,10 @@ public class ProgramEventDetailPresenter implements ProgramEventDetailContract.P
                             .subscribe(
                                     data -> {
                                         this.orgUnits = data;
-                                        view.orgUnitProgress(false);
-                                        view.addTree(OrgUnitUtils.renderTree(view.getContext(), orgUnits, true));
+                                        programEventDetailView.orgUnitProgress(false);
+                                        programEventDetailView.addTree(OrgUnitUtils.renderTree(programEventDetailView.getContext(), orgUnits, true));
                                     },
-                                    throwable -> view.renderError(throwable.getMessage())));
+                                    throwable -> programEventDetailView.renderError(throwable.getMessage())));
         }
     }
 
@@ -192,7 +192,7 @@ public class ProgramEventDetailPresenter implements ProgramEventDetailContract.P
         bundle.putString(PROGRAM_UID, programId);
         bundle.putString(Constants.EVENT_UID, eventId);
         bundle.putString(ORG_UNIT, orgUnit);
-        view.startActivity(EventCaptureActivity.class,
+        programEventDetailView.startActivity(EventCaptureActivity.class,
                 EventCaptureActivity.getActivityBundle(eventId, programId),
                 false, false, null
         );
@@ -206,12 +206,12 @@ public class ProgramEventDetailPresenter implements ProgramEventDetailContract.P
     public void addEvent() {
         Bundle bundle = new Bundle();
         bundle.putString(PROGRAM_UID, programId);
-        view.startActivity(EventInitialActivity.class, bundle, false, false, null);
+        programEventDetailView.startActivity(EventInitialActivity.class, bundle, false, false, null);
     }
 
     @Override
     public void onBackClick() {
-        view.back();
+        programEventDetailView.back();
     }
 
     @Override
@@ -221,11 +221,11 @@ public class ProgramEventDetailPresenter implements ProgramEventDetailContract.P
 
     @Override
     public void displayMessage(String message) {
-        view.displayMessage(message);
+        programEventDetailView.displayMessage(message);
     }
 
     @Override
     public void showFilter() {
-        view.showHideFilter();
+        programEventDetailView.showHideFilter();
     }
 }

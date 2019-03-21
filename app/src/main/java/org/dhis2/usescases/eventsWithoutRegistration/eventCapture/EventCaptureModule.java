@@ -30,20 +30,18 @@ public class EventCaptureModule {
 
 
     private final String eventUid;
-    private final String programUid;
 
-    public EventCaptureModule(String eventUid, String programUid) {
+    public EventCaptureModule(String eventUid) {
         this.eventUid = eventUid;
-        this.programUid = programUid;
     }
 
     @Provides
     @PerActivity
-    EventCaptureContract.Presenter providePresenter(@NonNull EventCaptureContract.EventCaptureRepository eventCaptureRepository,
-                                                    @NonNull MetadataRepository metadataRepository,
-                                                    @NonNull RulesUtilsProvider ruleUtils,
-                                                    @NonNull DataEntryStore dataEntryStore) {
-        return new EventCapturePresenterImpl(eventUid, eventCaptureRepository, metadataRepository, ruleUtils, dataEntryStore);
+    EventCaptureContract.EventCapturePresenter providePresenter(@NonNull EventCaptureContract.EventCaptureRepository eventCaptureRepository,
+                                                                @NonNull MetadataRepository metadataRepository,
+                                                                @NonNull RulesUtilsProvider ruleUtils,
+                                                                @NonNull DataEntryStore dataEntryStore) {
+        return new EventCaptureEventCapturePresenterImpl(eventUid, eventCaptureRepository, metadataRepository, ruleUtils, dataEntryStore);
     }
 
     @Provides
@@ -51,7 +49,7 @@ public class EventCaptureModule {
     EventCaptureContract.EventCaptureRepository provideRepository(Context context,
                                                                   @NonNull BriteDatabase briteDatabase,
                                                                   FormRepository formRepository, D2 d2) {
-        return new EventCaptureRepositoryImpl(context, briteDatabase, formRepository, eventUid,d2);
+        return new EventCaptureRepositoryImpl(context, briteDatabase, formRepository, eventUid, d2);
     }
 
     @Provides

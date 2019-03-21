@@ -1,10 +1,10 @@
 package org.dhis2.usescases.reservedValue;
 
-import androidx.annotation.NonNull;
-
 import com.google.auto.value.AutoValue;
 
 import javax.annotation.Nullable;
+
+import androidx.annotation.NonNull;
 
 @AutoValue
 public abstract class ReservedValueModel {

@@ -41,7 +41,7 @@ public final class EnrollmentRuleEngineRepository implements RuleEngineRepositor
 
     private static final String QUERY_ATTRIBUTE_VALUES = "SELECT\n" +
             "  Field.id,\n" +
-            "  Value.value,\n" +
+            "  Value.VALUE,\n" +
             "  ProgramRuleVariable.useCodeForOptionSet,\n" +
             "  Option.code,\n" +
             "  Option.name\n" +
@@ -58,8 +58,8 @@ public final class EnrollmentRuleEngineRepository implements RuleEngineRepositor
             "    Value.trackedEntityAttribute = Field.id\n" +
             "        AND Value.trackedEntityInstance = Enrollment.trackedEntityInstance)\n" +
             "  LEFT JOIN ProgramRuleVariable ON ProgramRuleVariable.trackedEntityAttribute = Field.id " +
-            "  LEFT JOIN Option ON (Option.optionSet = Field.optionSet AND Option.code = Value.value) " +
-            "WHERE Enrollment.uid = ? AND Value.value IS NOT NULL;";
+            "  LEFT JOIN Option ON (Option.optionSet = Field.optionSet AND Option.code = Value.VALUE) " +
+            "WHERE Enrollment.uid = ? AND Value.VALUE IS NOT NULL;";
 
     @NonNull
     private final BriteDatabase briteDatabase;
@@ -95,7 +95,7 @@ public final class EnrollmentRuleEngineRepository implements RuleEngineRepositor
     @NonNull
     private Flowable<RuleEnrollment> queryEnrollment(
             @NonNull List<RuleAttributeValue> attributeValues) {
-        return briteDatabase.createQuery(EnrollmentModel.TABLE, QUERY_ENROLLMENT, enrollmentUid == null ? "" : enrollmentUid)
+        return briteDatabase.createQuery(EnrollmentModel.TABLE, QUERY_ENROLLMENT, enrollmentUid)
                 .mapToOne(cursor -> {
                     Date enrollmentDate = parseDate(cursor.getString(2));
                     Date incidentDate = cursor.isNull(1) ?
@@ -114,7 +114,7 @@ public final class EnrollmentRuleEngineRepository implements RuleEngineRepositor
     @NonNull
     private Flowable<List<RuleAttributeValue>> queryAttributeValues() {
         return briteDatabase.createQuery(Arrays.asList(EnrollmentModel.TABLE,
-                TrackedEntityAttributeValueModel.TABLE), QUERY_ATTRIBUTE_VALUES, enrollmentUid == null ? "" : enrollmentUid)
+                TrackedEntityAttributeValueModel.TABLE), QUERY_ATTRIBUTE_VALUES, enrollmentUid)
                 .mapToList(cursor -> {
                             String value = cursor.getString(1);
                             boolean useCode = cursor.getInt(2) == 1;
@@ -128,12 +128,9 @@ public final class EnrollmentRuleEngineRepository implements RuleEngineRepositor
     }
 
     @NonNull
-    private static Date parseDate(@NonNull String date) {
-        try {
-            return BaseIdentifiableObject.DATE_FORMAT.parse(date);
-        } catch (ParseException parseException) {
-            throw new RuntimeException(parseException);
-        }
+    private static Date parseDate(@NonNull String date) throws ParseException {
+        return BaseIdentifiableObject.DATE_FORMAT.parse(date);
+
     }
 
     @Nonnull

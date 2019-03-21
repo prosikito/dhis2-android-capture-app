@@ -3,7 +3,6 @@ package org.dhis2.usescases.main.program;
 import com.squareup.sqlbrite2.BriteDatabase;
 
 import org.dhis2.data.dagger.PerFragment;
-import org.hisp.dhis.android.core.D2;
 
 import dagger.Module;
 import dagger.Provides;
@@ -17,14 +16,14 @@ public class ProgramModule {
 
     @Provides
     @PerFragment
-    ProgramContract.Presenter programPresenter(HomeRepository homeRepository) {
-        return new ProgramPresenter(homeRepository);
+    ProgramContract.ProgramPresenter programPresenter(HomeRepository homeRepository) {
+        return new ProgramProgramPresenter(homeRepository);
     }
 
     @Provides
     @PerFragment
-    HomeRepository homeRepository(BriteDatabase briteDatabase, D2 d2) {
-        return new HomeRepositoryImpl(briteDatabase, d2);
+    HomeRepository homeRepository(BriteDatabase briteDatabase) {
+        return new HomeRepositoryImpl(briteDatabase);
     }
 
 

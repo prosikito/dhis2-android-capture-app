@@ -23,11 +23,11 @@ import java.util.List;
 
 public class RelationshipAdapter extends RecyclerView.Adapter<RelationshipViewHolder> {
 
-    private TeiDashboardContracts.Presenter presenter;
+    private TeiDashboardContracts.TeiDashboardPresenter teiDashboardPresenter;
     private List<Pair<Relationship, RelationshipType>> relationships;
 
-    public RelationshipAdapter(TeiDashboardContracts.Presenter presenter) {
-        this.presenter = presenter;
+    public RelationshipAdapter(TeiDashboardContracts.TeiDashboardPresenter teiDashboardPresenter) {
+        this.teiDashboardPresenter = teiDashboardPresenter;
         this.relationships = new ArrayList<>();
     }
 
@@ -40,7 +40,7 @@ public class RelationshipAdapter extends RecyclerView.Adapter<RelationshipViewHo
 
     @Override
     public void onBindViewHolder(@NonNull RelationshipViewHolder holder, int position) {
-        holder.bind(presenter, relationships.get(position));
+        holder.bind(teiDashboardPresenter, relationships.get(position));
     }
 
     @Override

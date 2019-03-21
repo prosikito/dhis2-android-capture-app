@@ -15,12 +15,12 @@ import javax.inject.Inject;
 import androidx.databinding.DataBindingUtil;
 import io.reactivex.functions.Consumer;
 
-public class SplashActivity extends ActivityGlobalAbstract implements SplashContracts.View {
+public class SplashActivity extends ActivityGlobalAbstract implements SplashContracts.SplashView {
 
     ActivitySplashBinding binding;
 
     @Inject
-    SplashContracts.Presenter presenter;
+    SplashContracts.SplashPresenter splashPresenter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -34,12 +34,12 @@ public class SplashActivity extends ActivityGlobalAbstract implements SplashCont
     @Override
     protected void onResume() {
         super.onResume();
-        presenter.init(this);
+        splashPresenter.init(this);
     }
 
     @Override
     protected void onPause() {
-        presenter.destroy();
+        splashPresenter.destroy();
         super.onPause();
     }
 
@@ -51,7 +51,7 @@ public class SplashActivity extends ActivityGlobalAbstract implements SplashCont
                 binding.logo.setVisibility(View.GONE);
                 binding.flag.setVisibility(View.VISIBLE);
             }
-            presenter.isUserLoggedIn();
+            splashPresenter.isUserLoggedIn();
         };
     }
 }

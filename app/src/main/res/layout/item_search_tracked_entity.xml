@@ -11,7 +11,7 @@
 
         <variable
             name="presenter"
-            type="org.dhis2.usescases.searchTrackEntity.SearchTEContractsModule.Presenter" />
+            type="org.dhis2.usescases.searchTrackEntity.SearchTEContractsModule.SearchTEPresenter" />
 
         <variable
             name="program"
@@ -201,7 +201,7 @@
                                     android:textSize="16sp"
                                     android:textStyle="bold"
                                     tools:ignore="RelativeOverlap"
-                                    tools:text="view more" />-->
+                                    tools:text="dataSetTableContractView more" />-->
 
             </RelativeLayout>
 

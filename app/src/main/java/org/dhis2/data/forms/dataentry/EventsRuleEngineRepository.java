@@ -42,20 +42,11 @@ public final class EventsRuleEngineRepository implements RuleEngineRepository {
             " AND " + EventModel.TABLE + "." + EventModel.Columns.STATE + " != '" + State.TO_DELETE + "'" +
             "LIMIT 1;";
 
-    /*private static final String QUERY_VALUES = "SELECT " +
-            "  eventDate," +
-            "  programStage," +
-            "  dataElement," +
-            "  value" +
-            " FROM TrackedEntityDataValue " +
-            "  INNER JOIN Event ON TrackedEntityDataValue.event = Event.uid " +
-            " WHERE event = ? AND value IS NOT NULL AND " + EventModel.Columns.STATE + " != '" + State.TO_DELETE + "'";*/
-
     private static final String QUERY_VALUES = "SELECT " +
             "  Event.eventDate," +
             "  Event.programStage," +
             "  TrackedEntityDataValue.dataElement," +
-            "  TrackedEntityDataValue.value," +
+            "  TrackedEntityDataValue.VALUE," +
             "  ProgramRuleVariable.useCodeForOptionSet," +
             "  Option.code," +
             "  Option.name" +
@@ -63,8 +54,8 @@ public final class EventsRuleEngineRepository implements RuleEngineRepository {
             "  INNER JOIN Event ON TrackedEntityDataValue.event = Event.uid " +
             "  INNER JOIN DataElement ON DataElement.uid = TrackedEntityDataValue.dataElement " +
             "  LEFT JOIN ProgramRuleVariable ON ProgramRuleVariable.dataElement = DataElement.uid " +
-            "  LEFT JOIN Option ON (Option.optionSet = DataElement.optionSet AND Option.code = TrackedEntityDataValue.value) " +
-            " WHERE Event.uid = ? AND value IS NOT NULL AND " + EventModel.TABLE + "." + EventModel.Columns.STATE + " != '" + State.TO_DELETE + "';";
+            "  LEFT JOIN Option ON (Option.optionSet = DataElement.optionSet AND Option.code = TrackedEntityDataValue.VALUE) " +
+            " WHERE Event.uid = ? AND VALUE IS NOT NULL AND " + EventModel.TABLE + "." + EventModel.Columns.STATE + " != '" + State.TO_DELETE + "';";
 
     @NonNull
     private final BriteDatabase briteDatabase;
@@ -97,9 +88,9 @@ public final class EventsRuleEngineRepository implements RuleEngineRepository {
 
     @NonNull
     private Flowable<RuleEvent> queryEvent(@NonNull List<RuleDataValue> dataValues) {
-        return briteDatabase.createQuery(EventModel.TABLE, QUERY_EVENT, eventUid == null ? "" : eventUid)
+        return briteDatabase.createQuery(EventModel.TABLE, QUERY_EVENT, eventUid)
                 .mapToOne(cursor -> {
-                    String eventUid = cursor.getString(0);
+                    String eventUidAux = cursor.getString(0);
                     String programStageUid = cursor.getString(1);
                     RuleEvent.Status status = RuleEvent.Status.valueOf(cursor.getString(2));
                     Date eventDate = parseDate(cursor.getString(3));
@@ -109,7 +100,7 @@ public final class EventsRuleEngineRepository implements RuleEngineRepository {
                     String programStageName = cursor.getString(6);
 
                     return RuleEvent.builder()
-                            .event(eventUid)
+                            .event(eventUidAux)
                             .programStage(programStageUid)
                             .programStageName(programStageName)
                             .status(status)
@@ -137,17 +128,17 @@ public final class EventsRuleEngineRepository implements RuleEngineRepository {
     @NonNull
     private Flowable<List<RuleDataValue>> queryDataValues() {
         return briteDatabase.createQuery(Arrays.asList(EventModel.TABLE,
-                TrackedEntityDataValueModel.TABLE), QUERY_VALUES, eventUid == null ? "" : eventUid)
+                TrackedEntityDataValueModel.TABLE), QUERY_VALUES, eventUid)
                 .mapToList(cursor -> {
                     Date eventDate = DateUtils.databaseDateFormat().parse(cursor.getString(0));
                     String programStage = cursor.getString(1);
                     String dataElement = cursor.getString(2);
                     String value = cursor.getString(3) != null ? cursor.getString(3) : "";
-                    Boolean useCode = cursor.getInt(4) == 1;
+                    boolean useCode = cursor.getInt(4) == 1;
                     String optionCode = cursor.getString(5);
                     String optionName = cursor.getString(6);
                     if (!isEmpty(optionCode) && !isEmpty(optionName))
-                        value = useCode ? optionCode : optionName; //If de has optionSet then check if value should be code or name for program rules
+                        value = useCode ? optionCode : optionName; //If de has optionSet then check if VALUE should be code or name for program rules
                     return RuleDataValue.create(eventDate, programStage, dataElement, value);
                 }).toFlowable(BackpressureStrategy.LATEST);
     }

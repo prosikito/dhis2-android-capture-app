@@ -17,11 +17,12 @@ import androidx.annotation.Nullable;
 import androidx.databinding.DataBindingUtil;
 import io.reactivex.functions.Consumer;
 
-public class EnrollmentActivity extends ActivityGlobalAbstract implements EnrollmentContracts.View {
+@SuppressWarnings("squid:MaximumInheritanceDepth")
+public class EnrollmentActivity extends ActivityGlobalAbstract implements EnrollmentContracts.EnrollmentView {
 
     EnrollmentActivityBinding binding;
     @Inject
-    EnrollmentContracts.Presenter presenter;
+    EnrollmentContracts.EnrollmentPresenter enrollmentPresenter;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -32,12 +33,12 @@ public class EnrollmentActivity extends ActivityGlobalAbstract implements Enroll
 
         binding = DataBindingUtil.setContentView(this, R.layout.enrollment_activity);
 
-        presenter.init(this);
+        enrollmentPresenter.init(this);
     }
 
     @Override
     protected void onStop() {
-        presenter.onDettach();
+        enrollmentPresenter.onDettach();
         super.onStop();
     }
 

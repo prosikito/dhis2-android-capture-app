@@ -42,7 +42,7 @@ final class ProgramStageRepository implements DataEntryRepository {
             "  Field.type,\n" +
             "  Field.mandatory,\n" +
             "  Field.optionSet,\n" +
-            "  Value.value,\n" +
+            "  Value.VALUE,\n" +
             "  Option.displayName,\n" +
             "  Field.section,\n" +
             "  Field.allowFutureDate,\n" +
@@ -69,12 +69,12 @@ final class ProgramStageRepository implements DataEntryRepository {
             "      FROM ProgramStageDataElement\n" +
             "        INNER JOIN DataElement ON DataElement.uid = ProgramStageDataElement.dataElement\n" +
             "        LEFT JOIN ProgramStageSection ON ProgramStageSection.programStage = ProgramStageDataElement.programStage\n" +
-            "        LEFT JOIN ProgramStageSectionDataElementLink ON ProgramStageSectionDataElementLink.programStageSection = ProgramStageSection.uid AND ProgramStageSectionDataElementLink.dataElement = DataElement.uid\n" +            "    ) AS Field ON (Field.stage = Event.programStage)\n" +
+            "        LEFT JOIN ProgramStageSectionDataElementLink ON ProgramStageSectionDataElementLink.programStageSection = ProgramStageSection.uid AND ProgramStageSectionDataElementLink.dataElement = DataElement.uid\n" + "    ) AS Field ON (Field.stage = Event.programStage)\n" +
             "  LEFT OUTER JOIN TrackedEntityDataValue AS Value ON (\n" +
             "    Value.event = Event.uid AND Value.dataElement = Field.id\n" +
             "  )\n" +
             "  LEFT OUTER JOIN Option ON (\n" +
-            "    Field.optionSet = Option.optionSet AND Value.value = Option.code\n" +
+            "    Field.optionSet = Option.optionSet AND Value.VALUE = Option.code\n" +
             "  )\n" +
             " %s  " +
             "ORDER BY CASE" +
@@ -144,7 +144,7 @@ final class ProgramStageRepository implements DataEntryRepository {
 
     @Override
     public List<FieldViewModel> fieldList() {
-        return null;
+        return new ArrayList<>();
     }
 
     private List<FieldViewModel> checkRenderType(List<FieldViewModel> fieldViewModels) {

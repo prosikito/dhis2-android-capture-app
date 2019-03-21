@@ -18,12 +18,12 @@ import org.dhis2.usescases.teiDashboard.TeiDashboardContracts;
 
 public class DashboardProgramAdapter extends RecyclerView.Adapter<DashboardProgramViewHolder> {
 
-    private final TeiDashboardContracts.Presenter presenter;
+    private final TeiDashboardContracts.TeiDashboardPresenter teiDashboardPresenter;
     private DashboardProgramModel dashboardProgramModel;
 
-    public DashboardProgramAdapter(TeiDashboardContracts.Presenter presenter, DashboardProgramModel program) {
+    public DashboardProgramAdapter(TeiDashboardContracts.TeiDashboardPresenter teiDashboardPresenter, DashboardProgramModel program) {
         this.dashboardProgramModel = program;
-        this.presenter = presenter;
+        this.teiDashboardPresenter = teiDashboardPresenter;
     }
 
     @NonNull
@@ -35,7 +35,7 @@ public class DashboardProgramAdapter extends RecyclerView.Adapter<DashboardProgr
 
     @Override
     public void onBindViewHolder(@NonNull DashboardProgramViewHolder holder, int position) {
-        holder.bind(presenter, dashboardProgramModel, position);
+        holder.bind(teiDashboardPresenter, dashboardProgramModel, position);
     }
 
     @Override

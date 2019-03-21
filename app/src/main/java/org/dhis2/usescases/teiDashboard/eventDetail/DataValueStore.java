@@ -23,6 +23,10 @@ import androidx.annotation.Nullable;
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
 
+import static org.dhis2.utils.SQLConstants.AND;
+import static org.dhis2.utils.SQLConstants.EQUAL;
+import static org.dhis2.utils.SQLConstants.QUESTION_MARK;
+
 final class DataValueStore implements DataEntryStore {
     private static final String SELECT_EVENT = "SELECT * FROM " + EventModel.TABLE +
             " WHERE " + EventModel.Columns.UID + " = ? " +
@@ -126,7 +130,7 @@ final class DataValueStore implements DataEntryStore {
 
         // ToDo: write test cases for different events
         return (long) briteDatabase.update(TrackedEntityDataValueModel.TABLE, dataValue,
-                TrackedEntityDataValueModel.Columns.DATA_ELEMENT + " = ? AND " +
+                TrackedEntityDataValueModel.Columns.DATA_ELEMENT + EQUAL + QUESTION_MARK + AND +
                         TrackedEntityDataValueModel.Columns.EVENT + " = ?",
                 uid,
                 eventUid);

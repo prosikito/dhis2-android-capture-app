@@ -1,9 +1,6 @@
 package org.dhis2.usescases.main.program;
 
 import android.database.Cursor;
-import androidx.databinding.BaseObservable;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
 import com.gabrielittner.auto.value.cursor.ColumnAdapter;
 import com.gabrielittner.auto.value.cursor.ColumnName;
@@ -11,10 +8,18 @@ import com.google.auto.value.AutoValue;
 
 import java.io.Serializable;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.databinding.BaseObservable;
+
 @AutoValue
 public abstract class HomeViewModel extends BaseObservable implements Serializable {
 
     static class Columns {
+        private Columns() {
+            // hide public constructor
+        }
+
         static final String UID = "uid";
         static final String DISPLAY_NAME = "displayName";
         static final String LAST_UPDATED = "lastUpdated";
@@ -58,6 +63,7 @@ public abstract class HomeViewModel extends BaseObservable implements Serializab
     @ColumnName(Columns.CATEGORY_COMBO)
     public abstract String categoryCombo();
 
+    @SuppressWarnings("squid:S00107")
     @NonNull
     public static HomeViewModel create(@NonNull String id, @NonNull String title, @NonNull String lastUpdated,
                                        @NonNull Type type, @NonNull String programType, @Nullable String trackedEntityType, @Nullable String displayFrontPageList,

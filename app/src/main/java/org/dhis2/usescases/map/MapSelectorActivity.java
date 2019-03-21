@@ -17,7 +17,7 @@ import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 
 import org.dhis2.R;
-import org.dhis2.usescases.eventsWithoutRegistration.eventInitial.EventInitialPresenter;
+import org.dhis2.usescases.eventsWithoutRegistration.eventInitial.EventInitialEventInitialPresenter;
 import org.dhis2.usescases.general.ActivityGlobalAbstract;
 
 import androidx.annotation.NonNull;
@@ -29,6 +29,7 @@ import androidx.core.app.ActivityCompat;
  * Created by Cristian on 15/03/2018.
  */
 
+@SuppressWarnings("squid:MaximumInheritanceDepth")
 public class MapSelectorActivity extends ActivityGlobalAbstract implements OnMapReadyCallback {
 
     private GoogleMap mMap;
@@ -49,7 +50,9 @@ public class MapSelectorActivity extends ActivityGlobalAbstract implements OnMap
         setContentView(R.layout.activity_map_selector);
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
-        mapFragment.getMapAsync(this);
+        if (mapFragment != null){
+            mapFragment.getMapAsync(this);
+        }
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
         findViewById(R.id.back).setOnClickListener(v -> finish());
         findViewById(R.id.fab).setOnClickListener(v -> {
@@ -78,13 +81,7 @@ public class MapSelectorActivity extends ActivityGlobalAbstract implements OnMap
     private void centerMapOnCurrentLocation() {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             // Should we show an explanation?
-            if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_COARSE_LOCATION)) {
-                // TODO CRIS
-                // Show an expanation to the user *asynchronously* -- don't block
-                // this thread waiting for the user's response! After the user
-                // sees the explanation, try again to request the permission.
-
-            } else {
+            if (!ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_COARSE_LOCATION)) {
                 ActivityCompat.requestPermissions(this,
                         new String[]{Manifest.permission.ACCESS_COARSE_LOCATION},
                         ACCESS_COARSE_LOCATION_PERMISSION_REQUEST);
@@ -106,16 +103,11 @@ public class MapSelectorActivity extends ActivityGlobalAbstract implements OnMap
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String permissions[], @NonNull int[] grantResults) {
-        switch (requestCode) {
-            case EventInitialPresenter.ACCESS_COARSE_LOCATION_PERMISSION_REQUEST: {
-                // If request is cancelled, the result arrays are empty.
-                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    centerMapOnCurrentLocation();
-                } else {
-                    // TODO CRIS
-                }
-            }
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        // If request is cancelled, the result arrays are empty.
+        if (requestCode == EventInitialEventInitialPresenter.ACCESS_COARSE_LOCATION_PERMISSION_REQUEST &&
+                grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            centerMapOnCurrentLocation();
         }
     }
 }

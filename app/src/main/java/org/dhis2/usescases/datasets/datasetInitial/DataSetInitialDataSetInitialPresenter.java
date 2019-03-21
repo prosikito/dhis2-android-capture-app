@@ -11,34 +11,34 @@ import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.schedulers.Schedulers;
 import timber.log.Timber;
 
-public class DataSetInitialPresenter implements DataSetInitialContract.Presenter {
+public class DataSetInitialDataSetInitialPresenter implements DataSetInitialContract.DataSetInitialPresenter {
 
     private CompositeDisposable compositeDisposable;
     private DataSetInitialRepository dataSetInitialRepository;
-    private DataSetInitialContract.View view;
+    private DataSetInitialContract.DataSetInitialView dataSetInitialView;
 
-    public DataSetInitialPresenter(DataSetInitialRepository dataSetInitialRepository) {
+    public DataSetInitialDataSetInitialPresenter(DataSetInitialRepository dataSetInitialRepository) {
         this.dataSetInitialRepository = dataSetInitialRepository;
     }
 
 
     @Override
-    public void init(DataSetInitialContract.View view) {
-        this.view = view;
+    public void init(DataSetInitialContract.DataSetInitialView dataSetInitialView) {
+        this.dataSetInitialView = dataSetInitialView;
         compositeDisposable = new CompositeDisposable();
         compositeDisposable.add(
                 dataSetInitialRepository.dataSet()
                         .subscribeOn(Schedulers.io())
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(
-                                view::setData,
+                                dataSetInitialView::setData,
                                 Timber::d
                         ));
     }
 
     @Override
     public void onBackClick() {
-        view.back();
+        dataSetInitialView.back();
     }
 
     @Override
@@ -48,7 +48,7 @@ public class DataSetInitialPresenter implements DataSetInitialContract.Presenter
                         .subscribeOn(Schedulers.io())
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(
-                                data -> view.showOrgUnitDialog(data),
+                                data -> dataSetInitialView.showOrgUnitDialog(data),
                                 Timber::d
                         )
         );
@@ -56,7 +56,7 @@ public class DataSetInitialPresenter implements DataSetInitialContract.Presenter
 
     @Override
     public void onReportPeriodClick(PeriodType periodType) {
-        view.showPeriodSelector(periodType);
+        dataSetInitialView.showPeriodSelector(periodType);
     }
 
     @Override
@@ -66,7 +66,7 @@ public class DataSetInitialPresenter implements DataSetInitialContract.Presenter
                         .subscribeOn(Schedulers.io())
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(
-                                data -> view.showCatComboSelector(catOptionUid, data),
+                                data -> dataSetInitialView.showCatComboSelector(catOptionUid, data),
                                 Timber::d
                         )
         );
@@ -75,13 +75,13 @@ public class DataSetInitialPresenter implements DataSetInitialContract.Presenter
     @Override
     public void onActionButtonClick() {
         Bundle bundle = DataSetTableActivity.getBundle(
-                view.getDataSetUid(),
-                view.getSelectedOrgUnit(),
-                view.getPeriodType(),
-                DateUtils.databaseDateFormat().format(view.getSelectedPeriod()),
-                view.getSelectedCatOptions()
+                dataSetInitialView.getDataSetUid(),
+                dataSetInitialView.getSelectedOrgUnit(),
+                dataSetInitialView.getPeriodType(),
+                DateUtils.databaseDateFormat().format(dataSetInitialView.getSelectedPeriod()),
+                dataSetInitialView.getSelectedCatOptions()
         );
-        view.startActivity(DataSetTableActivity.class, bundle, true, false, null);
+        dataSetInitialView.startActivity(DataSetTableActivity.class, bundle, true, false, null);
     }
 
 
@@ -92,6 +92,6 @@ public class DataSetInitialPresenter implements DataSetInitialContract.Presenter
 
     @Override
     public void displayMessage(String message) {
-        view.displayMessage(message);
+        dataSetInitialView.displayMessage(message);
     }
 }

@@ -23,15 +23,15 @@ import timber.log.Timber;
 
 import static android.text.TextUtils.isEmpty;
 
-public class SplashPresenter implements SplashContracts.Presenter {
+public class SplashSplashPresenter implements SplashContracts.SplashPresenter {
 
     private final SplashRepository splashRespository;
-    private SplashContracts.View view;
+    private SplashContracts.SplashView splashView;
     private UserManager userManager;
     @NonNull
     private final CompositeDisposable compositeDisposable;
 
-    SplashPresenter(@Nullable UserManager userManager, SplashRepository splashRepository) {
+    SplashSplashPresenter(@Nullable UserManager userManager, SplashRepository splashRepository) {
         this.userManager = userManager;
         this.compositeDisposable = new CompositeDisposable();
         this.splashRespository = splashRepository;
@@ -43,22 +43,22 @@ public class SplashPresenter implements SplashContracts.Presenter {
     }
 
     @Override
-    public void init(SplashContracts.View view) {
-        this.view = view;
+    public void init(SplashContracts.SplashView splashView) {
+        this.splashView = splashView;
 
         compositeDisposable.add(splashRespository.getIconForFlag()
                 .delay(2, TimeUnit.SECONDS, Schedulers.io())
                 .map(flagName -> {
                     if (!isEmpty(flagName)) {
-                        Resources resources = view.getAbstracContext().getResources();
-                        return resources.getIdentifier(flagName, "drawable", view.getAbstracContext().getPackageName());
+                        Resources resources = splashView.getAbstracContext().getResources();
+                        return resources.getIdentifier(flagName, "drawable", splashView.getAbstracContext().getPackageName());
                     } else
                         return -1;
                 })
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
-                        view.renderFlag(),
+                        splashView.renderFlag(),
                         Timber::d
                 )
         );
@@ -73,7 +73,7 @@ public class SplashPresenter implements SplashContracts.Presenter {
 
         if (SyncUtils.isSyncRunning()) {
 
-            view.startActivity(SyncActivity.class, null, true, true, null);
+            splashView.startActivity(SyncActivity.class, null, true, true, null);
 
         } else {
 
@@ -82,7 +82,7 @@ public class SplashPresenter implements SplashContracts.Presenter {
                     .subscribeOn(Schedulers.io())
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe(isUserLoggedIn -> {
-                        SharedPreferences prefs = view.getAbstracContext().getSharedPreferences(
+                        SharedPreferences prefs = splashView.getAbstracContext().getSharedPreferences(
                                 Constants.SHARE_PREFS, Context.MODE_PRIVATE);
                         if (isUserLoggedIn && !prefs.getBoolean("SessionLocked", false)) {
                             navigateToHomeView();
@@ -95,12 +95,12 @@ public class SplashPresenter implements SplashContracts.Presenter {
 
     @Override
     public void navigateToLoginView() {
-        view.startActivity(LoginActivity.class, null, true, true, null);
+        splashView.startActivity(LoginActivity.class, null, true, true, null);
     }
 
     @Override
     public void navigateToHomeView() {
-        view.startActivity(MainActivity.class, null, true, true, null);
+        splashView.startActivity(MainActivity.class, null, true, true, null);
     }
 
 }

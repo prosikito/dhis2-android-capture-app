@@ -15,10 +15,10 @@ import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.schedulers.Schedulers;
 import timber.log.Timber;
 
-public class DataSetTablePresenter implements DataSetTableContract.Presenter {
+public class DataSetTablePresenter implements DataSetTableContract.DataSetTablePresenter {
 
     private final DataSetTableRepository tableRepository;
-    DataSetTableContract.View view;
+    DataSetTableContract.DataSetTableView dataSetTableContractView;
     private CompositeDisposable compositeDisposable;
     private Pair<Map<String, List<DataElementModel>>, Map<String, List<CategoryOptionComboModel>>> tableData;
 
@@ -28,12 +28,12 @@ public class DataSetTablePresenter implements DataSetTableContract.Presenter {
 
     @Override
     public void onBackClick() {
-        view.back();
+        dataSetTableContractView.back();
     }
 
     @Override
-    public void init(DataSetTableContract.View view, String orgUnitUid, String periodTypeName, String periodInitialDate, String catCombo) {
-        this.view = view;
+    public void init(DataSetTableContract.DataSetTableView dataSetTableContractView, String orgUnitUid, String periodTypeName, String periodInitialDate, String catCombo) {
+        this.dataSetTableContractView = dataSetTableContractView;
         compositeDisposable = new CompositeDisposable();
 
         compositeDisposable.add(
@@ -51,7 +51,7 @@ public class DataSetTablePresenter implements DataSetTableContract.Presenter {
                         .subscribeOn(Schedulers.io())
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(
-                                view::setDataSet,
+                                dataSetTableContractView::setDataSet,
                                 Timber::e
                         )
         );
@@ -67,7 +67,7 @@ public class DataSetTablePresenter implements DataSetTableContract.Presenter {
                         .subscribe(
                                 data -> {
                                     this.tableData = data;
-                                    view.setDataElements(data.val0(), data.val1());
+                                    dataSetTableContractView.setDataElements(data.val0(), data.val1());
                                 },
                                 Timber::e
                         )
@@ -92,7 +92,7 @@ public class DataSetTablePresenter implements DataSetTableContract.Presenter {
 
     @Override
     public void displayMessage(String message) {
-        view.displayMessage(message);
+        dataSetTableContractView.displayMessage(message);
     }
 
 

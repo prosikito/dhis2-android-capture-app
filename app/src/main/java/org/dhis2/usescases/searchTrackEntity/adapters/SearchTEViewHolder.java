@@ -40,8 +40,8 @@ public class SearchTEViewHolder extends RecyclerView.ViewHolder {
     }
 
 
-    public void bind(SearchTEContractsModule.Presenter presenter, SearchTeiModel searchTeiModel) {
-        binding.setPresenter(presenter);
+    public void bind(SearchTEContractsModule.SearchTEPresenter searchTEPresenter, SearchTeiModel searchTeiModel) {
+        binding.setPresenter(searchTEPresenter);
         binding.setOverdue(searchTeiModel.isHasOverdue());
         binding.setIsOnline(searchTeiModel.isOnline());
         binding.setSyncState(searchTeiModel.getTei().state());
@@ -56,7 +56,7 @@ public class SearchTEViewHolder extends RecyclerView.ViewHolder {
 
         binding.executePendingBindings();
 
-        itemView.setOnClickListener(view -> presenter.onTEIClick(searchTeiModel.getTei().uid(), searchTeiModel.isOnline()));
+        itemView.setOnClickListener(view -> searchTEPresenter.onTEIClick(searchTeiModel.getTei().uid(), searchTeiModel.isOnline()));
 
     }
 

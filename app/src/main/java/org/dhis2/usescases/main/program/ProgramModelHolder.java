@@ -25,9 +25,9 @@ public class ProgramModelHolder extends RecyclerView.ViewHolder {
         this.binding = binding;
     }
 
-    public void bind(ProgramContract.Presenter presenter, ProgramViewModel programViewModel, Period currentPeriod) {
+    public void bind(ProgramContract.ProgramPresenter programPresenter, ProgramViewModel programViewModel, Period currentPeriod) {
         binding.setProgram(programViewModel);
-        binding.setPresenter(presenter);
+        binding.setPresenter(programPresenter);
         binding.setCurrentPeriod(currentPeriod);
 
         int color = ColorUtils.getColorFrom(programViewModel.color(), ColorUtils.getPrimaryColor(binding.programImage.getContext(), ColorUtils.ColorType.PRIMARY));

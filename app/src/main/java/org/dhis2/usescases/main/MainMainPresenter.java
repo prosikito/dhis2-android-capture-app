@@ -20,23 +20,23 @@ import timber.log.Timber;
 
 import static android.text.TextUtils.isEmpty;
 
-final class MainPresenter implements MainContracts.Presenter {
+final class MainMainPresenter implements MainContracts.MainPresenter {
 
     private final MetadataRepository metadataRepository;
-    private MainContracts.View view;
+    private MainContracts.MainView mainView;
     private CompositeDisposable compositeDisposable;
 
 
     private final D2 d2;
 
-    MainPresenter(@NonNull D2 d2, MetadataRepository metadataRepository) {
+    MainMainPresenter(@NonNull D2 d2, MetadataRepository metadataRepository) {
         this.d2 = d2;
         this.metadataRepository = metadataRepository;
     }
 
     @Override
-    public void init(MainContracts.View view) {
-        this.view = view;
+    public void init(MainContracts.MainView mainView) {
+        this.mainView = mainView;
         this.compositeDisposable = new CompositeDisposable();
 
         compositeDisposable.add(Observable.defer(() -> Observable.just(d2.userModule().user.get()))
@@ -44,7 +44,7 @@ final class MainPresenter implements MainContracts.Presenter {
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
-                        view.renderUsername(),
+                        mainView.renderUsername(),
                         Timber::e
                 )
         );
@@ -55,7 +55,7 @@ final class MainPresenter implements MainContracts.Presenter {
                         .subscribeOn(Schedulers.io())
                         .subscribe(
                                 id -> {
-                                    SharedPreferences prefs = view.getAbstracContext().getSharedPreferences(
+                                    SharedPreferences prefs = mainView.getAbstracContext().getSharedPreferences(
                                             Constants.SHARE_PREFS, Context.MODE_PRIVATE);
                                     prefs.edit().putString(Constants.DEFAULT_CAT_COMBO, id).apply();
                                 },
@@ -70,7 +70,7 @@ final class MainPresenter implements MainContracts.Presenter {
         try {
             WorkManager.getInstance().cancelAllWork();
             d2.userModule().logOut().call();
-            view.startActivity(LoginActivity.class, null, true, true, null);
+            mainView.startActivity(LoginActivity.class, null, true, true, null);
         } catch (Exception e) {
             Timber.e(e);
         }
@@ -78,24 +78,24 @@ final class MainPresenter implements MainContracts.Presenter {
 
     @Override
     public void blockSession(String pin) {
-        SharedPreferences prefs = view.getAbstracContext().getSharedPreferences(
+        SharedPreferences prefs = mainView.getAbstracContext().getSharedPreferences(
                 Constants.SHARE_PREFS, Context.MODE_PRIVATE);
         prefs.edit().putBoolean("SessionLocked", true).apply();
         if (pin != null) {
             prefs.edit().putString("pin", pin).apply();
         }
         WorkManager.getInstance().cancelAllWork();
-        view.startActivity(LoginActivity.class, null, true, true, null);
+        mainView.startActivity(LoginActivity.class, null, true, true, null);
     }
 
     @Override
     public void showFilter() {
-        view.showHideFilter();
+        mainView.showHideFilter();
     }
 
     @Override
     public void changeFragment(int id) {
-        view.changeFragment(id);
+        mainView.changeFragment(id);
     }
 
     @Override
@@ -105,7 +105,7 @@ final class MainPresenter implements MainContracts.Presenter {
                         .subscribeOn(Schedulers.io())
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(
-                                data -> view.showSyncErrors(data),
+                                data -> mainView.showSyncErrors(data),
                                 Timber::e
                         )
         );
@@ -118,7 +118,7 @@ final class MainPresenter implements MainContracts.Presenter {
 
     @Override
     public void onMenuClick() {
-        view.openDrawer(Gravity.START);
+        mainView.openDrawer(Gravity.START);
     }
 
     //    @SuppressWarnings("PMD.UseStringBufferForStringAppends")

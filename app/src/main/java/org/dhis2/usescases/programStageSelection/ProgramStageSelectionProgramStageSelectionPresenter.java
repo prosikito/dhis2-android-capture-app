@@ -21,14 +21,14 @@ import timber.log.Timber;
  * QUADRAM. Created by ppajuelo on 31/10/2017.
  */
 
-public class ProgramStageSelectionPresenter implements ProgramStageSelectionContract.Presenter {
+public class ProgramStageSelectionProgramStageSelectionPresenter implements ProgramStageSelectionContract.ProgramStageSelectionPresenter {
 
     private final RulesUtilsProvider ruleUtils;
-    private ProgramStageSelectionContract.View view;
+    private ProgramStageSelectionContract.ProgramStageSelectionView programStageSelectionView;
     private CompositeDisposable compositeDisposable;
     private ProgramStageSelectionRepository programStageSelectionRepository;
 
-    ProgramStageSelectionPresenter(ProgramStageSelectionRepository programStageSelectionRepository, RulesUtilsProvider ruleUtils) {
+    ProgramStageSelectionProgramStageSelectionPresenter(ProgramStageSelectionRepository programStageSelectionRepository, RulesUtilsProvider ruleUtils) {
         this.programStageSelectionRepository = programStageSelectionRepository;
         this.ruleUtils = ruleUtils;
         compositeDisposable = new CompositeDisposable();
@@ -36,13 +36,13 @@ public class ProgramStageSelectionPresenter implements ProgramStageSelectionCont
 
     @Override
     public void onBackClick() {
-        if (view != null)
-            view.back();
+        if (programStageSelectionView != null)
+            programStageSelectionView.back();
     }
 
     @Override
-    public void getProgramStages(String programId, @NonNull String uid, @NonNull ProgramStageSelectionContract.View view) {
-        this.view = view;
+    public void getProgramStages(String programId, @NonNull String uid, @NonNull ProgramStageSelectionContract.ProgramStageSelectionView programStageSelectionView) {
+        this.programStageSelectionView = programStageSelectionView;
 
         Flowable<List<ProgramStageModel>> stagesFlowable = programStageSelectionRepository.enrollmentProgramStages(programId, uid);
 
@@ -57,7 +57,7 @@ public class ProgramStageSelectionPresenter implements ProgramStageSelectionCont
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
-                        view::setData,
+                        programStageSelectionView::setData,
                         Timber::e));
     }
 
@@ -90,11 +90,11 @@ public class ProgramStageSelectionPresenter implements ProgramStageSelectionCont
 
     @Override
     public void displayMessage(String message) {
-        view.displayMessage(message);
+        programStageSelectionView.displayMessage(message);
     }
 
     @Override
     public void onProgramStageClick(ProgramStageModel programStage) {
-        view.setResult(programStage.uid(), programStage.repeatable(), programStage.periodType());
+        programStageSelectionView.setResult(programStage.uid(), programStage.repeatable(), programStage.periodType());
     }
 }

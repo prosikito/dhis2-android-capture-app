@@ -62,13 +62,13 @@ import static org.dhis2.utils.Constants.TIME_WEEKLY;
 /**
  * A simple {@link Fragment} subclass.
  */
-public class SyncManagerFragment extends FragmentGlobalAbstract implements SyncManagerContracts.View {
+public class SyncManagerFragment extends FragmentGlobalAbstract implements SyncManagerContracts.SyncManagerView {
 
     private int metaInitializationCheck = 0;
     private int dataInitializationCheck = 0;
 
     @Inject
-    SyncManagerContracts.Presenter presenter;
+    SyncManagerContracts.SyncManagerPresenter syncManagerPresenter;
 
     private FragmentSyncManagerBinding binding;
     private SharedPreferences prefs;
@@ -92,7 +92,7 @@ public class SyncManagerFragment extends FragmentGlobalAbstract implements SyncM
                     binding.buttonSyncMeta.setEnabled(true);
 
                     setLastSyncDate();
-                    presenter.checkData();
+                    syncManagerPresenter.checkData();
                 }
             }
         }
@@ -111,7 +111,7 @@ public class SyncManagerFragment extends FragmentGlobalAbstract implements SyncM
                              Bundle savedInstanceState) {
         binding = DataBindingUtil.inflate(inflater, R.layout.fragment_sync_manager, container, false);
 
-        binding.setPresenter(presenter);
+        binding.setPresenter(syncManagerPresenter);
         prefs = getAbstracContext().getSharedPreferences(
                 Constants.SHARE_PREFS, Context.MODE_PRIVATE);
 
@@ -148,7 +148,7 @@ public class SyncManagerFragment extends FragmentGlobalAbstract implements SyncM
     @Override
     public void onResume() {
         super.onResume();
-        presenter.init(this);
+        syncManagerPresenter.init(this);
         LocalBroadcastManager.getInstance(getAbstractActivity().getApplicationContext()).registerReceiver(syncReceiver, new IntentFilter("action_sync"));
 
         if (SyncUtils.isSyncRunning()) {
@@ -184,7 +184,7 @@ public class SyncManagerFragment extends FragmentGlobalAbstract implements SyncM
         super.onPause();
         listenerDisposable.clear();
         LocalBroadcastManager.getInstance(getAbstractActivity().getApplicationContext()).unregisterReceiver(syncReceiver);
-        presenter.disponse();
+        syncManagerPresenter.disponse();
     }
 
     @Override
@@ -277,9 +277,9 @@ public class SyncManagerFragment extends FragmentGlobalAbstract implements SyncM
         }
         prefs.edit().putInt(Constants.TIME_DATA, time).apply();
         if (time != TIME_MANUAL)
-            presenter.syncData(time, Constants.DATA);
+            syncManagerPresenter.syncData(time, Constants.DATA);
         else
-            presenter.cancelPendingWork(Constants.DATA);
+            syncManagerPresenter.cancelPendingWork(Constants.DATA);
     }
 
     private void saveTimeMeta(int i) {
@@ -302,9 +302,9 @@ public class SyncManagerFragment extends FragmentGlobalAbstract implements SyncM
 
         prefs.edit().putInt(Constants.TIME_META, time).apply();
         if (time != TIME_MANUAL)
-            presenter.syncMeta(time, Constants.META);
+            syncManagerPresenter.syncMeta(time, Constants.META);
         else
-            presenter.cancelPendingWork(Constants.META);
+            syncManagerPresenter.cancelPendingWork(Constants.META);
     }
 
     @Override
@@ -324,7 +324,7 @@ public class SyncManagerFragment extends FragmentGlobalAbstract implements SyncM
                 .setTitle(getString(R.string.delete_local_data))
                 .setMessage(getString(R.string.delete_local_data_message))
                 .setView(R.layout.warning_layout)
-                .setPositiveButton(getString(R.string.action_accept), (dialog, which) -> presenter.deleteLocalData())
+                .setPositiveButton(getString(R.string.action_accept), (dialog, which) -> syncManagerPresenter.deleteLocalData())
                 .setNegativeButton(getString(R.string.cancel), (dialog, which) -> dialog.dismiss())
                 .show();
     }
@@ -345,7 +345,7 @@ public class SyncManagerFragment extends FragmentGlobalAbstract implements SyncM
                         .setPriority(NotificationCompat.PRIORITY_HIGH);
 
         notificationManager.notify(123456, notificationBuilder.build());
-        presenter.wipeDb();
+        syncManagerPresenter.wipeDb();
 
     }
 

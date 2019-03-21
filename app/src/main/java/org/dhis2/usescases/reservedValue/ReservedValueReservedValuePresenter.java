@@ -10,23 +10,23 @@ import io.reactivex.processors.PublishProcessor;
 import io.reactivex.schedulers.Schedulers;
 import timber.log.Timber;
 
-public class ReservedValuePresenter implements ReservedValueContracts.Presenter {
+public class ReservedValueReservedValuePresenter implements ReservedValueContracts.ReservedValuePresenter {
 
-    private ReservedValueContracts.View view;
+    private ReservedValueContracts.ReservedValueView reservedValueView;
     private CompositeDisposable disposable;
     private ReservedValueRepository repository;
     private D2 d2;
     private FlowableProcessor<Boolean> updateProcessor;
 
-    public ReservedValuePresenter(ReservedValueRepository repository, D2 d2) {
+    public ReservedValueReservedValuePresenter(ReservedValueRepository repository, D2 d2) {
         this.repository = repository;
         this.d2 = d2;
         this.updateProcessor = PublishProcessor.create();
     }
 
     @Override
-    public void init(ReservedValueContracts.View view) {
-        this.view = view;
+    public void init(ReservedValueContracts.ReservedValueView reservedValueView) {
+        this.reservedValueView = reservedValueView;
         disposable = new CompositeDisposable();
 
         disposable.add(
@@ -36,7 +36,7 @@ public class ReservedValuePresenter implements ReservedValueContracts.Presenter 
                         .subscribeOn(Schedulers.io())
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(
-                                view::setDataElements,
+                                reservedValueView::setDataElements,
                                 Timber::e
                         )
         );
@@ -58,7 +58,7 @@ public class ReservedValuePresenter implements ReservedValueContracts.Presenter 
 
     @Override
     public void onBackClick() {
-        if (view != null)
-            view.onBackClick();
+        if (reservedValueView != null)
+            reservedValueView.onBackClick();
     }
 }

@@ -12,24 +12,22 @@ import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.schedulers.Schedulers;
 import timber.log.Timber;
 
-public class EnrollmentPresenterImpl implements EnrollmentContracts.Presenter {
+public class EnrollmentEnrollmentPresenterImpl implements EnrollmentContracts.EnrollmentPresenter {
 
-    private final EnrollmentRepository enrollmentRepository;
     private final CompositeDisposable compositeDisposable;
     private final D2 d2;
     private final String enrollmentUid;
-    private EnrollmentContracts.View view;
+    private EnrollmentContracts.EnrollmentView enrollmentView;
 
-    EnrollmentPresenterImpl(String enrollmentUid, EnrollmentRepository enrollmentRepository, D2 d2) {
+    EnrollmentEnrollmentPresenterImpl(String enrollmentUid, D2 d2) {
         this.enrollmentUid = enrollmentUid;
-        this.enrollmentRepository = enrollmentRepository;
         this.compositeDisposable = new CompositeDisposable();
         this.d2 = d2;
     }
 
 
     @Override
-    public void init(EnrollmentContracts.View view) {
+    public void init(EnrollmentContracts.EnrollmentView enrollmentView) {
         compositeDisposable.add(
                 Observable.just(d2.enrollmentModule().enrollments.uid(enrollmentUid).get())
                         .flatMap(enrollment -> Observable.just(d2.programModule().programs.uid(enrollment.program()).get())
@@ -40,10 +38,10 @@ public class EnrollmentPresenterImpl implements EnrollmentContracts.Presenter {
                                 programEnrollmentPair -> {
                                     Program program = programEnrollmentPair.val0();
                                     Enrollment enrollment = programEnrollmentPair.val1();
-                                    view.renderEnrollmentDate(program.enrollmentDateLabel(), DateUtils.uiDateFormat().format(enrollment.enrollmentDate()));
+                                    enrollmentView.renderEnrollmentDate(program.enrollmentDateLabel(), DateUtils.uiDateFormat().format(enrollment.enrollmentDate()));
                                     if (program.displayIncidentDate())
-                                        view.renderIncidentDate(program.incidentDateLabel(), DateUtils.uiDateFormat().format(enrollment.incidentDate()));
-                                    view.showCoordinates(program.featureType());
+                                        enrollmentView.renderIncidentDate(program.incidentDateLabel(), DateUtils.uiDateFormat().format(enrollment.incidentDate()));
+                                    enrollmentView.showCoordinates(program.featureType());
                                 },
                                 Timber::e
                         )
@@ -64,7 +62,7 @@ public class EnrollmentPresenterImpl implements EnrollmentContracts.Presenter {
 
     @Override
     public void displayMessage(String message) {
-        view.displayMessage(message);
+        enrollmentView.displayMessage(message);
     }
 
 }

@@ -1,10 +1,6 @@
 package org.dhis2.usescases.qrCodes.eventsworegistration;
 
-import androidx.databinding.DataBindingUtil;
 import android.os.Bundle;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.viewpager.widget.ViewPager;
 import android.view.View;
 
 import org.dhis2.App;
@@ -20,6 +16,11 @@ import java.util.Locale;
 
 import javax.inject.Inject;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.databinding.DataBindingUtil;
+import androidx.viewpager.widget.ViewPager;
+
 import static org.dhis2.data.qr.QRjson.DATA_JSON_WO_REGISTRATION;
 import static org.dhis2.data.qr.QRjson.EVENT_JSON;
 
@@ -27,6 +28,7 @@ import static org.dhis2.data.qr.QRjson.EVENT_JSON;
  * QUADRAM. Created by ppajuelo on 21/06/2018.
  */
 
+@SuppressWarnings("squid:MaximumInheritanceDepth")
 public class QrEventsWORegistrationActivity extends ActivityGlobalAbstract implements QrEventsWORegistrationContracts.View {
 
     @Inject

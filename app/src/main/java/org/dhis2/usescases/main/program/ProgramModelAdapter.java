@@ -11,7 +11,6 @@ import org.dhis2.databinding.ItemProgramModelBinding;
 import org.dhis2.utils.Period;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -19,12 +18,12 @@ import java.util.List;
  */
 
 public class ProgramModelAdapter extends RecyclerView.Adapter<ProgramModelHolder> {
-    private final ProgramContract.Presenter presenter;
+    private final ProgramContract.ProgramPresenter programPresenter;
     private Period currentPeriod;
     private final List<ProgramViewModel> programList;
 
-    ProgramModelAdapter(ProgramContract.Presenter presenter, Period currentPeriod) {
-        this.presenter = presenter;
+    ProgramModelAdapter(ProgramContract.ProgramPresenter programPresenter, Period currentPeriod) {
+        this.programPresenter = programPresenter;
         this.programList = new ArrayList<>();
         this.currentPeriod = currentPeriod;
         setHasStableIds(true);
@@ -40,7 +39,7 @@ public class ProgramModelAdapter extends RecyclerView.Adapter<ProgramModelHolder
     @Override
     public void onBindViewHolder(@NonNull ProgramModelHolder holder, int position) {
 
-        holder.bind(presenter, programList.get(holder.getAdapterPosition()), currentPeriod);
+        holder.bind(programPresenter, programList.get(holder.getAdapterPosition()), currentPeriod);
     }
 
 

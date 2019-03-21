@@ -35,10 +35,11 @@ import okhttp3.ResponseBody;
 import retrofit2.Response;
 import timber.log.Timber;
 
-public class LoginPresenter implements LoginContracts.Presenter {
+public class LoginLoginPresenter implements LoginContracts.LoginPresenter {
 
+    private static final String SESSION_LOCKED = "SessionLocked";
     private final ConfigurationRepository configurationRepository;
-    private LoginContracts.View view;
+    private LoginContracts.LoginView loginView;
 
     private UserManager userManager;
     private CompositeDisposable disposable;
@@ -48,31 +49,31 @@ public class LoginPresenter implements LoginContracts.Presenter {
     private ObservableField<Boolean> isUserPassSet = new ObservableField<>(false);
     private Boolean canHandleBiometrics;
 
-    LoginPresenter(ConfigurationRepository configurationRepository) {
+    LoginLoginPresenter(ConfigurationRepository configurationRepository) {
         this.configurationRepository = configurationRepository;
     }
 
     @SuppressWarnings("squid:S2583")
     @Override
-    public void init(LoginContracts.View view) {
-        this.view = view;
+    public void init(LoginContracts.LoginView loginView) {
+        this.loginView = loginView;
         this.disposable = new CompositeDisposable();
 
         userManager = null;
-        if (((App) view.getContext().getApplicationContext()).getServerComponent() != null)
-            userManager = ((App) view.getContext().getApplicationContext()).getServerComponent().userManager();
+        if (((App) loginView.getContext().getApplicationContext()).getServerComponent() != null)
+            userManager = ((App) loginView.getContext().getApplicationContext()).getServerComponent().userManager();
 
         if (userManager != null) {
             disposable.add(userManager.isUserLoggedIn()
                     .subscribeOn(Schedulers.io())
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe(isUserLoggedIn -> {
-                        SharedPreferences prefs = view.getAbstracContext().getSharedPreferences(
+                        SharedPreferences prefs = loginView.getAbstracContext().getSharedPreferences(
                                 Constants.SHARE_PREFS, Context.MODE_PRIVATE);
-                        if (isUserLoggedIn && !prefs.getBoolean("SessionLocked", false)) {
-                            view.startActivity(MainActivity.class, null, true, true, null);
-                        } else if (prefs.getBoolean("SessionLocked", false)) {
-                            view.getBinding().unlockLayout.setVisibility(View.VISIBLE);
+                        if (isUserLoggedIn && !prefs.getBoolean(SESSION_LOCKED, false)) {
+                            loginView.startActivity(MainActivity.class, null, true, true, null);
+                        } else if (prefs.getBoolean(SESSION_LOCKED, false)) {
+                            loginView.getBinding().unlockLayout.setVisibility(View.VISIBLE);
                         }
 
                     }, Timber::e));
@@ -85,18 +86,18 @@ public class LoginPresenter implements LoginContracts.Presenter {
                             .subscribe(
                                     systemInfo -> {
                                         if (systemInfo.contextPath() != null)
-                                            view.setUrl(systemInfo.contextPath());
+                                            loginView.setUrl(systemInfo.contextPath());
                                         else
-                                            view.setUrl(view.getContext().getString(R.string.login_https));
+                                            loginView.setUrl(loginView.getContext().getString(R.string.login_https));
                                     },
                                     Timber::e));
         } else
-            view.setUrl(view.getContext().getString(R.string.login_https));
+            loginView.setUrl(loginView.getContext().getString(R.string.login_https));
 
 
         if (false && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) //TODO: REMOVE FALSE WHEN GREEN LIGHT
             disposable.add(RxPreconditions
-                    .hasBiometricSupport(view.getContext())
+                    .hasBiometricSupport(loginView.getContext())
                     .filter(canHandleBiometricsResult -> {
                         this.canHandleBiometrics = canHandleBiometrics;
                         return canHandleBiometrics && SecurePreferences.contains(Constants.SECURE_SERVER_URL);
@@ -104,7 +105,7 @@ public class LoginPresenter implements LoginContracts.Presenter {
                     .subscribeOn(Schedulers.io())
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe(
-                            canHandleBiometricsResult2 -> view.showBiometricButton(),
+                            canHandleBiometricsResult2 -> loginView.showBiometricButton(),
                             Timber::e));
 
 
@@ -113,44 +114,44 @@ public class LoginPresenter implements LoginContracts.Presenter {
     @Override
     public void onServerChanged(CharSequence s, int start, int before, int count) {
         boolean testingSet = false;
-        isServerUrlSet.set(!view.getBinding().serverUrl.getEditText().getText().toString().isEmpty());
-        view.resetCredentials(false, true, true);
+        isServerUrlSet.set(!loginView.getBinding().serverUrl.getEditText().getText().toString().isEmpty());
+        loginView.resetCredentials(false, true, true);
 
         if (isServerUrlSet.get() && !testingSet &&
-                (view.getBinding().serverUrl.getEditText().getText().toString().equals(Constants.URL_TEST_229) ||
-                        view.getBinding().serverUrl.getEditText().getText().toString().equals(Constants.URL_TEST_230))) {
-            view.setTestingCredentials();
+                (loginView.getBinding().serverUrl.getEditText().getText().toString().equals(Constants.URL_TEST_229) ||
+                        loginView.getBinding().serverUrl.getEditText().getText().toString().equals(Constants.URL_TEST_230))) {
+            loginView.setTestingCredentials();
         }
 
-        view.setLoginVisibility(isServerUrlSet.get() && isUserNameSet.get() && isUserPassSet.get());
+        loginView.setLoginVisibility(isServerUrlSet.get() && isUserNameSet.get() && isUserPassSet.get());
 
 
     }
 
     @Override
     public void onUserChanged(CharSequence s, int start, int before, int count) {
-        isUserNameSet.set(!view.getBinding().userName.getEditText().getText().toString().isEmpty());
-        view.resetCredentials(false, false, true);
+        isUserNameSet.set(!loginView.getBinding().userName.getEditText().getText().toString().isEmpty());
+        loginView.resetCredentials(false, false, true);
 
-        view.setLoginVisibility(isServerUrlSet.get() && isUserNameSet.get() && isUserPassSet.get());
+        loginView.setLoginVisibility(isServerUrlSet.get() && isUserNameSet.get() && isUserPassSet.get());
 
     }
 
     @Override
     public void onPassChanged(CharSequence s, int start, int before, int count) {
-        isUserPassSet.set(!view.getBinding().userPass.getEditText().getText().toString().isEmpty());
-        view.setLoginVisibility(isServerUrlSet.get() && isUserNameSet.get() && isUserPassSet.get());
+        isUserPassSet.set(!loginView.getBinding().userPass.getEditText().getText().toString().isEmpty());
+        loginView.setLoginVisibility(isServerUrlSet.get() && isUserNameSet.get() && isUserPassSet.get());
     }
 
     @Override
     public void onButtonClick() {
-        view.hideKeyboard();
-        SharedPreferences prefs = view.getAbstracContext().getSharedPreferences(
+        loginView.hideKeyboard();
+        SharedPreferences prefs = loginView.getAbstracContext().getSharedPreferences(
                 Constants.SHARE_PREFS, Context.MODE_PRIVATE);
         if (!prefs.getBoolean(Constants.USER_ASKED_CRASHLYTICS, false))
-            view.showCrashlyticsDialog();
+            loginView.showCrashlyticsDialog();
         else
-            view.showLoginProgress(true);
+            loginView.showLoginProgress(true);
     }
 
     @Override
@@ -161,9 +162,9 @@ public class LoginPresenter implements LoginContracts.Presenter {
         }
         disposable.add(
                 configurationRepository.configure(baseUrl)
-                        .map(config -> ((App) view.getAbstractActivity().getApplicationContext()).createServerComponent(config).userManager())
+                        .map(config -> ((App) loginView.getAbstractActivity().getApplicationContext()).createServerComponent(config).userManager())
                         .switchMap(userManagerResult -> {
-                            SharedPreferences prefs = view.getAbstractActivity().getSharedPreferences(
+                            SharedPreferences prefs = loginView.getAbstractActivity().getSharedPreferences(
                                     Constants.SHARE_PREFS, Context.MODE_PRIVATE);
                             prefs.edit().putString(Constants.SERVER, serverUrl).apply();
                             this.userManager = userManagerResult;
@@ -191,13 +192,13 @@ public class LoginPresenter implements LoginContracts.Presenter {
 
     @Override
     public void onQRClick(View v) {
-        Intent intent = new Intent(view.getContext(), QRActivity.class);
-        view.getAbstractActivity().startActivityForResult(intent, Constants.RQ_QR_SCANNER);
+        Intent intent = new Intent(loginView.getContext(), QRActivity.class);
+        loginView.getAbstractActivity().startActivityForResult(intent, Constants.RQ_QR_SCANNER);
     }
 
     @Override
     public void onVisibilityClick(View v) {
-        view.switchPasswordVisibility();
+        loginView.switchPasswordVisibility();
     }
 
     @Override
@@ -217,11 +218,11 @@ public class LoginPresenter implements LoginContracts.Presenter {
 
     @Override
     public void unlockSession(String pin) {
-        SharedPreferences prefs = view.getAbstracContext().getSharedPreferences(
+        SharedPreferences prefs = loginView.getAbstracContext().getSharedPreferences(
                 Constants.SHARE_PREFS, Context.MODE_PRIVATE);
         if (prefs.getString("pin", "").equals(pin)) {
-            prefs.edit().putBoolean("SessionLocked", false).apply();
-            view.startActivity(MainActivity.class, null, true, true, null);
+            prefs.edit().putBoolean(SESSION_LOCKED, false).apply();
+            loginView.startActivity(MainActivity.class, null, true, true, null);
         }
     }
 
@@ -240,12 +241,12 @@ public class LoginPresenter implements LoginContracts.Presenter {
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe(
                             data -> {
-                                SharedPreferences prefs = view.getAbstracContext().getSharedPreferences();
-                                prefs.edit().putBoolean("SessionLocked", false).apply();
+                                SharedPreferences prefs = loginView.getAbstracContext().getSharedPreferences();
+                                prefs.edit().putBoolean(SESSION_LOCKED, false).apply();
                                 prefs.edit().putString("pin", null).apply();
-                                view.handleLogout();
+                                loginView.handleLogout();
                             },
-                            t -> view.handleLogout()
+                            t -> loginView.handleLogout()
                     )
             );
     }
@@ -254,10 +255,10 @@ public class LoginPresenter implements LoginContracts.Presenter {
     public void handleResponse(@NonNull Response userResponse) {
         Timber.d("Authentication response url: %s", userResponse.raw().request().url().toString());
         Timber.d("Authentication response code: %s", userResponse.code());
-        view.showLoginProgress(false);
+        loginView.showLoginProgress(false);
         if (userResponse.isSuccessful()) {
-            ((App) view.getContext().getApplicationContext()).createUserComponent();
-            view.saveUsersData();
+            ((App) loginView.getContext().getApplicationContext()).createUserComponent();
+            loginView.saveUsersData();
         }
 
     }
@@ -266,7 +267,7 @@ public class LoginPresenter implements LoginContracts.Presenter {
     public void handleError(@NonNull Throwable throwable) {
         Timber.e(throwable);
         if (throwable instanceof IOException) {
-            view.renderInvalidServerUrlError();
+            loginView.renderInvalidServerUrlError();
         } else if (throwable instanceof D2Error) {
             D2Error d2CallException = (D2Error) throwable;
             switch (d2CallException.errorCode()) {
@@ -274,14 +275,14 @@ public class LoginPresenter implements LoginContracts.Presenter {
                     handleResponse(Response.success(null));
                     break;
                 default:
-                    view.renderError(d2CallException.errorCode(), d2CallException.errorDescription());
+                    loginView.renderError(d2CallException.errorCode(), d2CallException.errorDescription());
                     break;
             }
         } else {
-            view.renderUnexpectedError();
+            loginView.renderUnexpectedError();
         }
 
-        view.showLoginProgress(false);
+        loginView.showLoginProgress(false);
     }
 
     @Override
@@ -293,13 +294,13 @@ public class LoginPresenter implements LoginContracts.Presenter {
                         .negativeButtonText("Cancel")
                         .negativeButtonListener((dialog, which) -> {
                         })
-                        .executor(ActivityCompat.getMainExecutor(view.getAbstractActivity()))
+                        .executor(ActivityCompat.getMainExecutor(loginView.getAbstractActivity()))
                         .build()
-                        .authenticate(view.getAbstractActivity())
+                        .authenticate(loginView.getAbstractActivity())
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(
-                                () -> view.checkSecuredCredentials(),
-                                error -> view.displayMessage("AUTH ERROR")));
+                                () -> loginView.checkSecuredCredentials(),
+                                error -> loginView.displayMessage("AUTH ERROR")));
     }
 
     @Override

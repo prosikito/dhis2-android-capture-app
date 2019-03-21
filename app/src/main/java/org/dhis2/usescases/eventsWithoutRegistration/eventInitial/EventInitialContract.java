@@ -1,14 +1,12 @@
 package org.dhis2.usescases.eventsWithoutRegistration.eventInitial;
 
 import android.app.DatePickerDialog;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+
+import com.unnamed.b.atv.model.TreeNode;
 
 import org.dhis2.data.forms.FormSectionViewModel;
 import org.dhis2.data.forms.dataentry.fields.FieldViewModel;
 import org.dhis2.usescases.general.AbstractActivityContracts;
-import com.unnamed.b.atv.model.TreeNode;
-
 import org.hisp.dhis.android.core.category.CategoryComboModel;
 import org.hisp.dhis.android.core.category.CategoryOptionComboModel;
 import org.hisp.dhis.android.core.common.ObjectStyleModel;
@@ -21,6 +19,8 @@ import org.hisp.dhis.android.core.program.ProgramStageModel;
 import java.util.Date;
 import java.util.List;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import io.reactivex.functions.Consumer;
 
 /**
@@ -29,7 +29,7 @@ import io.reactivex.functions.Consumer;
 
 public class EventInitialContract {
 
-    public interface View extends AbstractActivityContracts.View {
+    public interface EventInitialView extends AbstractActivityContracts.View {
         void setProgram(@NonNull ProgramModel program);
 
         void setCatComboOptions(CategoryComboModel catCombo, List<CategoryOptionComboModel> catComboList);
@@ -80,26 +80,30 @@ public class EventInitialContract {
         void renderObjectStyle(ObjectStyleModel objectStyleModel);
     }
 
-    public interface Presenter extends AbstractActivityContracts.Presenter {
-        void init(EventInitialContract.View view, String programId, String eventId, String orgUnitId, String programStageId);
+    public interface EventInitialPresenter extends AbstractActivityContracts.Presenter {
+        void init(EventInitialView eventInitialView, String programId, String eventId, String orgUnitId, String programStageId);
 
         void getProgramStage(String programStageUid);
 
         void onBackClick();
 
+        @SuppressWarnings("squid:S00107")
         void createEvent(String enrollmentUid, String programStageModel, Date date, String orgUnitUid,
                          String catOption, String catOptionCombo,
                          String latitude, String longitude, String trackedEntityInstance);
 
+        @SuppressWarnings("squid:S00107")
         void createEventPermanent(String enrollmentUid, String trackedEntityInstanceUid, String programStageModel,
                                   Date date, String orgUnitUid,
                                   String catOption, String catOptionCombo,
                                   String latitude, String longitude);
 
+        @SuppressWarnings("squid:S00107")
         void scheduleEvent(String enrollmentUid, String programStageModel, Date dueDate, String orgUnitUid,
                            String catOption, String catOptionCombo,
                            String latitude, String longitude);
 
+        @SuppressWarnings("squid:S00107")
         void editEvent(String trackedEntityInstance, String programStageModel, String eventUid, String date, String orgUnitUid,
                        String catOption, String catOptionCombo,
                        String latitude, String longitude);

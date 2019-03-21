@@ -3,7 +3,6 @@ package org.dhis2.usescases.teiDashboard.teiDataDetail;
 import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.util.Log;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
@@ -22,23 +21,23 @@ import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.schedulers.Schedulers;
 import timber.log.Timber;
 
-import static org.dhis2.usescases.eventsWithoutRegistration.eventInitial.EventInitialPresenter.ACCESS_COARSE_LOCATION_PERMISSION_REQUEST;
+import static org.dhis2.usescases.eventsWithoutRegistration.eventInitial.EventInitialEventInitialPresenter.ACCESS_COARSE_LOCATION_PERMISSION_REQUEST;
 
 /**
  * QUADRAM. Created by frodriguez on 12/13/2017.
  */
 
-public class TeiDataDetailPresenter implements TeiDataDetailContracts.Presenter {
+public class TeiDataDetailTeiDataDetailPresenter implements TeiDataDetailContracts.TeiDataDetailPresenter {
 
     private final DashboardRepository dashboardRepository;
     private final MetadataRepository metadataRepository;
     private final CompositeDisposable disposable;
     private final EnrollmentStatusStore enrollmentStore;
-    private TeiDataDetailContracts.View view;
+    private TeiDataDetailContracts.TeiDataDetailView teiDataDetailView;
     private FusedLocationProviderClient mFusedLocationClient;
     private String enrollmentUid;
 
-    TeiDataDetailPresenter(DashboardRepository dashboardRepository, MetadataRepository metadataRepository, EnrollmentStatusStore enrollmentStatusStore) {
+    TeiDataDetailTeiDataDetailPresenter(DashboardRepository dashboardRepository, MetadataRepository metadataRepository, EnrollmentStatusStore enrollmentStatusStore) {
         this.dashboardRepository = dashboardRepository;
         this.metadataRepository = metadataRepository;
         this.enrollmentStore = enrollmentStatusStore;
@@ -46,10 +45,10 @@ public class TeiDataDetailPresenter implements TeiDataDetailContracts.Presenter 
     }
 
     @Override
-    public void init(TeiDataDetailContracts.View view, String uid, String programUid, String enrollmentUid) {
-        this.view = view;
+    public void init(TeiDataDetailContracts.TeiDataDetailView teiDataDetailView, String uid, String programUid, String enrollmentUid) {
+        this.teiDataDetailView = teiDataDetailView;
         this.enrollmentUid = enrollmentUid;
-        mFusedLocationClient = LocationServices.getFusedLocationProviderClient(view.getContext());
+        mFusedLocationClient = LocationServices.getFusedLocationProviderClient(teiDataDetailView.getContext());
 
         if (programUid != null) {
             disposable.add(Observable.zip(
@@ -65,8 +64,8 @@ public class TeiDataDetailPresenter implements TeiDataDetailContracts.Presenter 
                     .subscribeOn(Schedulers.io())
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe(
-                            view::setData,
-                            throwable -> Log.d("ERROR", throwable.getMessage()))
+                            teiDataDetailView::setData,
+                            Timber::e)
             );
 
             disposable.add(
@@ -74,8 +73,8 @@ public class TeiDataDetailPresenter implements TeiDataDetailContracts.Presenter 
                             .subscribeOn(Schedulers.io())
                             .observeOn(AndroidSchedulers.mainThread())
                             .subscribe(
-                                    view.handleStatus(),
-                                    throwable -> Log.d("ERROR", throwable.getMessage()))
+                                    teiDataDetailView.handleStatus(),
+                                    Timber::e)
 
             );
 
@@ -84,7 +83,7 @@ public class TeiDataDetailPresenter implements TeiDataDetailContracts.Presenter 
                             .subscribeOn(Schedulers.io())
                             .observeOn(AndroidSchedulers.mainThread())
                             .subscribe(
-                                    data -> view.setLocation(data.val0(), data.val1()),
+                                    data -> teiDataDetailView.setLocation(data.val0(), data.val1()),
                                     Timber::e
                             )
             );
@@ -100,15 +99,15 @@ public class TeiDataDetailPresenter implements TeiDataDetailContracts.Presenter 
                     DashboardProgramModel::new)
                     .subscribeOn(Schedulers.io())
                     .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe(view::setData,
-                            throwable -> Log.d("ERROR", throwable.getMessage()))
+                    .subscribe(teiDataDetailView::setData,
+                            Timber::e)
             );
         }
     }
 
     @Override
     public void onBackPressed() {
-        view.getAbstracContext().onBackPressed();
+        teiDataDetailView.getAbstracContext().onBackPressed();
     }
 
 
@@ -120,11 +119,11 @@ public class TeiDataDetailPresenter implements TeiDataDetailContracts.Presenter 
                     .observeOn(AndroidSchedulers.mainThread())
                     .map(result -> EnrollmentStatus.CANCELLED)
                     .subscribe(
-                            view.handleStatus(),
+                            teiDataDetailView.handleStatus(),
                             Timber::d)
             );
         else
-            view.displayMessage(null);
+            teiDataDetailView.displayMessage(null);
 
     }
 
@@ -136,11 +135,11 @@ public class TeiDataDetailPresenter implements TeiDataDetailContracts.Presenter 
                     .observeOn(AndroidSchedulers.mainThread())
                     .map(result -> EnrollmentStatus.ACTIVE)
                     .subscribe(
-                            view.handleStatus(),
+                            teiDataDetailView.handleStatus(),
                             Timber::d)
             );
         else
-            view.displayMessage(null);
+            teiDataDetailView.displayMessage(null);
     }
 
     @Override
@@ -151,11 +150,11 @@ public class TeiDataDetailPresenter implements TeiDataDetailContracts.Presenter 
                     .observeOn(AndroidSchedulers.mainThread())
                     .map(result -> EnrollmentStatus.COMPLETED)
                     .subscribe(
-                            view.handleStatus(),
+                            teiDataDetailView.handleStatus(),
                             Timber::d)
             );
         else
-            view.displayMessage(null);
+            teiDataDetailView.displayMessage(null);
     }
 
     @Override
@@ -166,24 +165,24 @@ public class TeiDataDetailPresenter implements TeiDataDetailContracts.Presenter 
                     .observeOn(AndroidSchedulers.mainThread())
                     .map(result -> EnrollmentStatus.ACTIVE)
                     .subscribe(
-                            view.handleStatus(),
+                            teiDataDetailView.handleStatus(),
                             Timber::d)
             );
         else
-            view.displayMessage(null);
+            teiDataDetailView.displayMessage(null);
     }
 
     @Override
     public void onLocationClick() {
-        if (ActivityCompat.checkSelfPermission(view.getContext(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+        if (ActivityCompat.checkSelfPermission(teiDataDetailView.getContext(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             // Should we show an explanation?
-            if (ActivityCompat.shouldShowRequestPermissionRationale(view.getAbstractActivity(), Manifest.permission.ACCESS_COARSE_LOCATION)) {
+            if (ActivityCompat.shouldShowRequestPermissionRationale(teiDataDetailView.getAbstractActivity(), Manifest.permission.ACCESS_COARSE_LOCATION)) {
                 // TODO CRIS:  Show an expanation to the user *asynchronously* -- don't block
                 // this thread waiting for the user's response! After the user
                 // sees the explanation, try again to request the permission.
 
             } else {
-                ActivityCompat.requestPermissions(view.getAbstractActivity(),
+                ActivityCompat.requestPermissions(teiDataDetailView.getAbstractActivity(),
                         new String[]{Manifest.permission.ACCESS_COARSE_LOCATION},
                         ACCESS_COARSE_LOCATION_PERMISSION_REQUEST);
             }
@@ -198,8 +197,8 @@ public class TeiDataDetailPresenter implements TeiDataDetailContracts.Presenter 
 
     @Override
     public void onLocation2Click() {
-        Intent intent = new Intent(view.getContext(), MapSelectorActivity.class);
-        view.getAbstractActivity().startActivityForResult(intent, Constants.RQ_MAP_LOCATION);
+        Intent intent = new Intent(teiDataDetailView.getContext(), MapSelectorActivity.class);
+        teiDataDetailView.getAbstractActivity().startActivityForResult(intent, Constants.RQ_MAP_LOCATION);
     }
 
     @Override

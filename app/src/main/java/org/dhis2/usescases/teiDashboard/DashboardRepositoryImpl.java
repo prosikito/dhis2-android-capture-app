@@ -48,6 +48,15 @@ import io.reactivex.Flowable;
 import io.reactivex.Observable;
 import io.reactivex.functions.Consumer;
 
+import static org.dhis2.utils.SQLConstants.AND;
+import static org.dhis2.utils.SQLConstants.JOIN;
+import static org.dhis2.utils.SQLConstants.ON;
+import static org.dhis2.utils.SQLConstants.QUESTION_MARK;
+import static org.dhis2.utils.SQLConstants.SELECT;
+import static org.dhis2.utils.SQLConstants.TABLE_POINT_COLUMN;
+import static org.dhis2.utils.SQLConstants.TABLE_POINT_COLUMN_EQUAL;
+import static org.dhis2.utils.SQLConstants.VARIABLE;
+import static org.dhis2.utils.SQLConstants.WHERE;
 import static org.hisp.dhis.android.core.utils.StoreUtils.sqLiteBind;
 
 /**
@@ -59,54 +68,54 @@ public class DashboardRepositoryImpl implements DashboardRepository {
     private static final String INSERT_NOTE = "INSERT INTO Note ( " +
             "uid, enrollment, value, storedBy, storedDate" +
             ") VALUES (?, ?, ?, ?, ?);";
-    private static final String SELECT_NOTES = "SELECT " +
+    private static final String SELECT_NOTES = SELECT +
             "Note.* FROM Note\n" +
             "JOIN Enrollment ON Enrollment.uid = Note.enrollment\n" +
             "WHERE Enrollment.trackedEntityInstance = ? AND Enrollment.program = ?\n" +
             "ORDER BY Note.storedDate DESC";
 
-    private final String PROGRAM_QUERY = String.format("SELECT %s.* FROM %s WHERE %s.%s = ",
+    private static final String PROGRAM_QUERY = String.format("SELECT %s.* FROM %s WHERE %s.%s = ",
             ProgramModel.TABLE, ProgramModel.TABLE, ProgramModel.TABLE, ProgramModel.Columns.UID);
 
-    private final String PROGRAM_INDICATORS_QUERY = String.format("SELECT %s.* FROM %s WHERE %s.%s = ",
+    private static final String PROGRAM_INDICATORS_QUERY = String.format("SELECT %s.* FROM %s WHERE %s.%s = ",
             ProgramIndicatorModel.TABLE, ProgramIndicatorModel.TABLE, ProgramIndicatorModel.TABLE, ProgramIndicatorModel.Columns.PROGRAM);
 
-    private final String ATTRIBUTES_QUERY = String.format("SELECT %s.* FROM %s INNER JOIN %s ON %s.%s = %s.%s WHERE %s.%s = ",
+    private static final String ATTRIBUTES_QUERY = String.format("SELECT %s.* FROM %s INNER JOIN %s ON %s.%s = %s.%s WHERE %s.%s = ",
             TrackedEntityAttributeModel.TABLE, TrackedEntityAttributeModel.TABLE,
             ProgramTrackedEntityAttributeModel.TABLE, TrackedEntityAttributeModel.TABLE, TrackedEntityAttributeModel.Columns.UID,
             ProgramTrackedEntityAttributeModel.TABLE, ProgramTrackedEntityAttributeModel.Columns.TRACKED_ENTITY_ATTRIBUTE,
             ProgramTrackedEntityAttributeModel.TABLE, ProgramTrackedEntityAttributeModel.Columns.PROGRAM);
 
-    private final String ORG_UNIT_QUERY = String.format("SELECT * FROM %s WHERE %s.%s = ",
+    private static final String ORG_UNIT_QUERY = String.format("SELECT * FROM %s WHERE %s.%s = ",
             OrganisationUnitModel.TABLE, OrganisationUnitModel.TABLE, OrganisationUnitModel.Columns.UID
     );
 
-    private final String ENROLLMENT_QUERY = String.format("SELECT * FROM %s WHERE %s.%s = ? AND %s.%s = ? LIMIT 1",
+    private static final String ENROLLMENT_QUERY = String.format("SELECT * FROM %s WHERE %s.%s = ? AND %s.%s = ? LIMIT 1",
             EnrollmentModel.TABLE, EnrollmentModel.TABLE, EnrollmentModel.Columns.PROGRAM,
             EnrollmentModel.TABLE, EnrollmentModel.Columns.TRACKED_ENTITY_INSTANCE);
 
-    private final String PROGRAM_STAGE_QUERY = String.format("SELECT * FROM %s WHERE %s.%s = ",
+    private static final String PROGRAM_STAGE_QUERY = String.format("SELECT * FROM %s WHERE %s.%s = ",
             ProgramStageModel.TABLE, ProgramStageModel.TABLE, ProgramStageModel.Columns.PROGRAM);
 
-    private final String PROGRAM_STAGE_FROM_EVENT = String.format(
+    private static final String PROGRAM_STAGE_FROM_EVENT = String.format(
             "SELECT %s.* FROM %s JOIN %s " +
                     "ON %s.%s = %s.%s " +
-                    "WHERE %s.%s = ? " +
+                    WHERE + TABLE_POINT_COLUMN_EQUAL + QUESTION_MARK +
                     "LIMIT 1",
             ProgramStageModel.TABLE, ProgramStageModel.TABLE, EventModel.TABLE,
             ProgramStageModel.TABLE, ProgramStageModel.Columns.UID, EventModel.TABLE, EventModel.Columns.PROGRAM_STAGE,
             EventModel.TABLE, EventModel.Columns.UID);
 
-    private final String GET_EVENT_FROM_UID = String.format(
+    private static final String GET_EVENT_FROM_UID = String.format(
             "SELECT * FROM %s WHERE %s.%s = ? LIMIT 1",
             EventModel.TABLE, EventModel.TABLE, EventModel.Columns.UID);
 
-    private final String EVENTS_QUERY = String.format(
+    private static final String EVENTS_QUERY = String.format(
             "SELECT DISTINCT %s.* FROM %s " +
-                    "JOIN %s ON %s.%s = %s.%s " +
-                    "JOIN %s ON %s.%s = %s.%s " +
-                    "WHERE %s.%s = ? " + //ProgramUid
-                    "AND %s.%s = ? " + //TeiUid
+                    JOIN + VARIABLE + ON + TABLE_POINT_COLUMN_EQUAL + TABLE_POINT_COLUMN +
+                    JOIN + VARIABLE + ON + TABLE_POINT_COLUMN_EQUAL + TABLE_POINT_COLUMN +
+                    WHERE + TABLE_POINT_COLUMN_EQUAL + QUESTION_MARK + //ProgramUid
+                    AND + TABLE_POINT_COLUMN_EQUAL + QUESTION_MARK + //TeiUid
                     "AND %s.%s != '%s' " +
                     "AND %s.%s IN (SELECT %s FROM %s WHERE %s = ?) " +
                     "ORDER BY CASE WHEN ( Event.status IN ('SCHEDULE','SKIPPED','OVERDUE')) " +
@@ -122,12 +131,12 @@ public class DashboardRepositoryImpl implements DashboardRepository {
             EventModel.TABLE, EventModel.Columns.DUE_DATE,
             EventModel.TABLE, EventModel.Columns.EVENT_DATE, ProgramStageModel.TABLE, ProgramStageModel.Columns.SORT_ORDER);
 
-    private final String EVENTS_DISPLAY_BOX = String.format(
+    private static final String EVENTS_DISPLAY_BOX = String.format(
             "SELECT Event.* FROM %s " +
-                    "JOIN %s ON %s.%s = %s.%s " +
-                    "JOIN %s ON %s.%s = %s.%s " +
-                    "WHERE %s.%s = ? " +
-                    "AND %s.%s = ? " +
+                    JOIN + VARIABLE + ON + TABLE_POINT_COLUMN_EQUAL + TABLE_POINT_COLUMN +
+                    JOIN + VARIABLE + ON + TABLE_POINT_COLUMN_EQUAL + TABLE_POINT_COLUMN +
+                    WHERE + TABLE_POINT_COLUMN_EQUAL + QUESTION_MARK +
+                    AND + TABLE_POINT_COLUMN_EQUAL + QUESTION_MARK +
                     "AND %s.%s = ?",
             EventModel.TABLE,
             EnrollmentModel.TABLE, EnrollmentModel.TABLE, EnrollmentModel.Columns.UID, EventModel.TABLE, EventModel.Columns.ENROLLMENT,
@@ -140,12 +149,12 @@ public class DashboardRepositoryImpl implements DashboardRepository {
     private static final Set<String> EVENTS_TABLE = new HashSet<>(Arrays.asList(EventModel.TABLE, EnrollmentModel.TABLE));
     private static final Set<String> EVENTS_PROGRAM_STAGE_TABLE = new HashSet<>(Arrays.asList(EventModel.TABLE, EnrollmentModel.TABLE, ProgramStageModel.TABLE));
 
-    private final String ATTRIBUTE_VALUES_QUERY = String.format(
+    private static final String ATTRIBUTE_VALUES_QUERY = String.format(
             "SELECT TrackedEntityAttributeValue.*, TrackedEntityAttribute.valueType, TrackedEntityAttribute.optionSet FROM %s " +
-                    "JOIN %s ON %s.%s = %s.%s " +
-                    "JOIN %s ON %s.%s = %s.%s " +
-                    "WHERE %s.%s = ? " +
-                    "AND %s.%s = ? " +
+                    JOIN + VARIABLE + ON + TABLE_POINT_COLUMN_EQUAL + TABLE_POINT_COLUMN +
+                    JOIN + VARIABLE + ON + TABLE_POINT_COLUMN_EQUAL + TABLE_POINT_COLUMN +
+                    WHERE + TABLE_POINT_COLUMN_EQUAL + QUESTION_MARK +
+                    AND + TABLE_POINT_COLUMN_EQUAL + QUESTION_MARK +
                     "ORDER BY %s.%s",
             TrackedEntityAttributeValueModel.TABLE,
             ProgramTrackedEntityAttributeModel.TABLE, ProgramTrackedEntityAttributeModel.TABLE, ProgramTrackedEntityAttributeModel.Columns.TRACKED_ENTITY_ATTRIBUTE, TrackedEntityAttributeValueModel.TABLE, TrackedEntityAttributeValueModel.Columns.TRACKED_ENTITY_ATTRIBUTE,
@@ -153,10 +162,10 @@ public class DashboardRepositoryImpl implements DashboardRepository {
             ProgramTrackedEntityAttributeModel.TABLE, ProgramTrackedEntityAttributeModel.Columns.PROGRAM,
             TrackedEntityAttributeValueModel.TABLE, TrackedEntityAttributeValueModel.Columns.TRACKED_ENTITY_INSTANCE,
             ProgramTrackedEntityAttributeModel.TABLE, ProgramTrackedEntityAttributeModel.Columns.SORT_ORDER);
-    private final String ATTRIBUTE_VALUES_NO_PROGRAM_QUERY = String.format(
+    private static final String ATTRIBUTE_VALUES_NO_PROGRAM_QUERY = String.format(
             "SELECT %s.*, TrackedEntityAttribute.valueType, TrackedEntityAttribute.optionSet FROM %s " +
-                    "JOIN %s ON %s.%s = %s.%s " +
-                    "JOIN %s ON %s.%s = %s.%s " +
+                    JOIN + VARIABLE + ON + TABLE_POINT_COLUMN_EQUAL + TABLE_POINT_COLUMN +
+                    JOIN + VARIABLE + ON + TABLE_POINT_COLUMN_EQUAL + TABLE_POINT_COLUMN +
                     "WHERE %s.%s = ? GROUP BY %s.%s",
             TrackedEntityAttributeValueModel.TABLE, TrackedEntityAttributeValueModel.TABLE,
             ProgramTrackedEntityAttributeModel.TABLE, ProgramTrackedEntityAttributeModel.TABLE, ProgramTrackedEntityAttributeModel.Columns.TRACKED_ENTITY_ATTRIBUTE, TrackedEntityAttributeValueModel.TABLE, TrackedEntityAttributeValueModel.Columns.TRACKED_ENTITY_ATTRIBUTE,
@@ -171,9 +180,9 @@ public class DashboardRepositoryImpl implements DashboardRepository {
     private String programUid;
     private String enrollmentUid;
 
-    private static final String SELECT_USERNAME = "SELECT " +
+    private static final String SELECT_USERNAME = SELECT +
             "UserCredentials.displayName FROM UserCredentials";
-    private static final String SELECT_ENROLLMENT = "SELECT " +
+    private static final String SELECT_ENROLLMENT = SELECT +
             "Enrollment.uid FROM Enrollment JOIN Program ON Program.uid = Enrollment.program\n" +
             "WHERE Program.uid = ? AND Enrollment.status = ? AND Enrollment.trackedEntityInstance = ?";
 
@@ -471,7 +480,7 @@ public class DashboardRepositoryImpl implements DashboardRepository {
                     Long id = idColumnIndex != -1 && !cursor.isNull(idColumnIndex) ? cursor.getLong(idColumnIndex) : null;
                     int enrollmentColumnIndex = cursor.getColumnIndex("enrollment");
                     String enrollment = enrollmentColumnIndex != -1 && !cursor.isNull(enrollmentColumnIndex) ? cursor.getString(enrollmentColumnIndex) : null;
-                    int valueColumnIndex = cursor.getColumnIndex("value");
+                    int valueColumnIndex = cursor.getColumnIndex("VALUE");
                     String value = valueColumnIndex != -1 && !cursor.isNull(valueColumnIndex) ? cursor.getString(valueColumnIndex) : null;
                     int storedByColumnIndex = cursor.getColumnIndex("storedBy");
                     String storedBy = storedByColumnIndex != -1 && !cursor.isNull(storedByColumnIndex) ? cursor.getString(storedByColumnIndex) : null;
@@ -507,7 +516,7 @@ public class DashboardRepositoryImpl implements DashboardRepository {
 
                     sqLiteBind(insetNoteStatement, 1, codeGenerator.generate()); //enrollment
                     sqLiteBind(insetNoteStatement, 2, enrollmentUid == null ? "" : enrollmentUid); //enrollment
-                    sqLiteBind(insetNoteStatement, 3, stringBooleanPair.val0() == null ? "" : stringBooleanPair.val0()); //value
+                    sqLiteBind(insetNoteStatement, 3, stringBooleanPair.val0() == null ? "" : stringBooleanPair.val0()); //VALUE
                     sqLiteBind(insetNoteStatement, 4, userName == null ? "" : userName); //storeBy
                     sqLiteBind(insetNoteStatement, 5, DateUtils.databaseDateFormat().format(Calendar.getInstance().getTime())); //storeDate
 
@@ -538,7 +547,7 @@ public class DashboardRepositoryImpl implements DashboardRepository {
 
                 sqLiteBind(insetNoteStatement, 1, codeGenerator.generate()); //enrollment
                 sqLiteBind(insetNoteStatement, 2, enrollmentUidAux == null ? "" : enrollmentUidAux); //enrollment
-                sqLiteBind(insetNoteStatement, 3, stringBooleanPair.val0()); //value
+                sqLiteBind(insetNoteStatement, 3, stringBooleanPair.val0()); //VALUE
                 sqLiteBind(insetNoteStatement, 4, userName == null ? "" : userName); //storeBy
                 sqLiteBind(insetNoteStatement, 5, DateUtils.databaseDateFormat().format(Calendar.getInstance().getTime())); //storeDate
 

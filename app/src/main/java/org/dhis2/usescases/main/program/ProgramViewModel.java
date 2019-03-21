@@ -1,19 +1,24 @@
 package org.dhis2.usescases.main.program;
 
 import android.database.Cursor;
-import androidx.databinding.BaseObservable;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
 import com.gabrielittner.auto.value.cursor.ColumnName;
 import com.google.auto.value.AutoValue;
 
 import java.io.Serializable;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.databinding.BaseObservable;
+
 @AutoValue
 public abstract class ProgramViewModel extends BaseObservable implements Serializable {
 
     static class Columns {
+        private Columns() {
+            // hide public constructor
+        }
+
         static final String UID = "uid";
         static final String DISPLAY_NAME = "displayName";
         static final String ICON = "icon";
@@ -71,7 +76,7 @@ public abstract class ProgramViewModel extends BaseObservable implements Seriali
     @ColumnName(Columns.ACCESS_DATA_WRITE)
     public abstract Boolean accessDataWrite();
 
-
+    @SuppressWarnings("squid:S00107")
     @NonNull
     public static ProgramViewModel create(@NonNull String uid, @NonNull String displayName, @Nullable String color,
                                           @Nullable String icon, @NonNull Integer count, @Nullable String type,

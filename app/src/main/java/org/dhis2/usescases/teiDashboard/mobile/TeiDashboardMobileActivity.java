@@ -11,12 +11,10 @@ import android.os.Handler;
 
 import androidx.annotation.Nullable;
 
-import com.google.android.material.ripple.RippleUtils;
 import com.google.android.material.tabs.TabLayout;
 import androidx.fragment.app.FragmentStatePagerAdapter;
 import androidx.viewpager.widget.ViewPager;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
 
@@ -49,7 +47,7 @@ import me.toptas.fancyshowcase.FocusShape;
  * QUADRAM. Created by ppajuelo on 29/11/2017.
  */
 
-public class TeiDashboardMobileActivity extends TeiDashboardActivity implements TeiDashboardContracts.View {
+public class TeiDashboardMobileActivity extends TeiDashboardActivity implements TeiDashboardContracts.TeiDashboardView {
 
     ActivityDashboardMobileBinding binding;
     protected FragmentStatePagerAdapter adapter;
@@ -62,7 +60,7 @@ public class TeiDashboardMobileActivity extends TeiDashboardActivity implements 
         super.onCreate(savedInstanceState);
 
         binding = DataBindingUtil.setContentView(this, R.layout.activity_dashboard_mobile);
-        binding.setPresenter(presenter);
+        binding.setPresenter(teiDashboardPresenter);
 
         binding.tabLayout.setupWithViewPager(binding.teiPager);
         binding.tabLayout.setTabMode(TabLayout.MODE_SCROLLABLE);
@@ -92,7 +90,7 @@ public class TeiDashboardMobileActivity extends TeiDashboardActivity implements 
     @Override
     protected void onPause() {
         super.onPause();
-        presenter.onDettach();
+        teiDashboardPresenter.onDettach();
     }
 
     @Override
@@ -113,7 +111,7 @@ public class TeiDashboardMobileActivity extends TeiDashboardActivity implements 
 
     @Override
     public void init(String teiUid, String programUid) {
-        presenter.init(this, teiUid, programUid);
+        teiDashboardPresenter.init(this, teiUid, programUid);
     }
 
     private void setViewpagerAdapter() {
@@ -189,7 +187,7 @@ public class TeiDashboardMobileActivity extends TeiDashboardActivity implements 
     @Override
     public void showCatComboDialog(String eventId, String catCombo, List<CategoryOptionComboModel> catComboOptions, String title) {
         CategoryComboDialog dialog = new CategoryComboDialog(getAbstracContext(), catCombo, catComboOptions, 123,
-                selectedOption -> presenter.changeCatOption(eventId, selectedOption), title);
+                selectedOption -> teiDashboardPresenter.changeCatOption(eventId, selectedOption), title);
         dialog.setCancelable(false);
         dialog.setCanceledOnTouchOutside(false);
         dialog.show();
@@ -240,8 +238,8 @@ public class TeiDashboardMobileActivity extends TeiDashboardActivity implements 
         return binding.toolbarTitle.getText().toString();
     }
 
-    public TeiDashboardContracts.Presenter getPresenter() {
-        return presenter;
+    public TeiDashboardContracts.TeiDashboardPresenter getPresenter() {
+        return teiDashboardPresenter;
     }
 
     @Override

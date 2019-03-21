@@ -8,18 +8,9 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
 import android.content.res.TypedArray;
-import androidx.databinding.BindingMethod;
-import androidx.databinding.BindingMethods;
-import androidx.databinding.DataBindingUtil;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import androidx.core.content.ContextCompat;
-import androidx.recyclerview.widget.DividerItemDecoration;
-import androidx.recyclerview.widget.RecyclerView;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -27,6 +18,8 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.widget.AdapterView;
 import android.widget.Spinner;
+
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import org.dhis2.App;
 import org.dhis2.BuildConfig;
@@ -44,10 +37,10 @@ import org.dhis2.usescases.searchTrackEntity.adapters.SearchTEAdapter;
 import org.dhis2.usescases.searchTrackEntity.adapters.SearchTeiModel;
 import org.dhis2.utils.ColorUtils;
 import org.dhis2.utils.Constants;
-import org.dhis2.utils.custom_views.OptionSetDialog;
 import org.dhis2.utils.EndlessRecyclerViewScrollListener;
 import org.dhis2.utils.HelpManager;
 import org.dhis2.utils.NetworkUtils;
+import org.dhis2.utils.custom_views.OptionSetDialog;
 import org.dhis2.utils.custom_views.OptionSetPopUp;
 import org.hisp.dhis.android.core.option.OptionModel;
 import org.hisp.dhis.android.core.program.ProgramModel;
@@ -60,6 +53,14 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
+import androidx.databinding.BindingMethod;
+import androidx.databinding.BindingMethods;
+import androidx.databinding.DataBindingUtil;
+import androidx.recyclerview.widget.DividerItemDecoration;
+import androidx.recyclerview.widget.RecyclerView;
 import io.reactivex.Flowable;
 import io.reactivex.functions.Consumer;
 import io.reactivex.processors.PublishProcessor;
@@ -73,11 +74,12 @@ import timber.log.Timber;
 @BindingMethods({
         @BindingMethod(type = FloatingActionButton.class, attribute = "app:srcCompat", method = "setImageDrawable")
 })
-public class SearchTEActivity extends ActivityGlobalAbstract implements SearchTEContractsModule.View {
+@SuppressWarnings("squid:MaximumInheritanceDepth")
+public class SearchTEActivity extends ActivityGlobalAbstract implements SearchTEContractsModule.SearchTEView {
 
     ActivitySearchBinding binding;
     @Inject
-    SearchTEContractsModule.Presenter presenter;
+    SearchTEContractsModule.SearchTEPresenter searchTEPresenter;
     @Inject
     MetadataRepository metadataRepository;
 
@@ -92,11 +94,11 @@ public class SearchTEActivity extends ActivityGlobalAbstract implements SearchTE
     private BroadcastReceiver networkReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-
+            // unused
         }
     };
     private ProgramModel program;
-    private static PublishProcessor<Integer> onlinePagerProcessor;
+    private PublishProcessor<Integer> onlinePagerProcessor;
     private PublishProcessor<Integer> offlinePagerProcessor;
     private EndlessRecyclerViewScrollListener endlessRecyclerViewScrollListener;
     //---------------------------------------------------------------------------------------------
@@ -111,27 +113,27 @@ public class SearchTEActivity extends ActivityGlobalAbstract implements SearchTE
         super.onCreate(savedInstanceState);
 
         binding = DataBindingUtil.setContentView(this, R.layout.activity_search);
-        binding.setPresenter(presenter);
+        binding.setPresenter(searchTEPresenter);
         initialProgram = getIntent().getStringExtra("PROGRAM_UID");
 
         try {
             fromRelationship = getIntent().getBooleanExtra("FROM_RELATIONSHIP", false);
             fromRelationshipTeiUid = getIntent().getStringExtra("FROM_RELATIONSHIP_TEI");
         } catch (Exception e) {
-            Timber.d(e.getMessage());
+            Timber.e(e);
         }
 
         if (fromRelationship) {
-            searchRelationshipAdapter = new SearchRelationshipAdapter(presenter, metadataRepository, false);
+            searchRelationshipAdapter = new SearchRelationshipAdapter(searchTEPresenter, metadataRepository, false);
             binding.scrollView.setAdapter(searchRelationshipAdapter);
         } else {
-            searchTEAdapter = new SearchTEAdapter(presenter, metadataRepository);
+            searchTEAdapter = new SearchTEAdapter(searchTEPresenter, metadataRepository);
             binding.scrollView.setAdapter(searchTEAdapter);
         }
 
         binding.scrollView.addItemDecoration(new DividerItemDecoration(this, DividerItemDecoration.VERTICAL));
 
-        binding.formRecycler.setAdapter(new FormAdapter(getSupportFragmentManager(), LayoutInflater.from(this), presenter.getOrgUnits(), this));
+        binding.formRecycler.setAdapter(new FormAdapter(getSupportFragmentManager(), LayoutInflater.from(this), searchTEPresenter.getOrgUnits(), this));
 
         onlinePagerProcessor = PublishProcessor.create();
         offlinePagerProcessor = PublishProcessor.create();
@@ -142,11 +144,10 @@ public class SearchTEActivity extends ActivityGlobalAbstract implements SearchTE
                 if (NetworkUtils.isOnline(SearchTEActivity.this))
                     onlinePagerProcessor.onNext(page);
                 else {
-                    if(program != null)
-                        if(program.maxTeiCountToReturn() != 0 && totalItemsCount >= program.maxTeiCountToReturn())
+                    if (program != null)
+                        if (program.maxTeiCountToReturn() != 0 && totalItemsCount >= program.maxTeiCountToReturn())
                             offlinePagerProcessor.onNext(page);
-                    else
-                        if(totalItemsCount >= 20)
+                        else if (totalItemsCount >= 20)
                             offlinePagerProcessor.onNext(page);
                 }
             }
@@ -158,14 +159,14 @@ public class SearchTEActivity extends ActivityGlobalAbstract implements SearchTE
     @Override
     protected void onResume() {
         super.onResume();
-        presenter.init(this, tEType, initialProgram);
+        searchTEPresenter.init(this, tEType, initialProgram);
         registerReceiver(networkReceiver, new IntentFilter("android.net.conn.CONNECTIVITY_CHANGE"));
     }
 
 
     @Override
     protected void onPause() {
-        presenter.onDestroy();
+        searchTEPresenter.onDestroy();
         unregisterReceiver(networkReceiver);
         super.onPause();
     }
@@ -196,7 +197,7 @@ public class SearchTEActivity extends ActivityGlobalAbstract implements SearchTE
     }
 
     @Override
-    public Flowable<Trio<String, String, Integer>> optionSetActions(){
+    public Flowable<Trio<String, String, Integer>> optionSetActions() {
         return ((FormAdapter) binding.formRecycler.getAdapter()).asFlowableOption();
     }
 
@@ -259,7 +260,7 @@ public class SearchTEActivity extends ActivityGlobalAbstract implements SearchTE
             HelpManager.getInstance().setScreenHelp(getClass().getName(), steps);
 
             if (!prefs.getBoolean("TUTO_SEARCH_SHOWN", false) && !BuildConfig.DEBUG) {
-                HelpManager.getInstance().showHelp();/* getAbstractActivity().fancyShowCaseQueue.show();*/
+                HelpManager.getInstance().showHelp();
                 prefs.edit().putBoolean("TUTO_SEARCH_SHOWN", true).apply();
             }
 
@@ -308,7 +309,7 @@ public class SearchTEActivity extends ActivityGlobalAbstract implements SearchTE
 
     @Override
     public void setPrograms(List<ProgramModel> programModels) {
-        binding.programSpinner.setAdapter(new ProgramAdapter(this, R.layout.spinner_program_layout, R.id.spinner_text, programModels, presenter.getTrackedEntityName().displayName()));
+        binding.programSpinner.setAdapter(new ProgramAdapter(this, R.layout.spinner_program_layout, R.id.spinner_text, programModels, searchTEPresenter.getTrackedEntityName().displayName()));
         if (initialProgram != null && !initialProgram.isEmpty())
             setInitialProgram(programModels);
         else
@@ -331,18 +332,18 @@ public class SearchTEActivity extends ActivityGlobalAbstract implements SearchTE
             public void onItemSelected(AdapterView<?> adapterView, View view, int pos, long id) {
                 if (pos > 0) {
                     ProgramModel selectedProgram = (ProgramModel) adapterView.getItemAtPosition(pos - 1);
-                    setProgramColor(presenter.getProgramColor(selectedProgram.uid()));
-                    presenter.setProgram((ProgramModel) adapterView.getItemAtPosition(pos - 1));
+                    setProgramColor(searchTEPresenter.getProgramColor(selectedProgram.uid()));
+                    searchTEPresenter.setProgram((ProgramModel) adapterView.getItemAtPosition(pos - 1));
                     binding.enrollmentButton.setVisibility(View.VISIBLE);
                 } else {
-                    presenter.setProgram(null);
+                    searchTEPresenter.setProgram(null);
                     binding.enrollmentButton.setVisibility(View.GONE);
                 }
             }
 
             @Override
             public void onNothingSelected(AdapterView<?> adapterView) {
-
+                // unused
             }
         });
     }

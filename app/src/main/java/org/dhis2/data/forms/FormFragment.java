@@ -104,8 +104,6 @@ public class FormFragment extends FragmentGlobalAbstract implements FormView, Co
     private Date openingDate;
     private Date closingDate;
     private boolean mandatoryDelete = true;
-    private Context context;
-
 
     public View getDatesLayout() {
         return datesLayout;
@@ -245,7 +243,6 @@ public class FormFragment extends FragmentGlobalAbstract implements FormView, Co
     @Override
     public void onAttach(@NotNull Context context) {
         super.onAttach(context);
-        this.context = context;
         if (getArguments() != null && getActivity() != null) {
             FormViewArguments arguments = getArguments().getParcelable(FORM_VIEW_ARGUMENTS);
             if (arguments != null) {
@@ -256,12 +253,6 @@ public class FormFragment extends FragmentGlobalAbstract implements FormView, Co
 
             this.isEnrollment = getArguments().getBoolean(IS_ENROLLMENT);
         }
-    }
-
-    @Override
-    public void onDetach() {
-        context = null;
-        super.onDetach();
     }
 
     @Override
@@ -409,24 +400,20 @@ public class FormFragment extends FragmentGlobalAbstract implements FormView, Co
         });
 
         reportDate.setOnFocusChangeListener((v, hasFocus) -> {
-            if (hasFocus) {
-                if (getFragmentManager() != null) {
-                    DatePickerDialogFragment dialog = DatePickerDialogFragment.create(reportAllowFutureDates);
-                    dialog.setOpeningClosingDates(openingDate, closingDate);
-                    dialog.show(getFragmentManager());
-                    dialog.setFormattedOnDateSetListener(publishReportDateChange());
-                }
+            if (hasFocus && getFragmentManager() != null) {
+                DatePickerDialogFragment dialog = DatePickerDialogFragment.create(reportAllowFutureDates);
+                dialog.setOpeningClosingDates(openingDate, closingDate);
+                dialog.show(getFragmentManager());
+                dialog.setFormattedOnDateSetListener(publishReportDateChange());
             }
         });
 
         incidentDate.setOnFocusChangeListener((v, hasFocus) -> {
-            if (hasFocus) {
-                if (getFragmentManager() != null) {
-                    DatePickerDialogFragment dialog = DatePickerDialogFragment.create(incidentAllowFutureDates);
-                    dialog.setOpeningClosingDates(openingDate, closingDate);
-                    dialog.show(getFragmentManager());
-                    dialog.setFormattedOnDateSetListener(publishIncidentDateChange());
-                }
+            if (hasFocus && getFragmentManager() != null) {
+                DatePickerDialogFragment dialog = DatePickerDialogFragment.create(incidentAllowFutureDates);
+                dialog.setOpeningClosingDates(openingDate, closingDate);
+                dialog.show(getFragmentManager());
+                dialog.setFormattedOnDateSetListener(publishIncidentDateChange());
             }
         });
     }
@@ -500,7 +487,7 @@ public class FormFragment extends FragmentGlobalAbstract implements FormView, Co
         }
     }
 
-    public void hideSections(String uid) {
+    public void hideSections() {
         formPresenter.checkSections();
     }
 

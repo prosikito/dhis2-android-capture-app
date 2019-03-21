@@ -19,15 +19,15 @@ import java.util.List;
 
 public class TeiProgramListAdapter extends RecyclerView.Adapter<TeiProgramListEnrollmentViewHolder> {
 
-    private TeiProgramListContract.Presenter presenter;
+    private TeiProgramListContract.TeiProgramListPresenter teiProgramListPresenter;
     private List<TeiProgramListItem> listItems;
     private List<EnrollmentViewModel> activeEnrollments;
     private List<EnrollmentViewModel> inactiveEnrollments;
     private List<ProgramViewModel> programs;
     private List<ProgramViewModel> possibleEnrollmentPrograms;
 
-    TeiProgramListAdapter(TeiProgramListContract.Presenter presenter) {
-        this.presenter = presenter;
+    TeiProgramListAdapter(TeiProgramListContract.TeiProgramListPresenter teiProgramListPresenter) {
+        this.teiProgramListPresenter = teiProgramListPresenter;
         this.listItems = new ArrayList<>();
         this.activeEnrollments = new ArrayList<>();
         this.inactiveEnrollments = new ArrayList<>();
@@ -83,28 +83,28 @@ public class TeiProgramListAdapter extends RecyclerView.Adapter<TeiProgramListEn
     public void onBindViewHolder(@NonNull TeiProgramListEnrollmentViewHolder holder, int position) {
         switch (listItems.get(position).getViewType()) {
             case TeiProgramListItem.TeiProgramListItemViewType.ALL_PROGRAMS_DASHBOARD:
-                holder.bind(presenter,null,null);
+                holder.bind(teiProgramListPresenter,null,null);
                 break;
             case TeiProgramListItem.TeiProgramListItemViewType.FIRST_TITLE:
-                holder.bind(presenter, null, null);
+                holder.bind(teiProgramListPresenter, null, null);
                 break;
             case TeiProgramListItem.TeiProgramListItemViewType.ACTIVE_ENROLLMENT:
-                holder.bind(presenter, listItems.get(position).getEnrollmentModel(), null);
+                holder.bind(teiProgramListPresenter, listItems.get(position).getEnrollmentModel(), null);
                 break;
             case TeiProgramListItem.TeiProgramListItemViewType.PROGRAM:
-                holder.bind(presenter, null, listItems.get(position).getProgramModel());
+                holder.bind(teiProgramListPresenter, null, listItems.get(position).getProgramModel());
                 break;
             case TeiProgramListItem.TeiProgramListItemViewType.SECOND_TITLE:
-                holder.bind(presenter, null, null);
+                holder.bind(teiProgramListPresenter, null, null);
                 break;
             case TeiProgramListItem.TeiProgramListItemViewType.INACTIVE_ENROLLMENT:
-                holder.bind(presenter, listItems.get(position).getEnrollmentModel(), null);
+                holder.bind(teiProgramListPresenter, listItems.get(position).getEnrollmentModel(), null);
                 break;
             case TeiProgramListItem.TeiProgramListItemViewType.THIRD_TITLE:
-                holder.bind(presenter, null, null);
+                holder.bind(teiProgramListPresenter, null, null);
                 break;
             case TeiProgramListItem.TeiProgramListItemViewType.PROGRAMS_TO_ENROLL:
-                holder.bind(presenter, null, listItems.get(position).getProgramModel());
+                holder.bind(teiProgramListPresenter, null, listItems.get(position).getProgramModel());
                 break;
             default:
                 break;

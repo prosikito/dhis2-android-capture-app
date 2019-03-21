@@ -2,14 +2,9 @@ package org.dhis2.usescases.datasets.datasetDetail;
 
 import android.annotation.SuppressLint;
 import android.app.DatePickerDialog;
-import androidx.databinding.DataBindingUtil;
 import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
-import androidx.core.content.ContextCompat;
-import androidx.core.content.res.ResourcesCompat;
-import androidx.recyclerview.widget.DividerItemDecoration;
-import android.view.Gravity;
 import android.view.View;
 import android.widget.AdapterView;
 
@@ -22,9 +17,9 @@ import org.dhis2.databinding.ActivityDatasetDetailBinding;
 import org.dhis2.usescases.general.ActivityGlobalAbstract;
 import org.dhis2.usescases.main.program.OrgUnitHolder;
 import org.dhis2.utils.CatComboAdapter;
-import org.dhis2.utils.custom_views.RxDateDialog;
 import org.dhis2.utils.DateUtils;
 import org.dhis2.utils.Period;
+import org.dhis2.utils.custom_views.RxDateDialog;
 import org.hisp.dhis.android.core.category.CategoryComboModel;
 import org.hisp.dhis.android.core.category.CategoryOptionComboModel;
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnitModel;
@@ -38,6 +33,11 @@ import java.util.Locale;
 
 import javax.inject.Inject;
 
+import androidx.core.content.ContextCompat;
+import androidx.core.content.res.ResourcesCompat;
+import androidx.core.view.GravityCompat;
+import androidx.databinding.DataBindingUtil;
+import androidx.recyclerview.widget.DividerItemDecoration;
 import io.reactivex.Flowable;
 import io.reactivex.processors.PublishProcessor;
 import timber.log.Timber;
@@ -48,7 +48,8 @@ import static org.dhis2.utils.Period.NONE;
 import static org.dhis2.utils.Period.WEEKLY;
 import static org.dhis2.utils.Period.YEARLY;
 
-public class DataSetDetailActivity extends ActivityGlobalAbstract implements DataSetDetailContract.View {
+@SuppressWarnings("squid:MaximumInheritanceDepth")
+public class DataSetDetailActivity extends ActivityGlobalAbstract implements DataSetDetailContract.DataSetDetailView {
 
     private ActivityDatasetDetailBinding binding;
     private ArrayList<Date> chosenDateWeek = new ArrayList<>();
@@ -64,9 +65,9 @@ public class DataSetDetailActivity extends ActivityGlobalAbstract implements Dat
     private AndroidTreeView treeView;
     private boolean isFilteredByCatCombo = false;
     @Inject
-    DataSetDetailContract.Presenter presenter;
+    DataSetDetailContract.DataSetDetailPresenter dataSetDetailPresenter;
 
-    private static PublishProcessor<Integer> currentPage;
+    private PublishProcessor<Integer> currentPage;
     DataSetDetailAdapter adapter;
 
     @Override
@@ -80,9 +81,9 @@ public class DataSetDetailActivity extends ActivityGlobalAbstract implements Dat
         chosenDateYear.add(new Date());
 
         dataSetUid = getIntent().getStringExtra("DATASET_UID");
-        binding.setPresenter(presenter);
+        binding.setPresenter(dataSetDetailPresenter);
 
-        adapter = new DataSetDetailAdapter(presenter);
+        adapter = new DataSetDetailAdapter(dataSetDetailPresenter);
 
         currentPage = PublishProcessor.create();
     }
@@ -90,14 +91,14 @@ public class DataSetDetailActivity extends ActivityGlobalAbstract implements Dat
     @Override
     protected void onResume() {
         super.onResume();
-        presenter.init(this);
+        dataSetDetailPresenter.init(this);
 
-        presenter.getDataSetWithDates(null, currentPeriod, orgUnitFilter.toString());
+        dataSetDetailPresenter.getDataSetWithDates(null, currentPeriod, orgUnitFilter.toString());
     }
 
     @Override
     protected void onPause() {
-        presenter.onDettach();
+        dataSetDetailPresenter.onDettach();
         super.onPause();
         binding.treeViewContainer.removeAllViews();
     }
@@ -122,14 +123,11 @@ public class DataSetDetailActivity extends ActivityGlobalAbstract implements Dat
         treeView.setSelectionModeEnabled(true);
 
         binding.treeViewContainer.addView(treeView.getView());
-        if (presenter.getOrgUnits().size() < 25)
+        if (dataSetDetailPresenter.getOrgUnits().size() < 25)
             treeView.expandAll();
 
         treeView.setDefaultNodeClickListener((node, value) -> {
-            if (treeView.getSelected().size() == 1 && !node.isSelected()) {
-                ((OrgUnitHolder) node.getViewHolder()).update();
-                binding.buttonOrgUnit.setText(String.format(getString(R.string.org_unit_filter), treeView.getSelected().size()));
-            } else if (treeView.getSelected().size() > 1) {
+            if ((treeView.getSelected().size() == 1 && !node.isSelected()) || treeView.getSelected().size() > 1) {
                 ((OrgUnitHolder) node.getViewHolder()).update();
                 binding.buttonOrgUnit.setText(String.format(getString(R.string.org_unit_filter), treeView.getSelected().size()));
             }
@@ -140,10 +138,10 @@ public class DataSetDetailActivity extends ActivityGlobalAbstract implements Dat
 
     @Override
     public void openDrawer() {
-        if (!binding.drawerLayout.isDrawerOpen(Gravity.END))
-            binding.drawerLayout.openDrawer(Gravity.END);
+        if (!binding.drawerLayout.isDrawerOpen(GravityCompat.END))
+            binding.drawerLayout.openDrawer(GravityCompat.END);
         else
-            binding.drawerLayout.closeDrawer(Gravity.END);
+            binding.drawerLayout.closeDrawer(GravityCompat.END);
     }
 
     @Override
@@ -179,7 +177,7 @@ public class DataSetDetailActivity extends ActivityGlobalAbstract implements Dat
         switch (currentPeriod) {
             case NONE:
                 // TODO
-                presenter.getDataSetWithDates(null, currentPeriod, orgUnitFilter.toString());
+                dataSetDetailPresenter.getDataSetWithDates(null, currentPeriod, orgUnitFilter.toString());
                 textToShow = getString(R.string.period);
                 break;
             case DAILY:
@@ -189,7 +187,7 @@ public class DataSetDetailActivity extends ActivityGlobalAbstract implements Dat
                     textToShow = DateUtils.getInstance().formatDate(datesD.get(0));
                 if (!datesD.isEmpty() && datesD.size() > 1) textToShow += "... ";
                 // TODO
-                presenter.getDataSetWithDates(datesD, currentPeriod, orgUnitFilter.toString());
+                dataSetDetailPresenter.getDataSetWithDates(datesD, currentPeriod, orgUnitFilter.toString());
                 break;
             case WEEKLY:
                 if (!chosenDateWeek.isEmpty()) {
@@ -199,7 +197,7 @@ public class DataSetDetailActivity extends ActivityGlobalAbstract implements Dat
                 }
                 if (!chosenDateWeek.isEmpty() && chosenDateWeek.size() > 1) textToShow += "... ";
                 // TODO
-                presenter.getDataSetWithDates(chosenDateWeek, currentPeriod, orgUnitFilter.toString());
+                dataSetDetailPresenter.getDataSetWithDates(chosenDateWeek, currentPeriod, orgUnitFilter.toString());
                 break;
             case MONTHLY:
                 if (!chosenDateMonth.isEmpty()) {
@@ -208,14 +206,14 @@ public class DataSetDetailActivity extends ActivityGlobalAbstract implements Dat
                 }
                 if (!chosenDateMonth.isEmpty() && chosenDateMonth.size() > 1) textToShow += "... ";
                 // TODO
-                presenter.getDataSetWithDates(chosenDateMonth, currentPeriod, orgUnitFilter.toString());
+                dataSetDetailPresenter.getDataSetWithDates(chosenDateMonth, currentPeriod, orgUnitFilter.toString());
                 break;
             case YEARLY:
                 if (!chosenDateYear.isEmpty())
                     textToShow = yearFormat.format(chosenDateYear.get(0));
                 if (!chosenDateYear.isEmpty() && chosenDateYear.size() > 1) textToShow += "... ";
                 // TODO
-                presenter.getDataSetWithDates(chosenDateYear, currentPeriod, orgUnitFilter.toString());
+                dataSetDetailPresenter.getDataSetWithDates(chosenDateYear, currentPeriod, orgUnitFilter.toString());
                 break;
         }
 
@@ -255,7 +253,7 @@ public class DataSetDetailActivity extends ActivityGlobalAbstract implements Dat
                             binding.buttonPeriodText.setText(textToShow);
 
                             // TODO
-                            presenter.getDataSetWithDates(selectedDates, currentPeriod, orgUnitFilter.toString());
+                            dataSetDetailPresenter.getDataSetWithDates(selectedDates, currentPeriod, orgUnitFilter.toString());
 
                         } else {
                             ArrayList<Date> date = new ArrayList<>();
@@ -282,7 +280,7 @@ public class DataSetDetailActivity extends ActivityGlobalAbstract implements Dat
                             binding.buttonPeriodText.setText(text);
 
                             // TODO
-                            presenter.getDataSetWithDates(date, currentPeriod, orgUnitFilter.toString());
+                            dataSetDetailPresenter.getDataSetWithDates(date, currentPeriod, orgUnitFilter.toString());
                         }
                     },
                     Timber::d);
@@ -296,7 +294,7 @@ public class DataSetDetailActivity extends ActivityGlobalAbstract implements Dat
                 ArrayList<Date> day = new ArrayList<>();
                 day.add(dates[0]);
                 // TODO
-                presenter.getDataSetWithDates(day, currentPeriod, orgUnitFilter.toString());
+                dataSetDetailPresenter.getDataSetWithDates(day, currentPeriod, orgUnitFilter.toString());
                 binding.buttonPeriodText.setText(DateUtils.getInstance().formatDate(dates[0]));
                 chosenDateDay = dates[0];
             }, cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH));
@@ -311,7 +309,7 @@ public class DataSetDetailActivity extends ActivityGlobalAbstract implements Dat
             binding.catCombo.setVisibility(View.GONE);
         } else {
             binding.catCombo.setVisibility(View.VISIBLE);
-            CatComboAdapter adapter = new CatComboAdapter(this,
+            CatComboAdapter adapterAux = new CatComboAdapter(this,
                     R.layout.spinner_layout,
                     R.id.spinner_text,
                     catComboList,
@@ -319,24 +317,24 @@ public class DataSetDetailActivity extends ActivityGlobalAbstract implements Dat
                     R.color.white_faf);
 
             binding.catCombo.setVisibility(View.VISIBLE);
-            binding.catCombo.setAdapter(adapter);
+            binding.catCombo.setAdapter(adapterAux);
 
             binding.catCombo.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
                 @Override
                 public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                     if (position == 0) {
                         isFilteredByCatCombo = false;
-                        presenter.clearCatComboFilters(orgUnitFilter.toString());
+                        dataSetDetailPresenter.clearCatComboFilters(orgUnitFilter.toString());
                     } else {
                         isFilteredByCatCombo = true;
-                        presenter.onCatComboSelected(adapter.getItem(position - 1), orgUnitFilter.toString());
+                        dataSetDetailPresenter.onCatComboSelected(adapterAux.getItem(position - 1), orgUnitFilter.toString());
                     }
                 }
 
                 @Override
                 public void onNothingSelected(AdapterView<?> parent) {
                     isFilteredByCatCombo = false;
-                    presenter.clearCatComboFilters(orgUnitFilter.toString());
+                    dataSetDetailPresenter.clearCatComboFilters(orgUnitFilter.toString());
                 }
             });
         }
@@ -369,25 +367,25 @@ public class DataSetDetailActivity extends ActivityGlobalAbstract implements Dat
         switch (currentPeriod) {
             case NONE:
                 // TODO
-                presenter.getDataSetWithDates(null, currentPeriod, orgUnitFilter.toString());
+                dataSetDetailPresenter.getDataSetWithDates(null, currentPeriod, orgUnitFilter.toString());
                 break;
             case DAILY:
                 ArrayList<Date> datesD = new ArrayList<>();
                 datesD.add(chosenDateDay);
                 // TODO
-                presenter.getDataSetWithDates(datesD, currentPeriod, orgUnitFilter.toString());
+                dataSetDetailPresenter.getDataSetWithDates(datesD, currentPeriod, orgUnitFilter.toString());
                 break;
             case WEEKLY:
                 // TODO
-                presenter.getDataSetWithDates(chosenDateWeek, currentPeriod, orgUnitFilter.toString());
+                dataSetDetailPresenter.getDataSetWithDates(chosenDateWeek, currentPeriod, orgUnitFilter.toString());
                 break;
             case MONTHLY:
                 // TODO
-                presenter.getDataSetWithDates(chosenDateMonth, currentPeriod, orgUnitFilter.toString());
+                dataSetDetailPresenter.getDataSetWithDates(chosenDateMonth, currentPeriod, orgUnitFilter.toString());
                 break;
             case YEARLY:
                 // TODO
-                presenter.getDataSetWithDates(chosenDateYear, currentPeriod, orgUnitFilter.toString());
+                dataSetDetailPresenter.getDataSetWithDates(chosenDateYear, currentPeriod, orgUnitFilter.toString());
                 break;
         }
     }

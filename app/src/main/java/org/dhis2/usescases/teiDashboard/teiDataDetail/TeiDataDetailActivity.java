@@ -23,11 +23,11 @@ import javax.inject.Inject;
 import androidx.databinding.DataBindingUtil;
 import io.reactivex.functions.Consumer;
 
-public class TeiDataDetailActivity extends ActivityGlobalAbstract implements TeiDataDetailContracts.View {
+public class TeiDataDetailActivity extends ActivityGlobalAbstract implements TeiDataDetailContracts.TeiDataDetailView {
     ActivityTeidataDetailBinding binding;
 
     @Inject
-    TeiDataDetailContracts.Presenter presenter;
+    TeiDataDetailContracts.TeiDataDetailPresenter teiDataDetailPresenter;
 
     private DashboardProgramModel dashboardProgramModel;
 
@@ -38,7 +38,7 @@ public class TeiDataDetailActivity extends ActivityGlobalAbstract implements Tei
         supportPostponeEnterTransition();
         super.onCreate(savedInstanceState);
         binding = DataBindingUtil.setContentView(this, R.layout.activity_teidata_detail);
-        binding.setPresenter(presenter);
+        binding.setPresenter(teiDataDetailPresenter);
 
         init(getIntent().getStringExtra("TEI_UID"), getIntent().getStringExtra("PROGRAM_UID"), getIntent().getStringExtra("ENROLLMENT_UID"));
 
@@ -48,10 +48,12 @@ public class TeiDataDetailActivity extends ActivityGlobalAbstract implements Tei
 
             switch (integer) {
                 case R.id.deactivate:
-                    presenter.onDeactivate(dashboardProgramModel);
+                    teiDataDetailPresenter.onDeactivate(dashboardProgramModel);
                     break;
                 case R.id.complete:
-                    presenter.onComplete(dashboardProgramModel);
+                    teiDataDetailPresenter.onComplete(dashboardProgramModel);
+                    break;
+                default:
                     break;
             }
         });
@@ -62,7 +64,9 @@ public class TeiDataDetailActivity extends ActivityGlobalAbstract implements Tei
 
             switch (integer) {
                 case R.id.reOpen:
-                    presenter.onReOpen(dashboardProgramModel);
+                    teiDataDetailPresenter.onReOpen(dashboardProgramModel);
+                    break;
+                default:
                     break;
             }
         });
@@ -73,14 +77,17 @@ public class TeiDataDetailActivity extends ActivityGlobalAbstract implements Tei
 
             switch (integer) {
                 case R.id.activate:
-                    presenter.onActivate(dashboardProgramModel);
+                    teiDataDetailPresenter.onActivate(dashboardProgramModel);
+                    break;
+                default:
+                    break;
             }
         });
     }
 
     @Override
     public void init(String teiUid, String programUid, String enrollmentUid) {
-        presenter.init(this, teiUid, programUid, enrollmentUid);
+        teiDataDetailPresenter.init(this, teiUid, programUid, enrollmentUid);
     }
 
     @Override
@@ -93,8 +100,8 @@ public class TeiDataDetailActivity extends ActivityGlobalAbstract implements Tei
 
         if (program.getCurrentProgram().captureCoordinates()) {
             binding.coordinatesLayout.setVisibility(View.VISIBLE);
-            binding.location1.setOnClickListener(v -> presenter.onLocationClick());
-            binding.location2.setOnClickListener(v -> presenter.onLocation2Click());
+            binding.location1.setOnClickListener(v -> teiDataDetailPresenter.onLocationClick());
+            binding.location2.setOnClickListener(v -> teiDataDetailPresenter.onLocation2Click());
         }
 
         supportStartPostponedEnterTransition();
@@ -139,7 +146,7 @@ public class TeiDataDetailActivity extends ActivityGlobalAbstract implements Tei
             String savedLat = data.getStringExtra(MapSelectorActivity.LATITUDE);
             String savedLon = data.getStringExtra(MapSelectorActivity.LONGITUDE);
             setLocation(Double.valueOf(savedLat), Double.valueOf(savedLon));
-            presenter.saveLocation(Double.valueOf(savedLat), Double.valueOf(savedLon));
+            teiDataDetailPresenter.saveLocation(Double.valueOf(savedLat), Double.valueOf(savedLon));
         }
     }
 

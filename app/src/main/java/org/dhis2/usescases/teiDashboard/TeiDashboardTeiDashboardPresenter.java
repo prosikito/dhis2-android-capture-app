@@ -12,7 +12,6 @@ import org.dhis2.R;
 import org.dhis2.data.metadata.MetadataRepository;
 import org.dhis2.data.tuples.Pair;
 import org.dhis2.data.tuples.Trio;
-import org.dhis2.usescases.eventsWithoutRegistration.eventCapture.EventCaptureActivity;
 import org.dhis2.usescases.eventsWithoutRegistration.eventInitial.EventInitialActivity;
 import org.dhis2.usescases.searchTrackEntity.SearchTEActivity;
 import org.dhis2.usescases.teiDashboard.dashboardfragments.IndicatorsFragment;
@@ -61,12 +60,14 @@ import timber.log.Timber;
  * QUADRAM. Created by ppajuelo on 30/11/2017.
  */
 
-public class TeiDashboardPresenter implements TeiDashboardContracts.Presenter {
+public class TeiDashboardTeiDashboardPresenter implements TeiDashboardContracts.TeiDashboardPresenter {
 
+    private static final String TEI_UID = "TEI_UID";
+    private static final String PROGRAM_UID = "PROGRAM_UID";
     private final DashboardRepository dashboardRepository;
     private final MetadataRepository metadataRepository;
     private final D2 d2;
-    private TeiDashboardContracts.View view;
+    private TeiDashboardContracts.TeiDashboardView teiDashboardView;
 
     private String teUid;
     private String teType;
@@ -76,7 +77,7 @@ public class TeiDashboardPresenter implements TeiDashboardContracts.Presenter {
     private CompositeDisposable compositeDisposable;
     private DashboardProgramModel dashboardProgramModel;
 
-    TeiDashboardPresenter(D2 d2, DashboardRepository dashboardRepository, MetadataRepository metadataRepository) {
+    TeiDashboardTeiDashboardPresenter(D2 d2, DashboardRepository dashboardRepository, MetadataRepository metadataRepository) {
         this.d2 = d2;
         this.dashboardRepository = dashboardRepository;
         this.metadataRepository = metadataRepository;
@@ -84,8 +85,8 @@ public class TeiDashboardPresenter implements TeiDashboardContracts.Presenter {
     }
 
     @Override
-    public void init(TeiDashboardContracts.View view, String teiUid, String programUid) {
-        this.view = view;
+    public void init(TeiDashboardContracts.TeiDashboardView teiDashboardView, String teiUid, String programUid) {
+        this.teiDashboardView = teiDashboardView;
         this.teUid = teiUid;
         this.programUid = programUid;
 
@@ -115,7 +116,7 @@ public class TeiDashboardPresenter implements TeiDashboardContracts.Presenter {
                                 this.dashboardProgramModel = dashboardModel;
                                 this.programWritePermission = dashboardProgramModel.getCurrentProgram().accessDataWrite();
                                 this.teType = dashboardProgramModel.getTei().trackedEntityType();
-                                view.setData(dashboardProgramModel);
+                                teiDashboardView.setData(dashboardProgramModel);
                             },
                             Timber::e
                     )
@@ -141,7 +142,7 @@ public class TeiDashboardPresenter implements TeiDashboardContracts.Presenter {
                             dashboardModel -> {
                                 this.dashboardProgramModel = dashboardModel;
                                 this.teType = dashboardProgramModel.getTei().trackedEntityType();
-                                view.setData(dashboardProgramModel);
+                                teiDashboardView.setData(dashboardProgramModel);
                             },
                             Timber::e)
             );
@@ -211,7 +212,7 @@ public class TeiDashboardPresenter implements TeiDashboardContracts.Presenter {
                         .subscribeOn(Schedulers.io())
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(
-                                result -> view.displayMessage(result),
+                                result -> teiDashboardView.displayMessage(result),
                                 Timber::d
                         )
         );
@@ -225,7 +226,7 @@ public class TeiDashboardPresenter implements TeiDashboardContracts.Presenter {
                         .subscribeOn(Schedulers.io())
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(
-                                result -> view.displayMessage(result),
+                                result -> teiDashboardView.displayMessage(result),
                                 Timber::d
                         )
         );
@@ -234,7 +235,7 @@ public class TeiDashboardPresenter implements TeiDashboardContracts.Presenter {
 
     @Override
     public void onShareClick(View mView) {
-        PopupMenu menu = new PopupMenu(view.getContext(), mView);
+        PopupMenu menu = new PopupMenu(teiDashboardView.getContext(), mView);
 
         menu.getMenu().add(Menu.NONE, Menu.NONE, 0, "QR");
         //menu.getMenu().add(Menu.NONE, Menu.NONE, 1, "SMS"); TODO: When SMS is ready, reactivate option
@@ -242,10 +243,10 @@ public class TeiDashboardPresenter implements TeiDashboardContracts.Presenter {
         menu.setOnMenuItemClickListener(item -> {
             switch (item.getOrder()) {
                 case 0:
-                    view.showQR();
+                    teiDashboardView.showQR();
                     return true;
                 case 1:
-                    view.displayMessage(view.getContext().getString(R.string.feature_unavaible));
+                    teiDashboardView.displayMessage(teiDashboardView.getContext().getString(R.string.feature_unavaible));
                     return true;
                 default:
                     return true;
@@ -258,33 +259,33 @@ public class TeiDashboardPresenter implements TeiDashboardContracts.Presenter {
     @Override
     public void onEnrollmentSelectorClick() {
         Bundle extras = new Bundle();
-        extras.putString("TEI_UID", teUid);
-        view.goToEnrollmentList(extras);
+        extras.putString(TEI_UID, teUid);
+        teiDashboardView.goToEnrollmentList(extras);
     }
 
     @Override
     public void onShareQRClick() {
-        view.showQR();
+        teiDashboardView.showQR();
     }
 
     @Override
     public void setProgram(ProgramModel program) {
         this.programUid = program.uid();
-        view.restoreAdapter(programUid);
+        teiDashboardView.restoreAdapter(programUid);
         getData();
     }
 
     @Override
     public void seeDetails(View sharedView, DashboardProgramModel dashboardProgramModel) {
         Fragment teiFragment = TEIDataFragment.getInstance();
-        Intent intent = new Intent(view.getContext(), TeiDataDetailActivity.class);
+        Intent intent = new Intent(teiDashboardView.getContext(), TeiDataDetailActivity.class);
         Bundle extras = new Bundle();
-        extras.putString("TEI_UID", teUid);
-        extras.putString("PROGRAM_UID", programUid);
+        extras.putString(TEI_UID, teUid);
+        extras.putString(PROGRAM_UID, programUid);
         if (dashboardProgramModel.getCurrentEnrollment() != null)
             extras.putString("ENROLLMENT_UID", dashboardProgramModel.getCurrentEnrollment().uid());
         intent.putExtras(extras);
-        ActivityOptionsCompat options = ActivityOptionsCompat.makeSceneTransitionAnimation(view.getAbstractActivity(), sharedView, "user_info");
+        ActivityOptionsCompat options = ActivityOptionsCompat.makeSceneTransitionAnimation(teiDashboardView.getAbstractActivity(), sharedView, "user_info");
         teiFragment.startActivityForResult(intent, TEIDataFragment.getDetailsRequestCode(), options.toBundle());
     }
 
@@ -311,10 +312,10 @@ public class TeiDashboardPresenter implements TeiDashboardContracts.Presenter {
             Intent intent = new Intent(teiFragment.getContext(), EventDetailActivity.class);
             Bundle extras = new Bundle();
             extras.putString("EVENT_UID", uid);
-            extras.putString("TOOLBAR_TITLE", view.getToolbarTitle());
-            extras.putString("TEI_UID", teUid);
+            extras.putString("TOOLBAR_TITLE", teiDashboardView.getToolbarTitle());
+            extras.putString(TEI_UID, teUid);
             intent.putExtras(extras);
-            ActivityOptionsCompat options = ActivityOptionsCompat.makeSceneTransitionAnimation(view.getAbstractActivity(), sharedView, "shared_view");
+            ActivityOptionsCompat options = ActivityOptionsCompat.makeSceneTransitionAnimation(teiDashboardView.getAbstractActivity(), sharedView, "shared_view");
             teiFragment.startActivityForResult(intent, TEIDataFragment.getEventRequestCode(), options.toBundle());
 /*
             Intent intent2 = new Intent(teiFragment.getContext(), EventCaptureActivity.class);
@@ -328,9 +329,9 @@ public class TeiDashboardPresenter implements TeiDashboardContracts.Presenter {
         boolean followup = dashboardRepository.setFollowUp(dashboardProgramModel.getCurrentEnrollment().uid());
 
 
-        view.showToast(followup ?
-                view.getContext().getString(R.string.follow_up_enabled) :
-                view.getContext().getString(R.string.follow_up_disabled));
+        teiDashboardView.showToast(followup ?
+                teiDashboardView.getContext().getString(R.string.follow_up_enabled) :
+                teiDashboardView.getContext().getString(R.string.follow_up_disabled));
 
         TEIDataFragment.getInstance().switchFollowUp(followup);
 
@@ -353,16 +354,16 @@ public class TeiDashboardPresenter implements TeiDashboardContracts.Presenter {
     public void goToAddRelationship(String teiTypeToAdd) {
         if (programWritePermission) {
             Fragment relationshipFragment = RelationshipFragment.getInstance();
-            Intent intent = new Intent(view.getContext(), SearchTEActivity.class);
+            Intent intent = new Intent(teiDashboardView.getContext(), SearchTEActivity.class);
             Bundle extras = new Bundle();
             extras.putBoolean("FROM_RELATIONSHIP", true);
             extras.putString("FROM_RELATIONSHIP_TEI", teUid);
             extras.putString("TRACKED_ENTITY_UID", teiTypeToAdd);
-            extras.putString("PROGRAM_UID", null);
+            extras.putString(PROGRAM_UID, null);
             intent.putExtras(extras);
             relationshipFragment.startActivityForResult(intent, Constants.REQ_ADD_RELATIONSHIP);
         } else
-            view.displayMessage(view.getContext().getString(R.string.search_access_error));
+            teiDashboardView.displayMessage(teiDashboardView.getContext().getString(R.string.search_access_error));
     }
 
     @Override
@@ -372,7 +373,7 @@ public class TeiDashboardPresenter implements TeiDashboardContracts.Presenter {
             d2.relationshipModule().relationships.add(relationship);
 //            dashboardRepository.updateTeiState(); SDK now updating TEI state
         } catch (D2Error e) {
-            view.displayMessage(e.errorDescription());
+            teiDashboardView.displayMessage(e.errorDescription());
         }
     }
 
@@ -423,7 +424,7 @@ public class TeiDashboardPresenter implements TeiDashboardContracts.Presenter {
                         .map(list -> {
                             List<Trio<RelationshipTypeModel, String, Integer>> finalList = new ArrayList<>();
                             for (Pair<RelationshipTypeModel, String> rType : list) {
-                                int iconResId = dashboardRepository.getObjectStyle(view.getAbstracContext(), rType.val1());
+                                int iconResId = dashboardRepository.getObjectStyle(teiDashboardView.getAbstracContext(), rType.val1());
                                 finalList.add(Trio.create(rType.val0(), rType.val1(), iconResId));
                             }
                             return finalList;
@@ -470,7 +471,7 @@ public class TeiDashboardPresenter implements TeiDashboardContracts.Presenter {
 
     @Override
     public void onDescriptionClick(String description) {
-        view.showDescription(description);
+        teiDashboardView.showDescription(description);
     }
 
 
@@ -499,12 +500,12 @@ public class TeiDashboardPresenter implements TeiDashboardContracts.Presenter {
 
     @Override
     public void openDashboard(String teiUid) {
-        Intent intent = new Intent(view.getContext(), TeiDashboardMobileActivity.class);
+        Intent intent = new Intent(teiDashboardView.getContext(), TeiDashboardMobileActivity.class);
         Bundle bundle = new Bundle();
-        bundle.putString("TEI_UID", teiUid);
-        bundle.putString("PROGRAM_UID", null);
+        bundle.putString(TEI_UID, teiUid);
+        bundle.putString(PROGRAM_UID, null);
         intent.putExtras(bundle);
-        view.getAbstractActivity().startActivity(intent);
+        teiDashboardView.getAbstractActivity().startActivity(intent);
     }
 
     @Override
@@ -525,14 +526,14 @@ public class TeiDashboardPresenter implements TeiDashboardContracts.Presenter {
                         })
                         .subscribe(
                                 textView::setText,
-                                t -> view.displayMessage(view.getContext().getString(R.string.relationship_label_error)))
+                                t -> teiDashboardView.displayMessage(teiDashboardView.getContext().getString(R.string.relationship_label_error)))
 
         );*/
     }
 
     @Override
     public void onBackPressed() {
-        view.back();
+        teiDashboardView.back();
     }
 
     @Override
@@ -567,12 +568,12 @@ public class TeiDashboardPresenter implements TeiDashboardContracts.Presenter {
                     )
             );
         } else
-            view.displayMessage(null);
+            teiDashboardView.displayMessage(null);
     }
 
     @Override
     public void showDescription(String description) {
-        view.showDescription(description);
+        teiDashboardView.showDescription(description);
     }
 
     public void getCatComboOptions(EventModel event) {
@@ -587,7 +588,7 @@ public class TeiDashboardPresenter implements TeiDashboardContracts.Presenter {
                 .subscribe(pair -> {
                             for (ProgramStageModel programStage : dashboardProgramModel.getProgramStages()) {
                                 if (event.programStage().equals(programStage.uid()))
-                                    view.showCatComboDialog(event.uid(), pair.val1().displayName(), pair.val0(), programStage.displayName());
+                                    teiDashboardView.showCatComboDialog(event.uid(), pair.val1().displayName(), pair.val0(), programStage.displayName());
                             }
                         },
                         Timber::e));

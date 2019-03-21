@@ -26,16 +26,16 @@ import timber.log.Timber;
 public class EventAdapter extends RecyclerView.Adapter<EventViewHolder> {
 
     private final List<ProgramStageModel> programStageList;
-    private final TeiDashboardContracts.Presenter presenter;
+    private final TeiDashboardContracts.TeiDashboardPresenter teiDashboardPresenter;
     private final EnrollmentModel enrollment;
     private final ProgramModel program;
     private List<EventModel> events;
 
-    public EventAdapter(TeiDashboardContracts.Presenter presenter, List<ProgramStageModel> programStageList, List<EventModel> eventList, EnrollmentModel currentEnrollment, ProgramModel currentProgram) {
+    public EventAdapter(TeiDashboardContracts.TeiDashboardPresenter teiDashboardPresenter, List<ProgramStageModel> programStageList, List<EventModel> eventList, EnrollmentModel currentEnrollment, ProgramModel currentProgram) {
         this.events = eventList;
         this.enrollment = currentEnrollment;
         this.programStageList = programStageList;
-        this.presenter = presenter;
+        this.teiDashboardPresenter = teiDashboardPresenter;
         this.program = currentProgram;
     }
 
@@ -53,7 +53,7 @@ public class EventAdapter extends RecyclerView.Adapter<EventViewHolder> {
             if (Objects.equals(events.get(position).programStage(), stage.uid()))
                 programStage = stage;
         if (programStage != null)
-            holder.bind(presenter, events.get(position), programStage, enrollment, program);
+            holder.bind(teiDashboardPresenter, events.get(position), programStage, enrollment, program);
         else {
             Timber.e(new Throwable(), "Program stage %s does not belong to program %s",
                     events.get(position).programStage(), enrollment.program());

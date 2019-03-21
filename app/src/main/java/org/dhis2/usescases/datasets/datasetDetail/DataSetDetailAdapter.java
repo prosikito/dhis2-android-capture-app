@@ -15,11 +15,11 @@ import java.util.List;
 
 public class DataSetDetailAdapter extends RecyclerView.Adapter<DataSetDetailViewHolder> {
 
-    private DataSetDetailContract.Presenter presenter;
+    private DataSetDetailContract.DataSetDetailPresenter dataSetDetailPresenter;
     private List<DataSetDetailModel> datasets;
 
-    public DataSetDetailAdapter(DataSetDetailContract.Presenter presenter) {
-        this.presenter = presenter;
+    public DataSetDetailAdapter(DataSetDetailContract.DataSetDetailPresenter dataSetDetailPresenter) {
+        this.dataSetDetailPresenter = dataSetDetailPresenter;
         this.datasets = new ArrayList<>();
     }
 
@@ -35,7 +35,7 @@ public class DataSetDetailAdapter extends RecyclerView.Adapter<DataSetDetailView
     @Override
     public void onBindViewHolder(@NonNull DataSetDetailViewHolder holder, int position) {
         DataSetDetailModel dataSetModel = datasets.get(position);
-        holder.bind(presenter, dataSetModel);
+        holder.bind(dataSetDetailPresenter, dataSetModel);
     }
 
     @Override

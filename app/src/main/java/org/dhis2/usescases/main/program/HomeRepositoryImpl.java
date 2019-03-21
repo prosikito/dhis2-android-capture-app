@@ -6,7 +6,6 @@ import com.squareup.sqlbrite2.BriteDatabase;
 
 import org.dhis2.utils.DateUtils;
 import org.dhis2.utils.Period;
-import org.hisp.dhis.android.core.D2;
 import org.hisp.dhis.android.core.common.ObjectStyleModel;
 import org.hisp.dhis.android.core.common.State;
 import org.hisp.dhis.android.core.event.EventModel;
@@ -33,22 +32,22 @@ import static org.hisp.dhis.android.core.program.ProgramType.WITH_REGISTRATION;
 
 class HomeRepositoryImpl implements HomeRepository {
 
-    private final static String SELECT_EVENTS = "SELECT Event.* FROM Event " +
+    private static final String SELECT_EVENTS = "SELECT Event.* FROM Event " +
             "WHERE %s " +
             "Event.program = ? " +
             "AND " + EventModel.TABLE + "." + EventModel.Columns.STATE + " != '" + State.TO_DELETE + "'";
 
-    private final static String SELECT_TEIS = "SELECT Event.* FROM Event " +
+    private static final String SELECT_TEIS = "SELECT Event.* FROM Event " +
             "JOIN Enrollment ON Enrollment.uid = Event.enrollment " +
             "WHERE %s " +
             "Event.program = ? " +
             "AND Event.state != 'TO_DELETE' " +
             "GROUP BY Enrollment.trackedEntityInstance";
 
-    private final static String TRACKED_ENTITY_TYPE_NAME = "SELECT TrackedEntityType.displayName FROM TrackedEntityType " +
+    private static final String TRACKED_ENTITY_TYPE_NAME = "SELECT TrackedEntityType.displayName FROM TrackedEntityType " +
             "WHERE TrackedEntityType.uid = ? LIMIT 1";
 
-    private final static String PROGRAM_MODELS = "SELECT " +
+    private static final String PROGRAM_MODELS = "SELECT " +
             "Program.uid, " +
             "Program.displayName, " +
             "ObjectStyle.color, " +
@@ -57,25 +56,15 @@ class HomeRepositoryImpl implements HomeRepository {
             "Program.trackedEntityType," +
             "Program.description " +
             "FROM Program LEFT JOIN ObjectStyle ON ObjectStyle.uid = Program.uid " +
-            "JOIN OrganisationUnitProgramLink ON OrganisationUnitProgramLink.program = Program.uid %s GROUP BY Program.uid ORDER BY Program.displayName" /*+
-            "UNION " +
-            "SELECT DataSet.uid, " +
-            "DataSet.displayName, " +
-            "null, " +
-            "null, " +
-            "'', " +
-            "'', " +
-            "DataSet.description " +
-            "FROM DataSet " +
-            "JOIN DataSetOrganisationUnitLink ON DataSetOrganisationUnitLink.dataSet = DataSet.uid GROUP BY DataSet.uid"*/;
+            "JOIN OrganisationUnitProgramLink ON OrganisationUnitProgramLink.program = Program.uid %s GROUP BY Program.uid ORDER BY Program.displayName";
 
-    private final static String AGGREGATE_FROM_DATASET = "SELECT * FROM DataSetDataElementLink " +
+    private static final String AGGREGATE_FROM_DATASET = "SELECT * FROM DataSetDataElementLink " +
             "WHERE dataSet = ? ";
 
     private static final String[] TABLE_NAMES = new String[]{ProgramModel.TABLE, ObjectStyleModel.TABLE, OrganisationUnitProgramLinkModel.TABLE};
     private static final Set<String> TABLE_SET = new HashSet<>(Arrays.asList(TABLE_NAMES));
 
-    private final static String SELECT_ORG_UNITS =
+    private static final String SELECT_ORG_UNITS =
             "SELECT * FROM " + OrganisationUnitModel.TABLE + ", " + UserOrganisationUnitLinkModel.TABLE + " " +
                     "WHERE " + OrganisationUnitModel.TABLE + "." + OrganisationUnitModel.Columns.UID + " = " + UserOrganisationUnitLinkModel.TABLE + "." + UserOrganisationUnitLinkModel.Columns.ORGANISATION_UNIT +
                     " AND " + UserOrganisationUnitLinkModel.TABLE + "." + UserOrganisationUnitLinkModel.Columns.ORGANISATION_UNIT_SCOPE + " = '" + OrganisationUnitModel.Scope.SCOPE_DATA_CAPTURE +
@@ -83,11 +72,9 @@ class HomeRepositoryImpl implements HomeRepository {
                     " ORDER BY " + OrganisationUnitModel.TABLE + "." + OrganisationUnitModel.Columns.DISPLAY_NAME + " ASC";
 
     private final BriteDatabase briteDatabase;
-    private final D2 d2;
 
-    HomeRepositoryImpl(BriteDatabase briteDatabase, D2 d2) {
+    HomeRepositoryImpl(BriteDatabase briteDatabase) {
         this.briteDatabase = briteDatabase;
-        this.d2 = d2;
     }
 
     @NonNull
@@ -178,12 +165,12 @@ class HomeRepositoryImpl implements HomeRepository {
     @NonNull
     @Override
     public Observable<List<OrganisationUnitModel>> orgUnits(String parentUid) {
-        String SELECT_ORG_UNITS_BY_PARENT = "SELECT OrganisationUnit.* FROM OrganisationUnit " +
+        String selectOrgUnitsByParent = "SELECT OrganisationUnit.* FROM OrganisationUnit " +
                 "JOIN UserOrganisationUnit ON UserOrganisationUnit.organisationUnit = OrganisationUnit.uid " +
                 "WHERE OrganisationUnit.parent = ? AND UserOrganisationUnit.organisationUnitScope = 'SCOPE_DATA_CAPTURE' " +
                 "ORDER BY OrganisationUnit.displayName ASC";
 
-        return briteDatabase.createQuery(OrganisationUnitModel.TABLE, SELECT_ORG_UNITS_BY_PARENT, parentUid)
+        return briteDatabase.createQuery(OrganisationUnitModel.TABLE, selectOrgUnitsByParent, parentUid)
                 .mapToList(OrganisationUnitModel::create);
     }
 

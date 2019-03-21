@@ -1,14 +1,5 @@
 package org.dhis2.data.forms.dataentry;
 
-import androidx.databinding.ObservableBoolean;
-import androidx.databinding.ObservableField;
-import androidx.annotation.NonNull;
-import androidx.fragment.app.FragmentManager;
-import androidx.recyclerview.widget.DiffUtil;
-import androidx.recyclerview.widget.RecyclerView.Adapter;
-import androidx.recyclerview.widget.RecyclerView.ViewHolder;
-
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
 
@@ -42,6 +33,13 @@ import org.hisp.dhis.android.core.organisationunit.OrganisationUnitModel;
 import java.util.ArrayList;
 import java.util.List;
 
+import androidx.annotation.NonNull;
+import androidx.databinding.ObservableBoolean;
+import androidx.databinding.ObservableField;
+import androidx.fragment.app.FragmentManager;
+import androidx.recyclerview.widget.DiffUtil;
+import androidx.recyclerview.widget.RecyclerView.Adapter;
+import androidx.recyclerview.widget.RecyclerView.ViewHolder;
 import io.reactivex.Observable;
 import io.reactivex.processors.FlowableProcessor;
 import io.reactivex.processors.PublishProcessor;
@@ -76,7 +74,6 @@ public final class DataEntryAdapter extends Adapter {
 
     @NonNull
     private final List<Row> rows;
-    private final DataEntryArguments dataEntryArguments;
 
     private final FlowableProcessor<Trio<String, String, Integer>> processorOptionSet;
 
@@ -92,21 +89,20 @@ public final class DataEntryAdapter extends Adapter {
         imageSelector = new ObservableField<>("");
         currentPosition = PublishProcessor.create();
         this.processorOptionSet = PublishProcessor.create();
-        this.dataEntryArguments = dataEntryArguments;
 
-        rows.add(EDITTEXT, new EditTextRow(layoutInflater, processor, currentPosition, true, dataEntryArguments.renderType(), isEditable));
-        rows.add(BUTTON, new FileRow(layoutInflater, processor, currentPosition, true, dataEntryArguments.renderType()));
-        rows.add(CHECKBOX, new RadioButtonRow(layoutInflater, processor, currentPosition, true, dataEntryArguments.renderType()));
-        rows.add(SPINNER, new SpinnerRow(layoutInflater, processor, currentPosition, processorOptionSet, true, dataEntryArguments.renderType()));
-        rows.add(COORDINATES, new CoordinateRow(layoutInflater, processor, currentPosition, true, dataEntryArguments.renderType()));
-        rows.add(TIME, new DateTimeRow(layoutInflater, processor, currentPosition, TIME, true, dataEntryArguments.renderType()));
-        rows.add(DATE, new DateTimeRow(layoutInflater, processor, currentPosition, DATE, true, dataEntryArguments.renderType()));
-        rows.add(DATETIME, new DateTimeRow(layoutInflater, processor, currentPosition, DATETIME, true, dataEntryArguments.renderType()));
-        rows.add(AGEVIEW, new AgeRow(layoutInflater, processor, currentPosition, true, dataEntryArguments.renderType()));
-        rows.add(YES_NO, new RadioButtonRow(layoutInflater, processor, currentPosition, true, dataEntryArguments.renderType()));
-        rows.add(ORG_UNIT, new OrgUnitRow(fragmentManager, layoutInflater, processor, currentPosition, true, orgUnits, dataEntryArguments.renderType()));
-        rows.add(IMAGE, new ImageRow(layoutInflater, processor, currentPosition, dataEntryArguments.renderType()));
-        rows.add(UNSUPPORTED, new UnsupportedRow(layoutInflater, processor, currentPosition, true, dataEntryArguments.renderType()));
+        rows.add(EDITTEXT, new EditTextRow(layoutInflater, processor, true, dataEntryArguments.renderType(), isEditable));
+        rows.add(BUTTON, new FileRow(layoutInflater, true));
+        rows.add(CHECKBOX, new RadioButtonRow(layoutInflater, processor, true));
+        rows.add(SPINNER, new SpinnerRow(layoutInflater, processor, processorOptionSet, true, dataEntryArguments.renderType()));
+        rows.add(COORDINATES, new CoordinateRow(layoutInflater, processor, true));
+        rows.add(TIME, new DateTimeRow(layoutInflater, processor, currentPosition, TIME, true));
+        rows.add(DATE, new DateTimeRow(layoutInflater, processor, currentPosition, DATE, true));
+        rows.add(DATETIME, new DateTimeRow(layoutInflater, processor, currentPosition, DATETIME, true));
+        rows.add(AGEVIEW, new AgeRow(layoutInflater, processor, true));
+        rows.add(YES_NO, new RadioButtonRow(layoutInflater, processor, true));
+        rows.add(ORG_UNIT, new OrgUnitRow(fragmentManager, layoutInflater, processor, true, orgUnits, dataEntryArguments.renderType()));
+        rows.add(IMAGE, new ImageRow(layoutInflater, processor, dataEntryArguments.renderType()));
+        rows.add(UNSUPPORTED, new UnsupportedRow(layoutInflater));
 
     }
 
@@ -124,21 +120,20 @@ public final class DataEntryAdapter extends Adapter {
         imageSelector = new ObservableField<>("");
         currentPosition = PublishProcessor.create();
         this.processorOptionSet = processorOptSet;
-        this.dataEntryArguments = dataEntryArguments;
 
-        rows.add(EDITTEXT, new EditTextRow(layoutInflater, processor, currentPosition, true, dataEntryArguments.renderType(), isEditable));
-        rows.add(BUTTON, new FileRow(layoutInflater, processor, currentPosition, true, dataEntryArguments.renderType()));
-        rows.add(CHECKBOX, new RadioButtonRow(layoutInflater, processor, currentPosition, true, dataEntryArguments.renderType()));
-        rows.add(SPINNER, new SpinnerRow(layoutInflater, processor, currentPosition, processorOptionSet, true, dataEntryArguments.renderType()));
-        rows.add(COORDINATES, new CoordinateRow(layoutInflater, processor, currentPosition, true, dataEntryArguments.renderType()));
-        rows.add(TIME, new DateTimeRow(layoutInflater, processor, currentPosition, TIME, true, dataEntryArguments.renderType()));
-        rows.add(DATE, new DateTimeRow(layoutInflater, processor, currentPosition, DATE, true, dataEntryArguments.renderType()));
-        rows.add(DATETIME, new DateTimeRow(layoutInflater, processor, currentPosition, DATETIME, true, dataEntryArguments.renderType()));
-        rows.add(AGEVIEW, new AgeRow(layoutInflater, processor, currentPosition, true, dataEntryArguments.renderType()));
-        rows.add(YES_NO, new RadioButtonRow(layoutInflater, processor, currentPosition, true, dataEntryArguments.renderType()));
-        rows.add(ORG_UNIT, new OrgUnitRow(fragmentManager, layoutInflater, processor, currentPosition, true, orgUnits, dataEntryArguments.renderType()));
-        rows.add(IMAGE, new ImageRow(layoutInflater, processor, currentPosition, dataEntryArguments.renderType()));
-        rows.add(UNSUPPORTED, new UnsupportedRow(layoutInflater, processor, currentPosition, true, dataEntryArguments.renderType()));
+        rows.add(EDITTEXT, new EditTextRow(layoutInflater, processor, true, dataEntryArguments.renderType(), isEditable));
+        rows.add(BUTTON, new FileRow(layoutInflater, true));
+        rows.add(CHECKBOX, new RadioButtonRow(layoutInflater, processor, true));
+        rows.add(SPINNER, new SpinnerRow(layoutInflater, processor, processorOptionSet, true, dataEntryArguments.renderType()));
+        rows.add(COORDINATES, new CoordinateRow(layoutInflater, processor, true));
+        rows.add(TIME, new DateTimeRow(layoutInflater, processor, currentPosition, TIME, true));
+        rows.add(DATE, new DateTimeRow(layoutInflater, processor, currentPosition, DATE, true));
+        rows.add(DATETIME, new DateTimeRow(layoutInflater, processor, currentPosition, DATETIME, true));
+        rows.add(AGEVIEW, new AgeRow(layoutInflater, processor, true));
+        rows.add(YES_NO, new RadioButtonRow(layoutInflater, processor, true));
+        rows.add(ORG_UNIT, new OrgUnitRow(fragmentManager, layoutInflater, processor, true, orgUnits, dataEntryArguments.renderType()));
+        rows.add(IMAGE, new ImageRow(layoutInflater, processor, dataEntryArguments.renderType()));
+        rows.add(UNSUPPORTED, new UnsupportedRow(layoutInflater));
 
     }
 
@@ -208,7 +203,7 @@ public final class DataEntryAdapter extends Adapter {
         return processor;
     }
 
-    public FlowableProcessor<Trio<String, String, Integer>> asFlowableOption(){
+    public FlowableProcessor<Trio<String, String, Integer>> asFlowableOption() {
         return processorOptionSet;
     }
 

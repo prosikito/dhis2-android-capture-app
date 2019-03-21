@@ -12,7 +12,6 @@ import org.dhis2.databinding.ActivityProgramStageSelectionBinding;
 import org.dhis2.usescases.eventsWithoutRegistration.eventInitial.EventInitialActivity;
 import org.dhis2.usescases.general.ActivityGlobalAbstract;
 import org.dhis2.utils.Constants;
-import org.hisp.dhis.android.core.common.ObjectStyle;
 import org.hisp.dhis.android.core.common.ObjectStyleModel;
 import org.hisp.dhis.android.core.period.PeriodType;
 import org.hisp.dhis.android.core.program.ProgramStageModel;
@@ -39,44 +38,44 @@ import static org.dhis2.utils.Constants.TRACKED_ENTITY_INSTANCE;
  * QUADRAM. Created by ppajuelo on 31/10/2017.
  */
 
-public class ProgramStageSelectionActivity extends ActivityGlobalAbstract implements ProgramStageSelectionContract.View {
+@SuppressWarnings("squid:MaximumInheritanceDepth")
+public class ProgramStageSelectionActivity extends ActivityGlobalAbstract implements ProgramStageSelectionContract.ProgramStageSelectionView {
 
     ActivityProgramStageSelectionBinding binding;
 
     @Inject
-    ProgramStageSelectionContract.Presenter presenter;
+    ProgramStageSelectionContract.ProgramStageSelectionPresenter programStageSelectionPresenter;
 
     ProgramStageSelectionAdapter adapter;
     private String enrollmenId;
     private String programId;
-    private int orientation;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         programId = getIntent().getStringExtra("PROGRAM_UID");
         enrollmenId = getIntent().getStringExtra("ENROLLMENT_UID");
-        String eventCreationType =  getIntent().getStringExtra(EVENT_CREATION_TYPE);
+        String eventCreationType = getIntent().getStringExtra(EVENT_CREATION_TYPE);
         ((App) getApplicationContext()).userComponent().plus(new ProgramStageSelectionModule(programId, enrollmenId, eventCreationType)).inject(this);
         super.onCreate(savedInstanceState);
 
         binding = DataBindingUtil.setContentView(this, R.layout.activity_program_stage_selection);
-        binding.setPresenter(presenter);
-        adapter = new ProgramStageSelectionAdapter(presenter);
+        binding.setPresenter(programStageSelectionPresenter);
+        adapter = new ProgramStageSelectionAdapter(programStageSelectionPresenter);
         binding.recyclerView.setAdapter(adapter);
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        orientation = Resources.getSystem().getConfiguration().orientation;
-        presenter.getProgramStages(programId, enrollmenId, this); //TODO: enrollment / event path
+        int orientation = Resources.getSystem().getConfiguration().orientation;
+        programStageSelectionPresenter.getProgramStages(programId, enrollmenId, this); //TODO: enrollment / event path
         int columnCount = (orientation == Configuration.ORIENTATION_LANDSCAPE) ? 3 : 2;
         binding.recyclerView.setLayoutManager(new GridLayoutManager(this, columnCount));
     }
 
     @Override
     protected void onPause() {
-        presenter.onDettach();
+        programStageSelectionPresenter.onDettach();
         super.onPause();
     }
 

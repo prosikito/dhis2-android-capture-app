@@ -4,13 +4,11 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <data>
-
         <import type="android.view.View" />
 
         <variable
             name="presenter"
-            type="org.dhis2.usescases.login.LoginContracts.Presenter" />
-
+            type="org.dhis2.usescases.login.LoginContracts.LoginPresenter" />
     </data>
 
     <RelativeLayout

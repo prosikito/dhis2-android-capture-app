@@ -14,7 +14,7 @@ import io.reactivex.Observable;
 public class SplashRepositoryImpl implements SplashRepository {
 
     private static final String FLAG_QUERY = "SELECT " +
-            "SystemSetting.value FROM SystemSetting WHERE SystemSetting.key = 'flag' LIMIT 1";
+            "SystemSetting.VALUE FROM SystemSetting WHERE SystemSetting.key = 'flag' LIMIT 1";
 
     private final BriteDatabase briteDatabase;
 

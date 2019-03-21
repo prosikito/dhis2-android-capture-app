@@ -5,12 +5,6 @@ import androidx.recyclerview.widget.RecyclerView;
 import org.dhis2.BR;
 
 import org.dhis2.databinding.ItemProgramEventBinding;
-import org.hisp.dhis.android.core.event.EventModel;
-
-import io.reactivex.android.schedulers.AndroidSchedulers;
-import io.reactivex.disposables.CompositeDisposable;
-import io.reactivex.schedulers.Schedulers;
-import timber.log.Timber;
 
 /**
  * QUADRAM. Created by Cristian on 13/02/2018.
@@ -25,8 +19,8 @@ public class ProgramEventDetailViewHolder extends RecyclerView.ViewHolder {
         this.binding = binding;
     }
 
-    public void bind(ProgramEventDetailContract.Presenter presenter, ProgramEventViewModel event) {
-        binding.setVariable(BR.presenter, presenter);
+    public void bind(ProgramEventDetailContract.ProgramEventDetailPresenter programEventDetailPresenter, ProgramEventViewModel event) {
+        binding.setVariable(BR.presenter, programEventDetailPresenter);
         binding.setVariable(BR.event, event);
         binding.executePendingBindings();
 
@@ -40,7 +34,7 @@ public class ProgramEventDetailViewHolder extends RecyclerView.ViewHolder {
         }
         binding.dataValue.setText(stringBuilder);
 
-        itemView.setOnClickListener(view -> presenter.onEventClick(event.uid(), event.orgUnitUid()));
+        itemView.setOnClickListener(view -> programEventDetailPresenter.onEventClick(event.uid(), event.orgUnitUid()));
     }
 
 

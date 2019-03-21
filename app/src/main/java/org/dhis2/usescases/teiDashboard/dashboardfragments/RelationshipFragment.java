@@ -45,7 +45,7 @@ import static android.app.Activity.RESULT_OK;
 public class RelationshipFragment extends FragmentGlobalAbstract {
 
     FragmentRelationshipsBinding binding;
-    TeiDashboardContracts.Presenter presenter;
+    TeiDashboardContracts.TeiDashboardPresenter teiDashboardPresenter;
 
     private DashboardProgramModel dashboardProgramModel;
     static RelationshipFragment instance;
@@ -68,15 +68,15 @@ public class RelationshipFragment extends FragmentGlobalAbstract {
     @Override
     public void onAttach(Context context) {
         super.onAttach(context);
-        presenter = ((TeiDashboardMobileActivity) context).getPresenter();
+        teiDashboardPresenter = ((TeiDashboardMobileActivity) context).getPresenter();
     }
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         binding = DataBindingUtil.inflate(inflater, R.layout.fragment_relationships, container, false);
-        binding.setPresenter(presenter);
-        relationshipAdapter = new RelationshipAdapter(presenter);
+        binding.setPresenter(teiDashboardPresenter);
+        relationshipAdapter = new RelationshipAdapter(teiDashboardPresenter);
         binding.relationshipRecycler.setAdapter(relationshipAdapter);
         return binding.getRoot();
     }
@@ -84,7 +84,7 @@ public class RelationshipFragment extends FragmentGlobalAbstract {
     @Override
     public void onResume() {
         super.onResume();
-        setData(presenter.getDashBoardData());
+        setData(teiDashboardPresenter.getDashBoardData());
     }
 
     public void setData(DashboardProgramModel dashboardProgramModel) {
@@ -92,8 +92,8 @@ public class RelationshipFragment extends FragmentGlobalAbstract {
 
         binding.executePendingBindings();
 
-        presenter.subscribeToRelationships(this);
-        presenter.subscribeToRelationshipTypes(this);
+        teiDashboardPresenter.subscribeToRelationships(this);
+        teiDashboardPresenter.subscribeToRelationshipTypes(this);
 
     }
 
@@ -116,7 +116,7 @@ public class RelationshipFragment extends FragmentGlobalAbstract {
             if (resultCode == RESULT_OK) {
                 if (data != null) {
                     String tei_a = data.getStringExtra("TEI_A_UID");
-                    presenter.addRelationship(tei_a, relationshipType.uid());
+                    teiDashboardPresenter.addRelationship(tei_a, relationshipType.uid());
                 }
             }
         }
@@ -168,6 +168,6 @@ public class RelationshipFragment extends FragmentGlobalAbstract {
                                   @NonNull String teiTypeUid) {
         rfaHelper.toggleContent();
         relationshipType = relationshipTypeModel;
-        presenter.goToAddRelationship(teiTypeUid);
+        teiDashboardPresenter.goToAddRelationship(teiTypeUid);
     }
 }

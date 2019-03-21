@@ -38,12 +38,6 @@ public final class AttributeValueStore implements DataEntryStore {
             "  SELECT trackedEntityInstance FROM Enrollment WHERE Enrollment.uid = ? LIMIT 1\n" +
             ") AND trackedEntityAttribute = ?;";
 
-    private static final String INSERT = "INSERT INTO TrackedEntityAttributeValue ( " +
-            "created, lastUpdated, value, trackedEntityAttribute, trackedEntityInstance" +
-            ") VALUES (?, ?, ?, ?, (\n" +
-            "  SELECT trackedEntityInstance FROM Enrollment WHERE uid = ? LIMIT 1\n" +
-            "));";
-
     private static final String DELETE = "DELETE FROM TrackedEntityAttributeValue " +
             "WHERE trackedEntityInstance = (\n" +
             "  SELECT trackedEntityInstance FROM Enrollment WHERE Enrollment.uid = ? LIMIT 1\n" +
@@ -64,9 +58,6 @@ public final class AttributeValueStore implements DataEntryStore {
     private final SQLiteStatement updateStatement;
 
     @NonNull
-    private final SQLiteStatement insertStatement;
-
-    @NonNull
     private final SQLiteStatement deleteStatement;
 
     @NonNull
@@ -78,8 +69,6 @@ public final class AttributeValueStore implements DataEntryStore {
 
         updateStatement = briteDatabase.getWritableDatabase()
                 .compileStatement(UPDATE);
-        insertStatement = briteDatabase.getWritableDatabase()
-                .compileStatement(INSERT);
         deleteStatement = briteDatabase.getWritableDatabase()
                 .compileStatement(DELETE);
     }
@@ -161,11 +150,11 @@ public final class AttributeValueStore implements DataEntryStore {
     private String currentValue(@NonNull String uid, valueType valueType) {
         Cursor cursor;
         if (valueType == ATTR)
-            cursor = briteDatabase.query("SELECT TrackedEntityAttributeValue.value FROM TrackedEntityAttributeValue " +
+            cursor = briteDatabase.query("SELECT TrackedEntityAttributeValue.VALUE FROM TrackedEntityAttributeValue " +
                     "JOIN Enrollment ON Enrollment.trackedEntityInstance = TrackedEntityAttributeValue.trackedEntityInstance " +
                     "WHERE TrackedEntityAttributeValue.trackedEntityAttribute = ? AND Enrollment.uid = ?", uid, enrollment);
         else
-            cursor = briteDatabase.query("SELECT TrackedEntityDataValue.value FROM TrackedEntityDataValue " +
+            cursor = briteDatabase.query("SELECT TrackedEntityDataValue.VALUE FROM TrackedEntityDataValue " +
                     "JOIN Event ON Event.uid = TrackedEntityDataValue.event " +
                     "JOIN Enrollment ON Enrollment.uid = Event.enrollment " +
                     "WHERE TrackedEntityDataValue.dataElement = ? " +
@@ -184,18 +173,6 @@ public final class AttributeValueStore implements DataEntryStore {
     private long insert(@NonNull String attribute, @NonNull String value, valueType valueType) {
         if (valueType == ATTR) {
             Date date = Calendar.getInstance().getTime();
-            String created = BaseIdentifiableObject.DATE_FORMAT.format(date);
-/*
-
-            sqLiteBind(insertStatement, 1, created == null ? "" : created);
-            sqLiteBind(insertStatement, 2, created == null ? "" : created);
-            sqLiteBind(insertStatement, 3, value == null ? "" : value);
-            sqLiteBind(insertStatement, 4, attribute == null ? "" : attribute);
-            sqLiteBind(insertStatement, 5, enrollment == null ? "" : enrollment);
-
-            long inserted = briteDatabase.executeInsert(
-                    TrackedEntityAttributeValueModel.TABLE, insertStatement);
-            insertStatement.clearBindings();*/
 
             String teiUid = null;
 
@@ -273,11 +250,11 @@ public final class AttributeValueStore implements DataEntryStore {
 
     private boolean checkUnique(String attribute, String value) {
         if (attribute != null && value != null) {
-            Cursor uniqueCursor = briteDatabase.query("SELECT TrackedEntityAttributeValue.value FROM TrackedEntityAttributeValue" +
+            Cursor uniqueCursor = briteDatabase.query("SELECT TrackedEntityAttributeValue.VALUE FROM TrackedEntityAttributeValue" +
                     " JOIN TrackedEntityAttribute ON TrackedEntityAttribute.uid = TrackedEntityAttributeValue.trackedEntityAttribute" +
                     " WHERE TrackedEntityAttribute.uid = ? AND" +
                     " TrackedEntityAttribute.uniqueProperty = ? AND" +
-                    " TrackedEntityAttributeValue.value = ?", attribute, "1", value);
+                    " TrackedEntityAttributeValue.VALUE = ?", attribute, "1", value);
 
             if (uniqueCursor == null)
                 return true;

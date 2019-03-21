@@ -39,9 +39,11 @@ import static android.text.TextUtils.isEmpty;
  * Created by ppajuelo on 18/10/2017.f
  */
 
-public class ProgramPresenter implements ProgramContract.Presenter {
+public class ProgramProgramPresenter implements ProgramContract.ProgramPresenter {
 
-    private ProgramContract.View view;
+    private static final String CURRENT_PERIOD = "CURRENT_PERIOD";
+    private static final String CHOOSEN_DATE = "CHOOSEN_DATE";
+    private ProgramContract.ProgramView programView;
     private final HomeRepository homeRepository;
     private CompositeDisposable compositeDisposable;
 
@@ -50,13 +52,13 @@ public class ProgramPresenter implements ProgramContract.Presenter {
 
     private FlowableProcessor<Pair<TreeNode, String>> parentOrgUnit;
 
-    ProgramPresenter(HomeRepository homeRepository) {
+    ProgramProgramPresenter(HomeRepository homeRepository) {
         this.homeRepository = homeRepository;
     }
 
     @Override
-    public void init(ProgramContract.View view) {
-        this.view = view;
+    public void init(ProgramContract.ProgramView programView) {
+        this.programView = programView;
         this.compositeDisposable = new CompositeDisposable();
         ExecutorService executorService = Executors.newFixedThreadPool(2);
         programQueries = PublishProcessor.create();
@@ -73,8 +75,8 @@ public class ProgramPresenter implements ProgramContract.Presenter {
                         .subscribeOn(Schedulers.from(executorService))
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(
-                                view.swapProgramModelData(),
-                                throwable -> view.renderError(throwable.getMessage())
+                                programView.swapProgramModelData(),
+                                throwable -> programView.renderError(throwable.getMessage())
                         ));
 
         compositeDisposable.add(
@@ -85,7 +87,7 @@ public class ProgramPresenter implements ProgramContract.Presenter {
                         .subscribeOn(Schedulers.from(executorService))
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(
-                                view.addNodeToTree(),
+                                programView.addNodeToTree(),
                                 Timber::e
                         ));
     }
@@ -117,7 +119,7 @@ public class ProgramPresenter implements ProgramContract.Presenter {
 
     @Override
     public List<TreeNode> transformToNode(List<OrganisationUnitModel> orgUnits) {
-        return OrgUnitUtils.createNode(view.getContext(), orgUnits, true);
+        return OrgUnitUtils.createNode(programView.getContext(), orgUnits, true);
     }
 
     @Override
@@ -127,7 +129,7 @@ public class ProgramPresenter implements ProgramContract.Presenter {
 
     @Override
     public void dispose() {
-        if(!myOrgs.isEmpty())
+        if (!myOrgs.isEmpty())
             myOrgs.clear();
         compositeDisposable.clear();
     }
@@ -150,29 +152,29 @@ public class ProgramPresenter implements ProgramContract.Presenter {
 
         switch (currentPeriod) {
             case NONE:
-                bundle.putInt("CURRENT_PERIOD", R.string.period);
-                bundle.putSerializable("CHOOSEN_DATE", null);
+                bundle.putInt(CURRENT_PERIOD, R.string.period);
+                bundle.putSerializable(CHOOSEN_DATE, null);
                 break;
             case DAILY:
-                bundle.putInt("CURRENT_PERIOD", R.string.DAILY);
-                bundle.putSerializable("CHOOSEN_DATE", view.getChosenDateDay());
+                bundle.putInt(CURRENT_PERIOD, R.string.DAILY);
+                bundle.putSerializable(CHOOSEN_DATE, programView.getChosenDateDay());
                 break;
             case WEEKLY:
-                bundle.putInt("CURRENT_PERIOD", R.string.WEEKLY);
-                bundle.putSerializable("CHOOSEN_DATE", view.getChosenDateWeek());
+                bundle.putInt(CURRENT_PERIOD, R.string.WEEKLY);
+                bundle.putSerializable(CHOOSEN_DATE, programView.getChosenDateWeek());
                 break;
             case MONTHLY:
-                bundle.putInt("CURRENT_PERIOD", R.string.MONTHLY);
-                bundle.putSerializable("CHOOSEN_DATE", view.getChosenDateMonth());
+                bundle.putInt(CURRENT_PERIOD, R.string.MONTHLY);
+                bundle.putSerializable(CHOOSEN_DATE, programView.getChosenDateMonth());
                 break;
             case YEARLY:
-                bundle.putInt("CURRENT_PERIOD", R.string.YEARLY);
-                bundle.putSerializable("CHOOSEN_DATE", view.getChosenDateYear());
+                bundle.putInt(CURRENT_PERIOD, R.string.YEARLY);
+                bundle.putSerializable(CHOOSEN_DATE, programView.getChosenDateYear());
                 break;
         }
 
         int programTheme = ColorUtils.getThemeFromColor(programModel.color());
-        SharedPreferences prefs = view.getAbstracContext().getSharedPreferences(
+        SharedPreferences prefs = programView.getAbstracContext().getSharedPreferences(
                 Constants.SHARE_PREFS, Context.MODE_PRIVATE);
         if (programTheme != -1) {
             prefs.edit().putInt(Constants.PROGRAM_THEME, programTheme).apply();
@@ -180,19 +182,19 @@ public class ProgramPresenter implements ProgramContract.Presenter {
             prefs.edit().remove(Constants.PROGRAM_THEME).apply();
 
         if (programModel.programType().equals(ProgramType.WITH_REGISTRATION.name())) {
-            view.startActivity(SearchTEActivity.class, bundle, false, false, null);
+            programView.startActivity(SearchTEActivity.class, bundle, false, false, null);
         } else if (programModel.programType().equals(ProgramType.WITHOUT_REGISTRATION.name())) {
-            view.startActivity(ProgramEventDetailActivity.class, bundle, false, false, null);
+            programView.startActivity(ProgramEventDetailActivity.class, bundle, false, false, null);
         } else {
-            view.startActivity(DataSetDetailActivity.class, bundle, false, false, null);
+            programView.startActivity(DataSetDetailActivity.class, bundle, false, false, null);
         }
     }
 
     @Override
     public void onOrgUnitButtonClick() {
-        view.openDrawer();
+        programView.openDrawer();
         if (myOrgs.isEmpty()) {
-            view.orgUnitProgress(true);
+            programView.orgUnitProgress(true);
             compositeDisposable.add(
                     homeRepository.orgUnits()
                             .subscribeOn(Schedulers.computation())
@@ -200,27 +202,27 @@ public class ProgramPresenter implements ProgramContract.Presenter {
                             .subscribe(
                                     data -> {
                                         this.myOrgs = data;
-                                        view.orgUnitProgress(false);
-                                        view.addTree(OrgUnitUtils.renderTree(view.getContext(), myOrgs, true));
+                                        programView.orgUnitProgress(false);
+                                        programView.addTree(OrgUnitUtils.renderTree(programView.getContext(), myOrgs, true));
                                     },
-                                    throwable -> view.renderError(throwable.getMessage())));
+                                    throwable -> programView.renderError(throwable.getMessage())));
         }
     }
 
     @Override
     public void onDateRangeButtonClick() {
-        view.showRageDatePicker();
+        programView.showRageDatePicker();
     }
 
 
     @Override
     public void onTimeButtonClick() {
-        view.showTimeUnitPicker();
+        programView.showTimeUnitPicker();
     }
 
     @Override
     public void showDescription(String description) {
-        view.showDescription(description);
+        programView.showDescription(description);
     }
 
     private String orgUnitQuery() {
@@ -232,7 +234,7 @@ public class ProgramPresenter implements ProgramContract.Presenter {
             if (i < myOrgs.size() - 1)
                 orgUnitFilter.append(", ");
         }
-        view.setOrgUnitFilter(orgUnitFilter);
+        programView.setOrgUnitFilter(orgUnitFilter);
         return orgUnitFilter.toString();
     }
 }

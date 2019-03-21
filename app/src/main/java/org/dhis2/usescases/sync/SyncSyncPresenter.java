@@ -18,21 +18,21 @@ import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.schedulers.Schedulers;
 import timber.log.Timber;
 
-public class SyncPresenter implements SyncContracts.Presenter {
+public class SyncSyncPresenter implements SyncContracts.SyncPresenter {
 
     private final MetadataRepository metadataRepository;
-    private SyncContracts.View view;
+    private SyncContracts.SyncView syncView;
 
     private CompositeDisposable disposable;
 
 
-    SyncPresenter(MetadataRepository metadataRepository) {
+    SyncSyncPresenter(MetadataRepository metadataRepository) {
         this.metadataRepository = metadataRepository;
     }
 
     @Override
-    public void init(SyncContracts.View view) {
-        this.view = view;
+    public void init(SyncContracts.SyncView syncView) {
+        this.syncView = syncView;
         this.disposable = new CompositeDisposable();
     }
 
@@ -65,8 +65,8 @@ public class SyncPresenter implements SyncContracts.Presenter {
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(flagTheme -> {
-                            view.saveFlag(flagTheme.val0());
-                            view.saveTheme(flagTheme.val1());
+                            syncView.saveFlag(flagTheme.val0());
+                            syncView.saveTheme(flagTheme.val1());
                         }, Timber::e
                 ));
 
@@ -83,7 +83,7 @@ public class SyncPresenter implements SyncContracts.Presenter {
                         throwable.getMessage() == null ? "" : throwable.getMessage()))
                 .startWith(SyncResult.progress())
                 .subscribe(update(SyncActivity.SyncState.AGGREGATES),
-                        throwable -> view.displayMessage(throwable.getMessage())
+                        throwable -> syncView.displayMessage(throwable.getMessage())
                 ));
     }*/
 
@@ -108,6 +108,6 @@ public class SyncPresenter implements SyncContracts.Presenter {
 
     @Override
     public void displayMessage(String message) {
-        view.displayMessage(message);
+        syncView.displayMessage(message);
     }
 }

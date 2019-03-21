@@ -37,13 +37,13 @@ import androidx.databinding.ObservableInt;
 import androidx.fragment.app.Fragment;
 import io.reactivex.functions.Consumer;
 
-
-public class MainActivity extends ActivityGlobalAbstract implements MainContracts.View {
+@SuppressWarnings("squid:MaximumInheritanceDepth")
+public class MainActivity extends ActivityGlobalAbstract implements MainContracts.MainView {
 
     protected ActivityMainBinding binding;
 
     @Inject
-    MainContracts.Presenter presenter;
+    MainContracts.MainPresenter mainPresenter;
 
     private ProgramFragment programFragment;
 
@@ -61,7 +61,7 @@ public class MainActivity extends ActivityGlobalAbstract implements MainContract
 
         super.onCreate(savedInstanceState);
         binding = DataBindingUtil.setContentView(this, R.layout.activity_main);
-        binding.setPresenter(presenter);
+        binding.setPresenter(mainPresenter);
         binding.navView.setNavigationItemSelectedListener(item -> {
             changeFragment(item.getItemId());
             return false;
@@ -70,17 +70,17 @@ public class MainActivity extends ActivityGlobalAbstract implements MainContract
         binding.pinLayout.pinLockView.setPinLockListener(new PinLockListener() {
             @Override
             public void onComplete(String pin) {
-                presenter.blockSession(pin);
+                mainPresenter.blockSession(pin);
             }
 
             @Override
             public void onEmpty() {
-
+                // unused
             }
 
             @Override
             public void onPinChange(int pinLength, String intermediatePin) {
-
+                // unused
             }
         });
 
@@ -104,7 +104,7 @@ public class MainActivity extends ActivityGlobalAbstract implements MainContract
     @Override
     protected void onResume() {
         super.onResume();
-        presenter.init(this);
+        mainPresenter.init(this);
 
         if (!getSharedPreferences().getBoolean(Constants.LAST_DATA_SYNC_STATUS, true) ||
                 !getSharedPreferences().getBoolean(Constants.LAST_META_SYNC_STATUS, true)) {
@@ -115,7 +115,7 @@ public class MainActivity extends ActivityGlobalAbstract implements MainContract
 
     @Override
     protected void onPause() {
-        presenter.onDetach();
+        mainPresenter.onDetach();
         super.onPause();
     }
 
@@ -182,7 +182,7 @@ public class MainActivity extends ActivityGlobalAbstract implements MainContract
             binding.pinLayout.getRoot().setVisibility(View.VISIBLE);
             isPinLayoutVisible = true;
         } else
-            presenter.blockSession(null);
+            mainPresenter.blockSession(null);
     }
 
     @Override
@@ -226,7 +226,7 @@ public class MainActivity extends ActivityGlobalAbstract implements MainContract
                 onLockClick();
                 break;
             case R.id.logout_button:
-                presenter.logOut();
+                mainPresenter.logOut();
                 break;
             case R.id.menu_home:
             default:

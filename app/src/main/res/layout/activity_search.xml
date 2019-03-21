@@ -7,7 +7,7 @@
 
         <variable
             name="presenter"
-            type="org.dhis2.usescases.searchTrackEntity.SearchTEContractsModule.Presenter" />
+            type="org.dhis2.usescases.searchTrackEntity.SearchTEContractsModule.SearchTEPresenter" />
 
     </data>
 
@@ -160,7 +160,7 @@
                 android:layout_alignParentBottom="true"
                 android:layout_gravity="end|bottom"
                 android:layout_margin="15dp"
-                android:onClick="@{(view)->presenter.onFabClick(view)}"
+                android:onClick="@{(dataSetTableContractView)->presenter.onFabClick(dataSetTableContractView)}"
                 android:tint="@color/white"
                 app:backgroundTint="?attr/colorPrimary"
                 app:elevation="7dp"

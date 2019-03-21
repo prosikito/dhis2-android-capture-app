@@ -2,11 +2,7 @@ package org.dhis2.utils.custom_views;
 
 import android.app.Dialog;
 import android.content.Context;
-import androidx.databinding.DataBindingUtil;
 import android.os.Bundle;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.fragment.app.DialogFragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -20,8 +16,14 @@ import org.dhis2.databinding.DialogOrgunitBinding;
 import org.dhis2.usescases.main.program.OrgUnitHolder;
 import org.dhis2.utils.OrgUnitUtils;
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnitModel;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.databinding.DataBindingUtil;
+import androidx.fragment.app.DialogFragment;
 
 /**
  * QUADRAM. Created by ppajuelo on 21/05/2018.
@@ -29,24 +31,24 @@ import java.util.List;
 
 public class OrgUnitDialog extends DialogFragment {
     DialogOrgunitBinding binding;
-    AndroidTreeView treeView;
-    boolean isMultiSelection = false;
-    static OrgUnitDialog instace;
+    private AndroidTreeView treeView;
+    private boolean isMultiSelection;
+    private static OrgUnitDialog instance;
     private View.OnClickListener possitiveListener;
     private View.OnClickListener negativeListener;
     private String title;
     private List<OrganisationUnitModel> myOrgs;
     private Context context;
 
-    public static OrgUnitDialog getInstace() {
-        if (instace == null) {
-            instace = new OrgUnitDialog();
+    public static OrgUnitDialog getInstance() {
+        if (instance == null) {
+            instance = new OrgUnitDialog();
         }
-        return instace;
+        return instance;
     }
 
     public OrgUnitDialog() {
-        instace = null;
+        instance = null;
         isMultiSelection = false;
         possitiveListener = null;
         negativeListener = null;
@@ -82,7 +84,7 @@ public class OrgUnitDialog extends DialogFragment {
     }
 
     @Override
-    public void onAttach(Context context) {
+    public void onAttach(@NotNull Context context) {
         super.onAttach(context);
         this.context = context;
     }
@@ -91,8 +93,10 @@ public class OrgUnitDialog extends DialogFragment {
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
         Dialog dialog = super.onCreateDialog(savedInstanceState);
-        dialog.getWindow().requestFeature(Window.FEATURE_NO_TITLE);
-        dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().requestFeature(Window.FEATURE_NO_TITLE);
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+        }
         return dialog;
     }
 
@@ -145,7 +149,11 @@ public class OrgUnitDialog extends DialogFragment {
 
     @Override
     public void dismiss() {
-        instace = null;
+        destroyInstance();
         super.dismiss();
+    }
+
+    private static void destroyInstance() {
+        instance = null;
     }
 }

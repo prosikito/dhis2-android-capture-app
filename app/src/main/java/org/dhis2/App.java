@@ -29,10 +29,11 @@ import org.dhis2.usescases.login.LoginModule;
 import org.dhis2.usescases.sync.SyncComponent;
 import org.dhis2.usescases.sync.SyncModule;
 import org.dhis2.utils.UtilsModule;
-import org.dhis2.utils.timber.DebugTree;
+import org.dhis2.utils.timber.Dhis2DebugTree;
 import org.dhis2.utils.timber.ReleaseTree;
 import org.hisp.dhis.android.core.configuration.Configuration;
 import org.hisp.dhis.android.core.configuration.ConfigurationManager;
+import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -91,7 +92,7 @@ public class App extends MultiDexApplication implements Components {
     @Override
     public void onCreate() {
         super.onCreate();
-        Timber.plant(BuildConfig.DEBUG ? new DebugTree() : new ReleaseTree());
+        Timber.plant(BuildConfig.DEBUG ? new Dhis2DebugTree() : new ReleaseTree());
         long startTime = System.currentTimeMillis();
         Timber.d("APPLICATION INITIALIZATION");
         if (BuildConfig.DEBUG) {
@@ -101,7 +102,7 @@ public class App extends MultiDexApplication implements Components {
         Fabric.with(this, new Crashlytics());
         Timber.d("FABRIC INITIALIZATION END AT %s", System.currentTimeMillis() - startTime);
 
-        this.instance = this;
+        instance = this;
 
         setUpAppComponent();
         setUpServerComponent();
@@ -184,7 +185,8 @@ public class App extends MultiDexApplication implements Components {
 
     @NonNull
     protected AppComponent createAppComponent() {
-        return (appComponent = prepareAppComponent().build());
+        appComponent = prepareAppComponent().build();
+        return appComponent;
     }
 
     @NonNull
@@ -200,7 +202,8 @@ public class App extends MultiDexApplication implements Components {
     @NonNull
     @Override
     public LoginComponent createLoginComponent() {
-        return (loginComponent = appComponent.plus(new LoginModule()));
+        loginComponent = appComponent.plus(new LoginModule());
+        return loginComponent;
     }
 
     @Nullable
@@ -217,7 +220,8 @@ public class App extends MultiDexApplication implements Components {
     @NonNull
     @Override
     public SyncComponent createSyncComponent() {
-        return (syncComponent = appComponent.plus(new SyncModule()));
+        syncComponent = appComponent.plus(new SyncModule());
+        return syncComponent;
     }
 
     @Nullable
@@ -234,6 +238,7 @@ public class App extends MultiDexApplication implements Components {
     ////////////////////////////////////////////////////////////////////////
     // Server component
     ////////////////////////////////////////////////////////////////////////
+    @NotNull
     @Override
     public ServerComponent createServerComponent(@NonNull Configuration configuration) {
         serverComponent = appComponent.plus(new ServerModule(configuration));
@@ -252,6 +257,7 @@ public class App extends MultiDexApplication implements Components {
         serverComponent = null;
     }
 
+    @org.jetbrains.annotations.Nullable
     public ServerComponent getServerComponent() {
         return serverComponent;
     }
@@ -260,9 +266,11 @@ public class App extends MultiDexApplication implements Components {
     // User component
     ////////////////////////////////////////////////////////////////////////
 
+    @NotNull
     @Override
     public UserComponent createUserComponent() {
-        return (userComponent = serverComponent.plus(new UserModule()));
+        userComponent = serverComponent.plus(new UserModule());
+        return userComponent;
     }
 
     @Override
@@ -280,7 +288,8 @@ public class App extends MultiDexApplication implements Components {
 
     @NonNull
     public FormComponent createFormComponent(@NonNull FormModule formModule) {
-        return (formComponent = userComponent.plus(formModule));
+        formComponent = userComponent.plus(formModule);
+        return formComponent;
     }
 
     @Nullable

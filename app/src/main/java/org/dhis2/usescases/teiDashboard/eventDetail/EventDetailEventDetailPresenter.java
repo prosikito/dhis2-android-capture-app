@@ -41,18 +41,18 @@ import static android.text.TextUtils.isEmpty;
  * QUADRAM. Created by ppajuelo on 19/12/2017.
  */
 
-public class EventDetailPresenter implements EventDetailContracts.Presenter {
+public class EventDetailEventDetailPresenter implements EventDetailContracts.EventDetailPresenter {
 
     private final EventDetailRepository eventDetailRepository;
     private final MetadataRepository metadataRepository;
     private final DataEntryStore dataEntryStore;
-    private EventDetailContracts.View view;
+    private EventDetailContracts.EventDetailView eventDetailView;
     private CompositeDisposable disposable;
     private EventDetailModel eventDetailModel;
 
     private boolean changedEventStatus = false;
 
-    EventDetailPresenter(EventDetailRepository eventDetailRepository, MetadataRepository metadataRepository, DataEntryStore dataEntryStore) {
+    EventDetailEventDetailPresenter(EventDetailRepository eventDetailRepository, MetadataRepository metadataRepository, DataEntryStore dataEntryStore) {
         this.metadataRepository = metadataRepository;
         this.eventDetailRepository = eventDetailRepository;
         this.dataEntryStore = dataEntryStore;
@@ -61,8 +61,8 @@ public class EventDetailPresenter implements EventDetailContracts.Presenter {
     }
 
     @Override
-    public void init(EventDetailContracts.View view) {
-        this.view = view;
+    public void init(EventDetailContracts.EventDetailView eventDetailView) {
+        this.eventDetailView = eventDetailView;
     }
 
     @SuppressLint("CheckResult")
@@ -88,7 +88,7 @@ public class EventDetailPresenter implements EventDetailContracts.Presenter {
                         .subscribe(
                                 data -> {
                                     eventDetailModel = data;
-                                    view.setData(data, metadataRepository);
+                                    eventDetailView.setData(data, metadataRepository);
                                 },
                                 throwable -> Log.d("ERROR", throwable.getMessage()))
 
@@ -102,7 +102,7 @@ public class EventDetailPresenter implements EventDetailContracts.Presenter {
                         .subscribeOn(Schedulers.io())
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(
-                                view::isEventExpired,
+                                eventDetailView::isEventExpired,
                                 Timber::d
                         )
         );
@@ -122,11 +122,11 @@ public class EventDetailPresenter implements EventDetailContracts.Presenter {
 
     @Override
     public void back() {
-        if (view != null &&
-                view.getAbstractActivity() != null &&
-                !view.getAbstractActivity().getSupportFragmentManager().getFragments().isEmpty()) {
-            ((FormFragment) view.getAbstractActivity().getSupportFragmentManager().getFragments().get(0)).getDatesLayout().getRootView().requestFocus();
-            new Handler().postDelayed(() -> view.goBack(changedEventStatus), 1500);
+        if (eventDetailView != null &&
+                eventDetailView.getAbstractActivity() != null &&
+                !eventDetailView.getAbstractActivity().getSupportFragmentManager().getFragments().isEmpty()) {
+            ((FormFragment) eventDetailView.getAbstractActivity().getSupportFragmentManager().getFragments().get(0)).getDatesLayout().getRootView().requestFocus();
+            new Handler().postDelayed(() -> eventDetailView.goBack(changedEventStatus), 1500);
         }
     }
 
@@ -134,13 +134,13 @@ public class EventDetailPresenter implements EventDetailContracts.Presenter {
     public void eventStatus(View buttonView, EventModel eventModel, ProgramStageModel stageModel) {
 
         if (stageModel.accessDataWrite()) {
-            FormFragment formFragment = (FormFragment) view.getAbstractActivity().getSupportFragmentManager().getFragments().get(0);
+            FormFragment formFragment = (FormFragment) eventDetailView.getAbstractActivity().getSupportFragmentManager().getFragments().get(0);
             formFragment.getDatesLayout().getRootView().requestFocus();
             new Handler().postDelayed(() -> {
                 if (formFragment.hasErrorOnComple() != null) { //Checks if there is an error action to display
-                    view.showInfoDialog(view.getContext().getString(R.string.error), formFragment.hasErrorOnComple().content());
+                    eventDetailView.showInfoDialog(eventDetailView.getContext().getString(R.string.error), formFragment.hasErrorOnComple().content());
                 } else if (formFragment.hasError() != null) {
-                    view.showInfoDialog(view.getContext().getString(R.string.error), formFragment.hasError().content());
+                    eventDetailView.showInfoDialog(eventDetailView.getContext().getString(R.string.error), formFragment.hasError().content());
                 } else {
                     if (formFragment.isAdded() && formFragment.getContext() != null) {
                         List<Fragment> sectionFragments = formFragment.getChildFragmentManager().getFragments();
@@ -153,7 +153,7 @@ public class EventDetailPresenter implements EventDetailContracts.Presenter {
                         if (mandatoryOk && !hasError) {
 
                             if (!isEmpty(formFragment.getMessageOnComplete())) {
-                                final AlertDialog dialog = view.showInfoDialog(view.getContext().getString(R.string.warning_error_on_complete_title), formFragment.getMessageOnComplete(), new OnDialogClickListener() {
+                                final AlertDialog dialog = eventDetailView.showInfoDialog(eventDetailView.getContext().getString(R.string.warning_error_on_complete_title), formFragment.getMessageOnComplete(), new OnDialogClickListener() {
                                     @Override
                                     public void onPossitiveClick(AlertDialog alertDialog) {
                                         updateEventStatus(eventModel);
@@ -161,7 +161,7 @@ public class EventDetailPresenter implements EventDetailContracts.Presenter {
 
                                     @Override
                                     public void onNegativeClick(AlertDialog alertDialog) {
-
+                                        // do nothing
                                     }
                                 });
                                 dialog.show();
@@ -169,14 +169,14 @@ public class EventDetailPresenter implements EventDetailContracts.Presenter {
                                 updateEventStatus(eventModel);
                             }
                         } else if (!mandatoryOk)
-                            view.showInfoDialog(view.getContext().getString(R.string.unable_to_complete), view.getAbstractActivity().getString(R.string.missing_mandatory_fields));
+                            eventDetailView.showInfoDialog(eventDetailView.getContext().getString(R.string.unable_to_complete), eventDetailView.getAbstractActivity().getString(R.string.missing_mandatory_fields));
                         else
-                            view.showInfoDialog(view.getContext().getString(R.string.unable_to_complete), view.getAbstracContext().getString(R.string.field_errors));
+                            eventDetailView.showInfoDialog(eventDetailView.getContext().getString(R.string.unable_to_complete), eventDetailView.getAbstracContext().getString(R.string.field_errors));
                     }
                 }
             }, 1500);
         } else
-            view.displayMessage(null);
+            eventDetailView.displayMessage(null);
     }
 
     private void updateEventStatus(EventModel eventModel) {
@@ -186,12 +186,12 @@ public class EventDetailPresenter implements EventDetailContracts.Presenter {
 
     @Override
     public void editData() {
-        view.setDataEditable();
+        eventDetailView.setDataEditable();
     }
 
     @Override
     public void confirmDeleteEvent() {
-        view.showConfirmDeleteEvent();
+        eventDetailView.showConfirmDeleteEvent();
     }
 
     @Override
@@ -202,17 +202,17 @@ public class EventDetailPresenter implements EventDetailContracts.Presenter {
             } else {
                 eventDetailRepository.deletePostedEvent(eventDetailModel.getEventModel());
             }
-            view.showEventWasDeleted();
+            eventDetailView.showEventWasDeleted();
         }
     }
 
     @Override
     public void onOrgUnitClick() {
 
-        OrgUnitDialog orgUnitDialog = OrgUnitDialog.getInstace().setMultiSelection(false);
+        OrgUnitDialog orgUnitDialog = OrgUnitDialog.getInstance().setMultiSelection(false);
         orgUnitDialog.setTitle("Event Org Unit")
                 .setPossitiveListener(v -> {
-                    view.setSelectedOrgUnit(orgUnitDialog.getSelectedOrgUnitModel());
+                    eventDetailView.setSelectedOrgUnit(orgUnitDialog.getSelectedOrgUnitModel());
                     orgUnitDialog.dismiss();
                 })
                 .setNegativeListener(v -> orgUnitDialog.dismiss());
@@ -223,7 +223,7 @@ public class EventDetailPresenter implements EventDetailContracts.Presenter {
                 .subscribe(
                         orgUnits -> {
                             orgUnitDialog.setOrgUnits(orgUnits);
-                            view.showOrgUnitSelector(orgUnitDialog);
+                            eventDetailView.showOrgUnitSelector(orgUnitDialog);
                         },
                         Timber::d
                 )
@@ -245,7 +245,7 @@ public class EventDetailPresenter implements EventDetailContracts.Presenter {
 
     @Override
     public void selectCatOption() {
-        view.showCatOptionDialog();
+        eventDetailView.showCatOptionDialog();
     }
 
     @Override
@@ -259,7 +259,7 @@ public class EventDetailPresenter implements EventDetailContracts.Presenter {
         int month = c.get(Calendar.MONTH);
         int day = c.get(Calendar.DAY_OF_MONTH);
 
-        DatePickerDialog dateDialog = new DatePickerDialog(view.getContext(), (
+        DatePickerDialog dateDialog = new DatePickerDialog(eventDetailView.getContext(), (
                 (datePicker, year1, month1, day1) -> {
                     Calendar selectedCalendar = Calendar.getInstance();
                     selectedCalendar.set(Calendar.YEAR, year1);
@@ -269,7 +269,7 @@ public class EventDetailPresenter implements EventDetailContracts.Presenter {
                     selectedCalendar.set(Calendar.MINUTE, c.get(Calendar.MINUTE));
                     Date selectedDate = selectedCalendar.getTime();
                     String result = DateUtils.uiDateFormat().format(selectedDate);
-                    view.setDate(result);
+                    eventDetailView.setDate(result);
 
                     if (eventDetailModel.getProgramStage().accessDataWrite()) {
                         dataEntryStore.updateEvent(selectedDate, eventDetailModel.getEventModel());
@@ -293,7 +293,7 @@ public class EventDetailPresenter implements EventDetailContracts.Presenter {
         if (eventDetailModel.orgUnitClosingDate() != null)
             dateDialog.getDatePicker().setMaxDate(eventDetailModel.orgUnitClosingDate().getTime());
 
-        dateDialog.setButton(DialogInterface.BUTTON_NEGATIVE, view.getContext().getString(R.string.date_dialog_clear), (dialog, which) -> {
+        dateDialog.setButton(DialogInterface.BUTTON_NEGATIVE, eventDetailView.getContext().getString(R.string.date_dialog_clear), (dialog, which) -> {
         });
         dateDialog.show();
     }
@@ -303,7 +303,7 @@ public class EventDetailPresenter implements EventDetailContracts.Presenter {
                 .setPeriod(eventDetailModel.getProgramStage().periodType())
                 .setPossitiveListener(selectedDate -> {
                     String result = DateUtils.uiDateFormat().format(selectedDate);
-                    view.setDate(result);
+                    eventDetailView.setDate(result);
 
                     if (eventDetailModel.getProgramStage().accessDataWrite()) {
                         dataEntryStore.updateEvent(selectedDate, eventDetailModel.getEventModel());
@@ -321,7 +321,7 @@ public class EventDetailPresenter implements EventDetailContracts.Presenter {
         if (eventDetailModel.orgUnitClosingDate() != null)
             periodDialog.setMaxDate(eventDetailModel.orgUnitClosingDate());
 
-        periodDialog.show(view.getAbstractActivity().getSupportFragmentManager(), PeriodDialog.class.getSimpleName());
+        periodDialog.show(eventDetailView.getAbstractActivity().getSupportFragmentManager(), PeriodDialog.class.getSimpleName());
     }
 
     @Override
@@ -331,6 +331,6 @@ public class EventDetailPresenter implements EventDetailContracts.Presenter {
 
     @Override
     public void displayMessage(String message) {
-        view.displayMessage(message);
+        eventDetailView.displayMessage(message);
     }
 }

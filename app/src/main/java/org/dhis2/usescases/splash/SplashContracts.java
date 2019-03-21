@@ -8,15 +8,15 @@ import io.reactivex.functions.Consumer;
 
 public class SplashContracts {
 
-    interface View extends AbstractActivityContracts.View {
+    interface SplashView extends AbstractActivityContracts.View {
 
         Consumer<Integer> renderFlag();
     }
 
-    interface Presenter {
+    interface SplashPresenter {
         void destroy();
 
-        void init(View view);
+        void init(SplashView splashView);
 
         @UiThread
         void isUserLoggedIn();

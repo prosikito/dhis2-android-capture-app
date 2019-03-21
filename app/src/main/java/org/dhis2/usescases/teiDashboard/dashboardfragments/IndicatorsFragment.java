@@ -1,11 +1,7 @@
 package org.dhis2.usescases.teiDashboard.dashboardfragments;
 
 import android.content.Context;
-import androidx.databinding.DataBindingUtil;
 import android.os.Bundle;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.fragment.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -17,11 +13,14 @@ import org.dhis2.usescases.general.FragmentGlobalAbstract;
 import org.dhis2.usescases.teiDashboard.TeiDashboardContracts;
 import org.dhis2.usescases.teiDashboard.adapters.IndicatorsAdapter;
 import org.dhis2.usescases.teiDashboard.mobile.TeiDashboardMobileActivity;
-
 import org.hisp.dhis.android.core.program.ProgramIndicatorModel;
 
 import java.util.List;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.databinding.DataBindingUtil;
+import androidx.fragment.app.Fragment;
 import io.reactivex.functions.Consumer;
 
 
@@ -36,7 +35,7 @@ public class IndicatorsFragment extends FragmentGlobalAbstract {
     static IndicatorsFragment instance;
     private IndicatorsAdapter adapter;
 
-    TeiDashboardContracts.Presenter presenter;
+    TeiDashboardContracts.TeiDashboardPresenter teiDashboardPresenter;
 
     static public IndicatorsFragment getInstance() {
         if (instance == null)
@@ -47,7 +46,7 @@ public class IndicatorsFragment extends FragmentGlobalAbstract {
     @Override
     public void onAttach(Context context) {
         super.onAttach(context);
-        presenter = ((TeiDashboardMobileActivity) context).getPresenter();
+        teiDashboardPresenter = ((TeiDashboardMobileActivity) context).getPresenter();
     }
 
     @Nullable
@@ -62,13 +61,17 @@ public class IndicatorsFragment extends FragmentGlobalAbstract {
     @Override
     public void onResume() {
         super.onResume();
-        presenter.subscribeToIndicators(this);
+        teiDashboardPresenter.subscribeToIndicators(this);
     }
 
     @Override
     public void onDestroy() {
-        instance = null;
+        destroyInstance();
         super.onDestroy();
+    }
+
+    private static void destroyInstance() {
+        instance = null;
     }
 
     public Consumer<List<Trio<ProgramIndicatorModel, String, String>>> swapIndicators() {
@@ -78,6 +81,7 @@ public class IndicatorsFragment extends FragmentGlobalAbstract {
     }
 
     public static Fragment createInstance() {
-        return instance = new IndicatorsFragment();
+        instance = new IndicatorsFragment();
+        return instance;
     }
 }

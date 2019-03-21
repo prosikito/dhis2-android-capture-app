@@ -30,13 +30,13 @@ public class RelationshipViewHolder extends RecyclerView.ViewHolder {
         this.compositeDisposable = new CompositeDisposable();
     }
 
-    public void bind(TeiDashboardContracts.Presenter presenter, Pair<Relationship, RelationshipType> relationships) {
+    public void bind(TeiDashboardContracts.TeiDashboardPresenter teiDashboardPresenter, Pair<Relationship, RelationshipType> relationships) {
 
         Relationship relationship = relationships.val0();
         String relationshipTEIUid;
         boolean from;
 
-        if (!presenter.getTeUid().equals(relationship.from().trackedEntityInstance().trackedEntityInstance())) {
+        if (!teiDashboardPresenter.getTeUid().equals(relationship.from().trackedEntityInstance().trackedEntityInstance())) {
             relationshipTEIUid = relationship.from().trackedEntityInstance().trackedEntityInstance();
             from = true;
         }else {
@@ -44,7 +44,7 @@ public class RelationshipViewHolder extends RecyclerView.ViewHolder {
             from = false;
         }
         compositeDisposable.add(
-                presenter.getTEIMainAttributes(relationshipTEIUid)
+                teiDashboardPresenter.getTEIMainAttributes(relationshipTEIUid)
                         .subscribe(
                                 this::setAttributes,
                                 Timber::d
@@ -52,16 +52,16 @@ public class RelationshipViewHolder extends RecyclerView.ViewHolder {
         );
 
         binding.teiRelationshipLink.setOnClickListener(view -> {
-            presenter.openDashboard(relationshipTEIUid);
+            teiDashboardPresenter.openDashboard(relationshipTEIUid);
         });
 
-        binding.setPresenter(presenter);
+        binding.setPresenter(teiDashboardPresenter);
         binding.setRelationship(relationship);
         String relationshipNameText = from?relationships.val1().aIsToB():relationships.val1().bIsToA();
         binding.relationshipName.setText(relationshipNameText!=null?relationshipNameText:relationships.val1().displayName());
         binding.executePendingBindings();
 
-//        presenter.subscribeToRelationshipLabel(relationship, binding.relationshipName);
+//        teiDashboardPresenter.subscribeToRelationshipLabel(relationship, binding.relationshipName);
     }
 
     private void setAttributes(List<TrackedEntityAttributeValueModel> trackedEntityAttributeValueModels) {

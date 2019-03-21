@@ -22,10 +22,10 @@ class DashboardProgramViewHolder extends RecyclerView.ViewHolder {
         this.binding = binding;
     }
 
-    public void bind(TeiDashboardContracts.Presenter presenter, DashboardProgramModel dashboardProgramModel, int position) {
+    public void bind(TeiDashboardContracts.TeiDashboardPresenter teiDashboardPresenter, DashboardProgramModel dashboardProgramModel, int position) {
         ProgramModel programModel = dashboardProgramModel.getEnrollmentProgramModels().get(position);
         EnrollmentModel enrollment = dashboardProgramModel.getEnrollmentForProgram(programModel.uid());
-        binding.setVariable(BR.presenter, presenter);
+        binding.setVariable(BR.presenter, teiDashboardPresenter);
         binding.setVariable(BR.program, programModel);
 
         Bindings.setObjectStyle(binding.programImage, binding.programImage, dashboardProgramModel.getObjectStyleForProgram(programModel.uid()));
@@ -34,6 +34,6 @@ class DashboardProgramViewHolder extends RecyclerView.ViewHolder {
             binding.setVariable(BR.enrollment, enrollment);
         binding.executePendingBindings();
 
-        itemView.setOnClickListener(v -> presenter.setProgram(dashboardProgramModel.getEnrollmentProgramModels().get(position)));
+        itemView.setOnClickListener(v -> teiDashboardPresenter.setProgram(dashboardProgramModel.getEnrollmentProgramModels().get(position)));
     }
 }

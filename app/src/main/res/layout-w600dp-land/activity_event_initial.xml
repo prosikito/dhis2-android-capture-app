@@ -23,7 +23,7 @@
 
         <variable
             name="presenter"
-            type="org.dhis2.usescases.eventsWithoutRegistration.eventInitial.EventInitialContract.Presenter" />
+            type="org.dhis2.usescases.eventsWithoutRegistration.eventInitial.EventInitialContract.EventInitialPresenter" />
     </data>
 
     <LinearLayout
@@ -188,7 +188,7 @@
                                     android:layout_height="wrap_content"
                                     android:layout_gravity="end"
                                     android:layout_marginTop="30dp"
-                                    android:onClick="@{(view)->presenter.onShareClick(view)}">
+                                    android:onClick="@{(dataSetTableContractView)->presenter.onShareClick(dataSetTableContractView)}">
 
                                     <ImageView
                                         android:id="@+id/shareIcon"
