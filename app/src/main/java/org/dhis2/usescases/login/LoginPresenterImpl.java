@@ -84,8 +84,8 @@ public class LoginPresenterImpl implements LoginContracts.LoginPresenter {
                     }, Timber::e));
 
             disposable.add(
-                    Observable.just(userManager.getD2().systemInfoModule().systemInfo.getWithAllChildren() != null ?
-                            userManager.getD2().systemInfoModule().systemInfo.getWithAllChildren() : SystemInfo.builder().build())
+                    Observable.just(userManager.getD2().systemInfoModule().systemInfo.get() != null ?
+                            userManager.getD2().systemInfoModule().systemInfo.get() : SystemInfo.builder().build())
                             .subscribeOn(Schedulers.io())
                             .observeOn(AndroidSchedulers.mainThread())
                             .subscribe(

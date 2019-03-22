@@ -43,6 +43,7 @@ import androidx.recyclerview.widget.RecyclerView.ViewHolder;
 import io.reactivex.Observable;
 import io.reactivex.processors.FlowableProcessor;
 import io.reactivex.processors.PublishProcessor;
+import timber.log.Timber;
 
 public final class DataEntryAdapter extends Adapter {
     private static final int EDITTEXT = 0;
@@ -212,6 +213,7 @@ public final class DataEntryAdapter extends Adapter {
     }
 
     public void swap(@NonNull List<FieldViewModel> updates) {
+        long currentTime = System.currentTimeMillis();
         DiffUtil.DiffResult diffResult = DiffUtil.calculateDiff(
                 new DataEntryDiffCallback(viewModels, updates));
 
@@ -219,6 +221,7 @@ public final class DataEntryAdapter extends Adapter {
         viewModels.addAll(updates);
 
         diffResult.dispatchUpdatesTo(this);
+        Timber.d("ADAPTER SWAP TOOK %s ms", System.currentTimeMillis() - currentTime);
     }
 
     public boolean mandatoryOk() {

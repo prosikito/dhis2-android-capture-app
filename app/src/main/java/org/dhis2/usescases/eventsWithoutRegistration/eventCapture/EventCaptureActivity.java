@@ -44,18 +44,16 @@ import static org.dhis2.utils.Constants.PROGRAM_UID;
 /**
  * QUADRAM. Created by ppajuelo on 19/11/2018.
  */
-@SuppressWarnings("squid:MaximumInheritanceDepth")
-public class EventCaptureActivity extends ActivityGlobalAbstract implements EventCaptureContract.EventCaptureView, View.OnTouchListener, GestureDetector.OnGestureListener {
+public class EventCaptureActivity extends ActivityGlobalAbstract implements EventCaptureContract.View, View.OnTouchListener, GestureDetector.OnGestureListener {
 
     private static final int SWIPE_THRESHOLD = 100;
     private static final int SWIPE_VELOCITY_THRESHOLD = 100;
-    private static final String SHOW_OPTIONS = "SHOW_OPTIONS";
 
     private GestureDetector gestureScanner;
 
     private ActivityEventCaptureBinding binding;
     @Inject
-    EventCaptureContract.EventCapturePresenter eventCapturePresenter;
+    EventCaptureContract.Presenter presenter;
     private int completionPercentage = 0;
     private String programStageUid;
     private Boolean isEventCompleted = false;
@@ -71,20 +69,38 @@ public class EventCaptureActivity extends ActivityGlobalAbstract implements Even
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         ((App) getApplicationContext()).userComponent().plus(
                 new EventCaptureModule(
-                        getIntent().getStringExtra(Constants.EVENT_UID)))
+                        getIntent().getStringExtra(Constants.EVENT_UID),
+                        getIntent().getStringExtra(Constants.PROGRAM_UID)))
                 .inject(this);
         super.onCreate(savedInstanceState);
         binding = DataBindingUtil.setContentView(this, R.layout.activity_event_capture);
-        binding.setPresenter(eventCapturePresenter);
+        binding.setPresenter(presenter);
         gestureScanner = new GestureDetector(this, this);
 
-        eventCapturePresenter.init(this);
+        presenter.init(this);
 
     }
 
     @Override
+    protected void onResume() {
+        super.onResume();
+
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+    }
+
+    @Override
+    protected void onStop() {
+
+        super.onStop();
+    }
+
+    @Override
     protected void onDestroy() {
-        eventCapturePresenter.onDettach();
+        presenter.onDettach();
         super.onDestroy();
     }
 
@@ -129,7 +145,7 @@ public class EventCaptureActivity extends ActivityGlobalAbstract implements Even
                     @Override
                     public void onNegative() {
                         String sectionToGo = emptyMandatoryFields.values().iterator().next().programStageSection();
-                        eventCapturePresenter.goToSection(sectionToGo);
+                        presenter.goToSection(sectionToGo);
                     }
                 })
                 .show();
@@ -150,43 +166,43 @@ public class EventCaptureActivity extends ActivityGlobalAbstract implements Even
     public void showCompleteActions(boolean canComplete) {
 
         FormBottomDialog.getInstance()
-                .setAccessDataWrite(eventCapturePresenter.canWrite())
-                .setIsEnrollmentOpen(eventCapturePresenter.isEnrollmentOpen())
-                .setIsExpired(eventCapturePresenter.hasExpired())
+                .setAccessDataWrite(presenter.canWrite())
+                .setIsEnrollmentOpen(presenter.isEnrollmentOpen())
+                .setIsExpired(presenter.hasExpired())
                 .setCanComplete(canComplete)
                 .setListener(this::setAction)
-                .show(getSupportFragmentManager(), SHOW_OPTIONS);
+                .show(getSupportFragmentManager(), "SHOW_OPTIONS");
     }
 
     @Override
     public void attemptToReopen() {
         FormBottomDialog.getInstance()
-                .setAccessDataWrite(eventCapturePresenter.canWrite())
-                .setIsExpired(eventCapturePresenter.hasExpired())
+                .setAccessDataWrite(presenter.canWrite())
+                .setIsExpired(presenter.hasExpired())
                 .setReopen(true)
                 .setListener(this::setAction)
-                .show(getSupportFragmentManager(), SHOW_OPTIONS);
+                .show(getSupportFragmentManager(), "SHOW_OPTIONS");
     }
 
     @Override
     public void attemptToSkip() {
 
         FormBottomDialog.getInstance()
-                .setAccessDataWrite(eventCapturePresenter.canWrite())
-                .setIsExpired(eventCapturePresenter.hasExpired())
+                .setAccessDataWrite(presenter.canWrite())
+                .setIsExpired(presenter.hasExpired())
                 .setSkip(true)
                 .setListener(this::setAction)
-                .show(getSupportFragmentManager(), SHOW_OPTIONS);
+                .show(getSupportFragmentManager(), "SHOW_OPTIONS");
     }
 
     @Override
     public void attemptToReschedule() {
         FormBottomDialog.getInstance()
-                .setAccessDataWrite(eventCapturePresenter.canWrite())
-                .setIsExpired(eventCapturePresenter.hasExpired())
+                .setAccessDataWrite(presenter.canWrite())
+                .setIsExpired(presenter.hasExpired())
                 .setReschedule(true)
                 .setListener(this::setAction)
-                .show(getSupportFragmentManager(), SHOW_OPTIONS);
+                .show(getSupportFragmentManager(), "SHOW_OPTIONS");
     }
 
     @Override
@@ -198,19 +214,19 @@ public class EventCaptureActivity extends ActivityGlobalAbstract implements Even
         switch (actionType) {
             case COMPLETE:
                 isEventCompleted = true;
-                eventCapturePresenter.completeEvent(false);
+                presenter.completeEvent(false);
                 break;
             case COMPLETE_ADD_NEW:
-                eventCapturePresenter.completeEvent(true);
+                presenter.completeEvent(true);
                 break;
             case FINISH_ADD_NEW:
                 restartDataEntry();
                 break;
             case REOPEN:
-                eventCapturePresenter.reopenEvent();
+                presenter.reopenEvent();
                 break;
             case SKIP:
-                eventCapturePresenter.skipEvent();
+                presenter.skipEvent();
                 break;
             case RESCHEDULE:
                 reschedule();
@@ -226,7 +242,7 @@ public class EventCaptureActivity extends ActivityGlobalAbstract implements Even
         DatePickerDialog datePickerDialog = new DatePickerDialog(this, (view, year, month, dayOfMonth) -> {
             Calendar chosenDate = Calendar.getInstance();
             chosenDate.set(year, month, dayOfMonth);
-            eventCapturePresenter.rescheduleEvent(chosenDate.getTime());
+            presenter.rescheduleEvent(chosenDate.getTime());
         }, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH));
 
         datePickerDialog.show();
@@ -282,7 +298,7 @@ public class EventCaptureActivity extends ActivityGlobalAbstract implements Even
 
                     @Override
                     public void onNegative() {
-                        eventCapturePresenter.goToSection(errors.entrySet().iterator().next().getKey());
+                        presenter.goToSection(errors.entrySet().iterator().next().getKey());
                     }
                 })
                 .show();
@@ -309,8 +325,8 @@ public class EventCaptureActivity extends ActivityGlobalAbstract implements Even
     }
 
     @Override
-    public EventCaptureContract.EventCapturePresenter getEventCapturePresenter() {
-        return eventCapturePresenter;
+    public EventCaptureContract.Presenter getPresenter() {
+        return presenter;
     }
 
     @Override
@@ -348,7 +364,7 @@ public class EventCaptureActivity extends ActivityGlobalAbstract implements Even
             }
             return false;
         });
-        popupMenu.getMenu().getItem(1).setVisible(eventCapturePresenter.canWrite() && eventCapturePresenter.isEnrollmentOpen());
+        popupMenu.getMenu().getItem(1).setVisible(presenter.canWrite() && presenter.isEnrollmentOpen());
         popupMenu.show();
     }
 
@@ -377,7 +393,7 @@ public class EventCaptureActivity extends ActivityGlobalAbstract implements Even
                 new DialogClickListener() {
                     @Override
                     public void onPositive() {
-                        eventCapturePresenter.deleteEvent();
+                        presenter.deleteEvent();
                     }
 
                     @Override
@@ -409,11 +425,13 @@ public class EventCaptureActivity extends ActivityGlobalAbstract implements Even
         try {
             float diffY = e2.getY() - e1.getY();
             float diffX = e2.getX() - e1.getX();
-            if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > SWIPE_THRESHOLD && Math.abs(velocityX) > SWIPE_VELOCITY_THRESHOLD) {
-                if (diffX > 0) {
-                    onSwipeRight();
-                } else {
-                    onSwipeLeft();
+            if (Math.abs(diffX) > Math.abs(diffY)) {
+                if (Math.abs(diffX) > SWIPE_THRESHOLD && Math.abs(velocityX) > SWIPE_VELOCITY_THRESHOLD) {
+                    if (diffX > 0) {
+                        onSwipeRight();
+                    } else {
+                        onSwipeLeft();
+                    }
                 }
             }
         } catch (Exception exception) {
@@ -445,10 +463,10 @@ public class EventCaptureActivity extends ActivityGlobalAbstract implements Even
     }
 
     public void onSwipeRight() {
-        eventCapturePresenter.onPreviousSection();
+        presenter.onPreviousSection();
     }
 
     public void onSwipeLeft() {
-        eventCapturePresenter.onNextSection();
+        presenter.onNextSection();
     }
 }

@@ -16,7 +16,7 @@ import org.dhis2.data.forms.dataentry.fields.FieldViewModel;
 import org.dhis2.data.forms.dataentry.fields.edittext.EditTextViewModel;
 import org.dhis2.data.metadata.MetadataRepository;
 import org.dhis2.data.schedulers.SchedulerProvider;
-import org.dhis2.data.tuples.Quartet;
+import org.dhis2.data.tuples.Quintet;
 import org.dhis2.data.tuples.Trio;
 import org.dhis2.usescases.eventsWithoutRegistration.eventSummary.EventSummaryActivity;
 import org.dhis2.usescases.eventsWithoutRegistration.eventSummary.EventSummaryRepository;
@@ -25,6 +25,7 @@ import org.dhis2.utils.Constants;
 import org.dhis2.utils.DateUtils;
 import org.dhis2.utils.OrgUnitUtils;
 import org.dhis2.utils.Result;
+import org.hisp.dhis.android.core.D2;
 import org.hisp.dhis.android.core.category.CategoryComboModel;
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnitModel;
 import org.hisp.dhis.android.core.period.PeriodType;
@@ -78,8 +79,7 @@ public class EventInitialPresenterImpl implements EventInitialContract.EventInit
     public EventInitialPresenterImpl(@NonNull EventSummaryRepository eventSummaryRepository,
                                      @NonNull EventInitialRepository eventInitialRepository,
                                      @NonNull MetadataRepository metadataRepository,
-                                     @NonNull SchedulerProvider schedulerProvider) {
-
+                                     @NonNull SchedulerProvider schedulerProvider, D2 d2) {
         this.metadataRepository = metadataRepository;
         this.eventInitialRepository = eventInitialRepository;
         this.eventSummaryRepository = eventSummaryRepository;
@@ -104,7 +104,8 @@ public class EventInitialPresenterImpl implements EventInitialContract.EventInit
                             metadataRepository.getProgramWithId(programId).toFlowable(BackpressureStrategy.LATEST),
                             eventInitialRepository.catComboModel(programId).toFlowable(BackpressureStrategy.LATEST),
                             eventInitialRepository.catCombo(programId).toFlowable(BackpressureStrategy.LATEST),
-                            Quartet::create
+                            metadataRepository.programStageForEvent(eventId),
+                            Quintet::create
                     )
                             .subscribeOn(Schedulers.io())
                             .observeOn(AndroidSchedulers.mainThread())
@@ -114,10 +115,11 @@ public class EventInitialPresenterImpl implements EventInitialContract.EventInit
                                 eventInitialView.setEvent(quartetFlowable.val0());
                                 eventInitialView.setProgram(quartetFlowable.val1());
                                 eventInitialView.setCatComboOptions(catCombo, quartetFlowable.val3());
+                                eventInitialView.setProgramStage(quartetFlowable.val4());
                             }, Timber::d)
             );
 
-        } else
+        } else {
             compositeDisposable.add(
                     Flowable.zip(
                             metadataRepository.getProgramWithId(programId).toFlowable(BackpressureStrategy.LATEST),
@@ -134,10 +136,10 @@ public class EventInitialPresenterImpl implements EventInitialContract.EventInit
                                 eventInitialView.setCatComboOptions(catCombo, trioFlowable.val2());
                             }, Timber::d)
             );
+            getProgramStages(programId, programStageId);
+        }
 
         getOrgUnits(programId);
-
-        getProgramStages(programId, programStageId);
 
         if (eventId != null)
             getEventSections(eventId);
@@ -248,6 +250,7 @@ public class EventInitialPresenterImpl implements EventInitialContract.EventInit
                         throwable -> eventInitialView.showProgramStageSelection()
                 ));
     }
+
 
     @Override
     public void onBackClick() {

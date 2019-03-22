@@ -2,7 +2,6 @@ package org.dhis2.data.forms.dataentry;
 
 import android.content.ContentValues;
 import android.database.Cursor;
-import android.util.Log;
 
 import com.squareup.sqlbrite2.BriteDatabase;
 
@@ -211,15 +210,17 @@ final class ProgramStageRepository implements DataEntryRepository {
 
     @Override
     public void assign(String field, String content) {
-        Cursor dataValueCursor = briteDatabase.query("SELECT * FROM TrackedEntityDataValue WHERE dataElement = ?", field == null ? "" : field);
-        if (dataValueCursor != null && dataValueCursor.moveToFirst()) {
-            TrackedEntityDataValueModel dataValue = TrackedEntityDataValueModel.create(dataValueCursor);
-            ContentValues contentValues = dataValue.toContentValues();
-            contentValues.put(TrackedEntityDataValueModel.Columns.VALUE, content);
-            int row = briteDatabase.update(TrackedEntityDataValueModel.TABLE, contentValues, "dataElement = ?", field == null ? "" : field);
-            if (row == -1)
-                Log.d(this.getClass().getSimpleName(), String.format("Error updating field %s", field == null ? "" : field));
+        try (Cursor dataValueCursor = briteDatabase.query("SELECT * FROM TrackedEntityDataValue WHERE dataElement = ?", field == null ? "" : field)) {
+            if (dataValueCursor != null && dataValueCursor.moveToFirst()) {
+                TrackedEntityDataValueModel dataValue = TrackedEntityDataValueModel.create(dataValueCursor);
+                ContentValues contentValues = dataValue.toContentValues();
+                contentValues.put(TrackedEntityDataValueModel.Columns.VALUE, content);
+                int row = briteDatabase.update(TrackedEntityDataValueModel.TABLE, contentValues, "dataElement = ?", field == null ? "" : field);
+                if (row == -1)
+                    Timber.d("Error updating field %s", field == null ? "" : field);
+            }
         }
+
     }
 
     @NonNull
@@ -241,8 +242,7 @@ final class ProgramStageRepository implements DataEntryRepository {
         }
 
         int optionCount = 0;
-        try {
-            Cursor countCursor = briteDatabase.query("SELECT COUNT (uid) FROM Option WHERE optionSet = ?", optionSetUid);
+        try (Cursor countCursor = briteDatabase.query("SELECT COUNT (uid) FROM Option WHERE optionSet = ?", optionSetUid)) {
             if (countCursor != null && countCursor.moveToFirst())
                 optionCount = countCursor.getInt(0);
         } catch (Exception e) {
@@ -257,18 +257,23 @@ final class ProgramStageRepository implements DataEntryRepository {
             }
         }
 
-        Cursor eventCursor = briteDatabase.query("SELECT * FROM Event WHERE uid = ?", eventUid);
-        eventCursor.moveToFirst();
-        EventModel eventModel = EventModel.create(eventCursor);
-        eventCursor.close();
-        Cursor programStageCursor = briteDatabase.query("SELECT * FROM ProgramStage WHERE uid = ?", eventModel.programStage());
-        programStageCursor.moveToFirst();
-        ProgramStageModel programStageModel = ProgramStageModel.create(programStageCursor);
-        programStageCursor.close();
-        Cursor programCursor = briteDatabase.query("SELECT * FROM Program WHERE uid = ?", eventModel.program());
-        programCursor.moveToFirst();
-        ProgramModel programModel = ProgramModel.create(programCursor);
-        programCursor.close();
+        EventModel eventModel;
+        ProgramStageModel programStageModel;
+        ProgramModel programModel;
+        try (Cursor eventCursor = briteDatabase.query("SELECT * FROM Event WHERE uid = ?", eventUid)) {
+            eventCursor.moveToFirst();
+            eventModel = EventModel.create(eventCursor);
+        }
+
+        try (Cursor programStageCursor = briteDatabase.query("SELECT * FROM ProgramStage WHERE uid = ?", eventModel.programStage())) {
+            programStageCursor.moveToFirst();
+            programStageModel = ProgramStageModel.create(programStageCursor);
+        }
+
+        try (Cursor programCursor = briteDatabase.query("SELECT * FROM Program WHERE uid = ?", eventModel.program())) {
+            programCursor.moveToFirst();
+            programModel = ProgramModel.create(programCursor);
+        }
 
         boolean hasExpired = DateUtils.getInstance().hasExpired(eventModel, programModel.expiryDays(), programModel.completeEventsExpiryDays(), programStageModel.periodType() != null ? programStageModel.periodType() : programModel.expiryPeriodType());
 

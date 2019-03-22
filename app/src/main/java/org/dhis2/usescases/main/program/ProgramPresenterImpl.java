@@ -8,7 +8,6 @@ import com.unnamed.b.atv.model.TreeNode;
 
 import org.dhis2.R;
 import org.dhis2.data.tuples.Pair;
-import org.dhis2.data.tuples.Trio;
 import org.dhis2.usescases.datasets.datasetDetail.DataSetDetailActivity;
 import org.dhis2.usescases.programEventDetail.ProgramEventDetailActivity;
 import org.dhis2.usescases.searchTrackEntity.SearchTEActivity;
@@ -17,10 +16,10 @@ import org.dhis2.utils.Constants;
 import org.dhis2.utils.OrgUnitUtils;
 import org.dhis2.utils.Period;
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnitModel;
+import org.hisp.dhis.android.core.period.DatePeriod;
 import org.hisp.dhis.android.core.program.ProgramType;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -41,24 +40,26 @@ import static android.text.TextUtils.isEmpty;
 
 public class ProgramPresenterImpl implements ProgramContract.ProgramPresenter {
 
-    private static final String CURRENT_PERIOD = "CURRENT_PERIOD";
-    private static final String CHOOSEN_DATE = "CHOOSEN_DATE";
-    private ProgramContract.ProgramView programView;
+    private ProgramContract.ProgramView view;
     private final HomeRepository homeRepository;
     private CompositeDisposable compositeDisposable;
 
     private List<OrganisationUnitModel> myOrgs = new ArrayList<>();
-    private FlowableProcessor<Trio> programQueries;
+    private FlowableProcessor<Pair<List<DatePeriod>, List<String>>> programQueries;
 
     private FlowableProcessor<Pair<TreeNode, String>> parentOrgUnit;
+    private List<DatePeriod> currentDateFilter;
+    private List<String> currentOrgUnitFilter;
 
     ProgramPresenterImpl(HomeRepository homeRepository) {
         this.homeRepository = homeRepository;
     }
 
     @Override
-    public void init(ProgramContract.ProgramView programView) {
-        this.programView = programView;
+    public void init(ProgramContract.ProgramView view) {
+        this.view = view;
+        this.currentOrgUnitFilter = new ArrayList<>();
+        this.currentDateFilter = new ArrayList<>();
         this.compositeDisposable = new CompositeDisposable();
         ExecutorService executorService = Executors.newFixedThreadPool(2);
         programQueries = PublishProcessor.create();
@@ -66,17 +67,13 @@ public class ProgramPresenterImpl implements ProgramContract.ProgramPresenter {
 
         compositeDisposable.add(
                 programQueries
-                        .startWith(Trio.create(null, null, null))
-                        .flatMap(datePeriodOrgs -> homeRepository.programModels(
-                                (List<Date>) datePeriodOrgs.val0(),
-                                (Period) datePeriodOrgs.val1(),
-                                (String) datePeriodOrgs.val2(),
-                                myOrgs.size()))
+                        .startWith(Pair.create(currentDateFilter, currentOrgUnitFilter))
+                        .flatMap(datePeriodOrgs -> homeRepository.programModels(datePeriodOrgs.val0(), datePeriodOrgs.val1()))
                         .subscribeOn(Schedulers.from(executorService))
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(
-                                programView.swapProgramModelData(),
-                                throwable -> programView.renderError(throwable.getMessage())
+                                view.swapProgramModelData(),
+                                throwable -> view.renderError(throwable.getMessage())
                         ));
 
         compositeDisposable.add(
@@ -87,27 +84,9 @@ public class ProgramPresenterImpl implements ProgramContract.ProgramPresenter {
                         .subscribeOn(Schedulers.from(executorService))
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(
-                                programView.addNodeToTree(),
+                                view.addNodeToTree(),
                                 Timber::e
                         ));
-    }
-
-
-    @Override
-    public void getProgramsWithDates(ArrayList<Date> dates, Period period) {
-        programQueries.onNext(Trio.create(dates, period, orgUnitQuery()));
-    }
-
-
-    @Override
-    public void getProgramsOrgUnit(List<Date> dates, Period period, String orgUnitQuery) {
-        programQueries.onNext(Trio.create(dates, period, orgUnitQuery));
-    }
-
-
-    @Override
-    public void getAllPrograms(String orgUnitQuery) {
-        programQueries.onNext(Trio.create(null, null, orgUnitQuery));
     }
 
     @Override
@@ -117,7 +96,7 @@ public class ProgramPresenterImpl implements ProgramContract.ProgramPresenter {
 
     @Override
     public List<TreeNode> transformToNode(List<OrganisationUnitModel> orgUnits) {
-        return OrgUnitUtils.createNode(programView.getContext(), orgUnits, true);
+        return OrgUnitUtils.createNode(view.getContext(), orgUnits, true);
     }
 
     @Override
@@ -130,6 +109,23 @@ public class ProgramPresenterImpl implements ProgramContract.ProgramPresenter {
         if (!myOrgs.isEmpty())
             myOrgs.clear();
         compositeDisposable.clear();
+    }
+
+    @Override
+    public void updateDateFilter(List<DatePeriod> datePeriodList) {
+        this.currentDateFilter = datePeriodList;
+        programQueries.onNext(Pair.create(currentDateFilter, currentOrgUnitFilter));
+    }
+
+    @Override
+    public void updateOrgUnitFilter(List<String> orgUnitList) {
+        this.currentOrgUnitFilter = orgUnitList;
+        programQueries.onNext(Pair.create(currentDateFilter, currentOrgUnitFilter));
+    }
+
+    @Override
+    public boolean areFiltersApplied() {
+        return !currentDateFilter.isEmpty() || !currentOrgUnitFilter.isEmpty();
     }
 
     @Override
@@ -150,29 +146,29 @@ public class ProgramPresenterImpl implements ProgramContract.ProgramPresenter {
 
         switch (currentPeriod) {
             case NONE:
-                bundle.putInt(CURRENT_PERIOD, R.string.period);
-                bundle.putSerializable(CHOOSEN_DATE, null);
+                bundle.putInt("CURRENT_PERIOD", R.string.period);
+                bundle.putSerializable("CHOOSEN_DATE", null);
                 break;
             case DAILY:
-                bundle.putInt(CURRENT_PERIOD, R.string.DAILY);
-                bundle.putSerializable(CHOOSEN_DATE, programView.getChosenDateDay());
+                bundle.putInt("CURRENT_PERIOD", R.string.DAILY);
+                bundle.putSerializable("CHOOSEN_DATE", view.getChosenDateDay());
                 break;
             case WEEKLY:
-                bundle.putInt(CURRENT_PERIOD, R.string.WEEKLY);
-                bundle.putSerializable(CHOOSEN_DATE, programView.getChosenDateWeek());
+                bundle.putInt("CURRENT_PERIOD", R.string.WEEKLY);
+                bundle.putSerializable("CHOOSEN_DATE", view.getChosenDateWeek());
                 break;
             case MONTHLY:
-                bundle.putInt(CURRENT_PERIOD, R.string.MONTHLY);
-                bundle.putSerializable(CHOOSEN_DATE, programView.getChosenDateMonth());
+                bundle.putInt("CURRENT_PERIOD", R.string.MONTHLY);
+                bundle.putSerializable("CHOOSEN_DATE", view.getChosenDateMonth());
                 break;
             case YEARLY:
-                bundle.putInt(CURRENT_PERIOD, R.string.YEARLY);
-                bundle.putSerializable(CHOOSEN_DATE, programView.getChosenDateYear());
+                bundle.putInt("CURRENT_PERIOD", R.string.YEARLY);
+                bundle.putSerializable("CHOOSEN_DATE", view.getChosenDateYear());
                 break;
         }
 
         int programTheme = ColorUtils.getThemeFromColor(programModel.color());
-        SharedPreferences prefs = programView.getAbstracContext().getSharedPreferences(
+        SharedPreferences prefs = view.getAbstracContext().getSharedPreferences(
                 Constants.SHARE_PREFS, Context.MODE_PRIVATE);
         if (programTheme != -1) {
             prefs.edit().putInt(Constants.PROGRAM_THEME, programTheme).apply();
@@ -180,19 +176,19 @@ public class ProgramPresenterImpl implements ProgramContract.ProgramPresenter {
             prefs.edit().remove(Constants.PROGRAM_THEME).apply();
 
         if (programModel.programType().equals(ProgramType.WITH_REGISTRATION.name())) {
-            programView.startActivity(SearchTEActivity.class, bundle, false, false, null);
+            view.startActivity(SearchTEActivity.class, bundle, false, false, null);
         } else if (programModel.programType().equals(ProgramType.WITHOUT_REGISTRATION.name())) {
-            programView.startActivity(ProgramEventDetailActivity.class, bundle, false, false, null);
+            view.startActivity(ProgramEventDetailActivity.class, bundle, false, false, null);
         } else {
-            programView.startActivity(DataSetDetailActivity.class, bundle, false, false, null);
+            view.startActivity(DataSetDetailActivity.class, bundle, false, false, null);
         }
     }
 
     @Override
     public void onOrgUnitButtonClick() {
-        programView.openDrawer();
+        view.openDrawer();
         if (myOrgs.isEmpty()) {
-            programView.orgUnitProgress(true);
+            view.orgUnitProgress(true);
             compositeDisposable.add(
                     homeRepository.orgUnits()
                             .subscribeOn(Schedulers.computation())
@@ -200,27 +196,27 @@ public class ProgramPresenterImpl implements ProgramContract.ProgramPresenter {
                             .subscribe(
                                     data -> {
                                         this.myOrgs = data;
-                                        programView.orgUnitProgress(false);
-                                        programView.addTree(OrgUnitUtils.renderTree(programView.getContext(), myOrgs, true));
+                                        view.orgUnitProgress(false);
+                                        view.addTree(OrgUnitUtils.renderTree(view.getContext(), myOrgs, true));
                                     },
-                                    throwable -> programView.renderError(throwable.getMessage())));
+                                    throwable -> view.renderError(throwable.getMessage())));
         }
     }
 
     @Override
     public void onDateRangeButtonClick() {
-        programView.showRageDatePicker();
+        view.showRageDatePicker();
     }
 
 
     @Override
     public void onTimeButtonClick() {
-        programView.showTimeUnitPicker();
+        view.showTimeUnitPicker();
     }
 
     @Override
     public void showDescription(String description) {
-        programView.showDescription(description);
+        view.showDescription(description);
     }
 
     private String orgUnitQuery() {
@@ -232,7 +228,15 @@ public class ProgramPresenterImpl implements ProgramContract.ProgramPresenter {
             if (i < myOrgs.size() - 1)
                 orgUnitFilter.append(", ");
         }
-        programView.setOrgUnitFilter(orgUnitFilter);
+        view.setOrgUnitFilter(orgUnitFilter);
         return orgUnitFilter.toString();
+    }
+
+    private List<String> orgUnitFilter() {
+        List<String> orgUnitsUids = new ArrayList<>();
+        for (OrganisationUnitModel orgUnit : myOrgs) {
+            orgUnitsUids.add(orgUnit.uid());
+        }
+        return orgUnitsUids;
     }
 }

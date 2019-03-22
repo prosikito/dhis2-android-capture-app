@@ -24,11 +24,11 @@ import io.reactivex.processors.FlowableProcessor;
  */
 public class EventCaptureContract {
 
-    public interface EventCaptureView extends AbstractActivityContracts.View {
+    public interface View extends AbstractActivityContracts.View {
 
         void renderInitialInfo(String stageName, String eventDate, String orgUnit, String catOption);
 
-        EventCapturePresenter getEventCapturePresenter();
+        EventCaptureContract.Presenter getPresenter();
 
         void setUp();
 
@@ -63,8 +63,8 @@ public class EventCaptureContract {
         void setProgramStage(String programStageUid);
     }
 
-    public interface EventCapturePresenter extends AbstractActivityContracts.Presenter {
-        void init(EventCaptureView eventCaptureView);
+    public interface Presenter extends AbstractActivityContracts.Presenter {
+        void init(EventCaptureContract.View view);
 
         void onBackClick();
 
