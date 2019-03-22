@@ -23,7 +23,7 @@ import timber.log.Timber;
 
 import static android.text.TextUtils.isEmpty;
 
-public class SplashSplashPresenter implements SplashContracts.SplashPresenter {
+public class SplashPresenterImpl implements SplashContracts.SplashPresenter {
 
     private final SplashRepository splashRespository;
     private SplashContracts.SplashView splashView;
@@ -31,7 +31,7 @@ public class SplashSplashPresenter implements SplashContracts.SplashPresenter {
     @NonNull
     private final CompositeDisposable compositeDisposable;
 
-    SplashSplashPresenter(@Nullable UserManager userManager, SplashRepository splashRepository) {
+    SplashPresenterImpl(@Nullable UserManager userManager, SplashRepository splashRepository) {
         this.userManager = userManager;
         this.compositeDisposable = new CompositeDisposable();
         this.splashRespository = splashRepository;

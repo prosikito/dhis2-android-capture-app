@@ -13,6 +13,6 @@ public class SyncModule {
     @Provides
     @PerActivity
     SyncContracts.SyncPresenter providePresenter(MetadataRepository metadataRepository) {
-        return new SyncSyncPresenter(metadataRepository);
+        return new SyncPresenterImpl(metadataRepository);
     }
 }

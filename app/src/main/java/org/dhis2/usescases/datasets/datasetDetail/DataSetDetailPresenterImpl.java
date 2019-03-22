@@ -2,9 +2,7 @@ package org.dhis2.usescases.datasets.datasetDetail;
 
 import android.annotation.SuppressLint;
 import android.os.Bundle;
-import androidx.annotation.IntDef;
 
-import org.dhis2.data.metadata.MetadataRepository;
 import org.dhis2.usescases.datasets.datasetInitial.DataSetInitialActivity;
 import org.dhis2.utils.Constants;
 import org.dhis2.utils.OrgUnitUtils;
@@ -19,18 +17,17 @@ import java.lang.annotation.RetentionPolicy;
 import java.util.Date;
 import java.util.List;
 
+import androidx.annotation.IntDef;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.schedulers.Schedulers;
 import timber.log.Timber;
 
 
-public class DataSetDetailDataSetDetailPresenter implements DataSetDetailContract.DataSetDetailPresenter {
+public class DataSetDetailPresenterImpl implements DataSetDetailContract.DataSetDetailPresenter {
 
     private DataSetDetailRepository dataSetDetailRepository;
     private DataSetDetailContract.DataSetDetailView dataSetDetailView;
-    private CategoryOptionComboModel categoryOptionComboModel;
-    private MetadataRepository metadataRepository;
     private int lastSearchType;
     private Date fromDate;
     private Date toDate;
@@ -49,9 +46,8 @@ public class DataSetDetailDataSetDetailPresenter implements DataSetDetailContrac
         int DATE_RANGES = 32;
     }
 
-    public DataSetDetailDataSetDetailPresenter(DataSetDetailRepository dataSetDetailRepository, MetadataRepository metadataRepository) {
+    public DataSetDetailPresenterImpl(DataSetDetailRepository dataSetDetailRepository) {
         this.dataSetDetailRepository = dataSetDetailRepository;
-        this.metadataRepository = metadataRepository;
         compositeDisposable = new CompositeDisposable();
     }
 
@@ -79,7 +75,7 @@ public class DataSetDetailDataSetDetailPresenter implements DataSetDetailContrac
 
     @Override
     public void onDateRangeButtonClick() {
-        dataSetDetailView.showRageDatePicker();
+        dataSetDetailView.showRangeDatePicker();
     }
 
     @Override
@@ -93,7 +89,7 @@ public class DataSetDetailDataSetDetailPresenter implements DataSetDetailContrac
         Bundle bundle = new Bundle();
         bundle.putString(Constants.DATA_SET_UID, dataSetDetailView.dataSetUid());
 
-        dataSetDetailView.startActivity(DataSetInitialActivity.class,bundle,false,false,null);
+        dataSetDetailView.startActivity(DataSetInitialActivity.class, bundle, false, false, null);
     }
 
     @Override
@@ -153,7 +149,7 @@ public class DataSetDetailDataSetDetailPresenter implements DataSetDetailContrac
 
     private void updateFilters(CategoryOptionComboModel categoryOptionComboModel, String
             orgUnitQuery) {
-        this.categoryOptionComboModel = categoryOptionComboModel;
+        CategoryOptionComboModel categoryOptionComboModel1 = categoryOptionComboModel;
         switch (lastSearchType) {
             case LastSearchType.DATES:
                 getDataSets(this.fromDate, this.toDate, orgUnitQuery);

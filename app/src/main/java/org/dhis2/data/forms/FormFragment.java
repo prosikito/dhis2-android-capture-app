@@ -267,23 +267,28 @@ public class FormFragment extends FragmentGlobalAbstract implements FormView, Co
         super.onPause();
     }
 
+    private int renderSection(List<FormSectionViewModel> sectionViewModels) {
+        int currentPosition = -1;
+        if (formSectionAdapter.getCount() > 0 && formSectionAdapter.areDifferentSections(sectionViewModels)) {
+            currentPosition = viewPager.getCurrentItem();
+            for (Fragment fragment : getChildFragmentManager().getFragments()) {
+                if (fragment instanceof DataEntryFragment) {
+                    continue;
+                } else if (fragment != null) {
+                    getChildFragmentManager().beginTransaction().remove(fragment).commit();
+                }
+            }
+            formSectionAdapter = new FormSectionAdapter(getChildFragmentManager());
+            viewPager.setAdapter(formSectionAdapter);
+        }
+        return currentPosition;
+    }
+
     @NonNull
     @Override
     public Consumer<List<FormSectionViewModel>> renderSectionViewModels() {
         return sectionViewModels -> {
-            int currentPostion = -1;
-            if (formSectionAdapter.getCount() > 0 && formSectionAdapter.areDifferentSections(sectionViewModels)) {
-                currentPostion = viewPager.getCurrentItem();
-                for (Fragment fragment : getChildFragmentManager().getFragments()) {
-                    if (fragment instanceof DataEntryFragment) {
-                        continue;
-                    } else if (fragment != null) {
-                        getChildFragmentManager().beginTransaction().remove(fragment).commit();
-                    }
-                }
-                formSectionAdapter = new FormSectionAdapter(getChildFragmentManager());
-                viewPager.setAdapter(formSectionAdapter);
-            }
+            int currentPostion = renderSection(sectionViewModels);
             formSectionAdapter.swapData(sectionViewModels);
             tabLayout.setupWithViewPager(viewPager);
             if (currentPostion != -1)

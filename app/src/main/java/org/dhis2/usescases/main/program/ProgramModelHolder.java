@@ -30,7 +30,8 @@ public class ProgramModelHolder extends RecyclerView.ViewHolder {
         binding.setPresenter(programPresenter);
         binding.setCurrentPeriod(currentPeriod);
 
-        int color = ColorUtils.getColorFrom(programViewModel.color(), ColorUtils.getPrimaryColor(binding.programImage.getContext(), ColorUtils.ColorType.PRIMARY));
+        int color = ColorUtils.getColorFrom(programViewModel.color(),
+                ColorUtils.getPrimaryColor(binding.programImage.getContext(), ColorUtils.ColorType.PRIMARY));
         int icon;
         if (programViewModel.icon() != null) {
             Resources resources = binding.programImage.getResources();

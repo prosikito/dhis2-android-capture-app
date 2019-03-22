@@ -18,7 +18,7 @@ public class SQLConstants {
     public static final String WHERE = " WHERE ";
     public static final String AND = " AND ";
     public static final String QUESTION_MARK = " ? ";
-    public static final String LIMIT_1 = " LIMIT_1 ";
+    public static final String LIMIT_1 = " LIMIT 1 ";
     public static final String TABLE_POINT_COLUMN_EQUAL = " %s.%s = ";
     public static final String TABLE_POINT_COLUMN = " %s.%s ";
     public static final String VARIABLE = " %s ";

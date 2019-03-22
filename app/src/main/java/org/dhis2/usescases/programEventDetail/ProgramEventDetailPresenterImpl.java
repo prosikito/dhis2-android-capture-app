@@ -39,7 +39,7 @@ import static org.dhis2.utils.Constants.PROGRAM_UID;
  * QUADRAM. Created by Cristian on 13/02/2018.
  */
 
-public class ProgramEventDetailProgramEventDetailPresenter implements ProgramEventDetailContract.ProgramEventDetailPresenter {
+public class ProgramEventDetailPresenterImpl implements ProgramEventDetailContract.ProgramEventDetailPresenter {
 
     private final ProgramEventDetailRepository eventRepository;
     private final MetadataRepository metaRepository;
@@ -57,7 +57,7 @@ public class ProgramEventDetailProgramEventDetailPresenter implements ProgramEve
     private String orgUnitQuery;
     private Period currentPeriod;
 
-    ProgramEventDetailProgramEventDetailPresenter(
+    ProgramEventDetailPresenterImpl(
             @NonNull ProgramEventDetailRepository programEventDetailRepository,
             @NonNull MetadataRepository metadataRepository) {
         this.eventRepository = programEventDetailRepository;

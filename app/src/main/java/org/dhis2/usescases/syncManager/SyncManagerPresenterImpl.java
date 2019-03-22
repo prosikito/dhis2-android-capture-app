@@ -33,7 +33,7 @@ import timber.log.Timber;
  * QUADRAM. Created by lmartin on 21/03/2018.
  */
 
-public class SyncManagerSyncManagerPresenter implements SyncManagerContracts.SyncManagerPresenter {
+public class SyncManagerPresenterImpl implements SyncManagerContracts.SyncManagerPresenter {
 
     private final D2 d2;
 
@@ -42,7 +42,7 @@ public class SyncManagerSyncManagerPresenter implements SyncManagerContracts.Syn
     private SyncManagerContracts.SyncManagerView syncManagerView;
     private FlowableProcessor<Boolean> checkData;
 
-    SyncManagerSyncManagerPresenter(MetadataRepository metadataRepository, D2 d2) {
+    SyncManagerPresenterImpl(MetadataRepository metadataRepository, D2 d2) {
         this.metadataRepository = metadataRepository;
         this.d2 = d2;
         checkData = PublishProcessor.create();

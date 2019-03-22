@@ -32,13 +32,13 @@ public class TeiProgramListModule {
     @Provides
     @PerActivity
     TeiProgramListContract.TeiProgramListPresenter providesPresenter(TeiProgramListContract.TeiProgramListInteractor teiProgramListInteractor) {
-        return new TeiProgramListTeiProgramListPresenter(teiProgramListInteractor, teiUid);
+        return new TeiProgramListPresenterImpl(teiProgramListInteractor, teiUid);
     }
 
     @Provides
     @PerActivity
     TeiProgramListContract.TeiProgramListInteractor provideInteractor(@NonNull TeiProgramListRepository teiProgramListRepository) {
-        return new TeiProgramListTeiProgramListInteractor(teiProgramListRepository);
+        return new TeiProgramListInteractorImpl(teiProgramListRepository);
     }
 
     @Provides

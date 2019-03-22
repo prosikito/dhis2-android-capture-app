@@ -42,7 +42,7 @@ final class ProgramStageRepository implements DataEntryRepository {
             "  Field.type,\n" +
             "  Field.mandatory,\n" +
             "  Field.optionSet,\n" +
-            "  Value.VALUE,\n" +
+            "  Value.value,\n" +
             "  Option.displayName,\n" +
             "  Field.section,\n" +
             "  Field.allowFutureDate,\n" +
@@ -74,7 +74,7 @@ final class ProgramStageRepository implements DataEntryRepository {
             "    Value.event = Event.uid AND Value.dataElement = Field.id\n" +
             "  )\n" +
             "  LEFT OUTER JOIN Option ON (\n" +
-            "    Field.optionSet = Option.optionSet AND Value.VALUE = Option.code\n" +
+            "    Field.optionSet = Option.optionSet AND Value.value = Option.code\n" +
             "  )\n" +
             " %s  " +
             "ORDER BY CASE" +
@@ -148,48 +148,59 @@ final class ProgramStageRepository implements DataEntryRepository {
     }
 
     private List<FieldViewModel> checkRenderType(List<FieldViewModel> fieldViewModels) {
-
         ArrayList<FieldViewModel> renderList = new ArrayList<>();
-
         if (renderingType != ProgramStageSectionRenderingType.LISTING) {
-
             for (FieldViewModel fieldViewModel : fieldViewModels) {
-                if (!isEmpty(fieldViewModel.optionSet())) {
-                    try (Cursor cursor = briteDatabase.query(OPTIONS, fieldViewModel.optionSet() == null ? "" : fieldViewModel.optionSet())) {
-                        if (cursor != null && cursor.moveToFirst()) {
-                            int optionCount = cursor.getCount();
-                            for (int i = 0; i < optionCount; i++) {
-                                String uid = cursor.getString(0);
-                                String displayName = cursor.getString(1);
-                                String optionCode = cursor.getString(2);
-
-                                ObjectStyleModel objectStyle = ObjectStyleModel.builder().build();
-                                try (Cursor objStyleCursor = briteDatabase.query("SELECT * FROM ObjectStyle WHERE uid = ?", fieldViewModel.uid())) {
-                                    if (objStyleCursor.moveToFirst())
-                                        objectStyle = ObjectStyleModel.create(objStyleCursor);
-                                }
-
-                                renderList.add(fieldFactory.create(
-                                        fieldViewModel.uid() + "." + uid, //fist
-                                        displayName + "-" + optionCode, ValueType.TEXT, false,
-                                        fieldViewModel.optionSet(), fieldViewModel.value(), fieldViewModel.programStageSection(),
-                                        fieldViewModel.allowFutureDate(), fieldViewModel.editable() == null ? false : fieldViewModel.editable(), renderingType, fieldViewModel.description(), null, optionCount, objectStyle));
-
-                                cursor.moveToNext();
-                            }
-                        }
-                    }
-
-                } else
-                    renderList.add(fieldViewModel);
+                renderList.addAll(parseFieldViewModel(fieldViewModel));
             }
-
-
-        } else
+        } else {
             renderList.addAll(fieldViewModels);
-
+        }
         return renderList;
+    }
 
+    private ArrayList<FieldViewModel> parseFieldViewModel(FieldViewModel fieldViewModel) {
+        ArrayList<FieldViewModel> renderList = new ArrayList<>();
+        if (!isEmpty(fieldViewModel.optionSet())) {
+            try (Cursor cursor = briteDatabase.query(OPTIONS, fieldViewModel.optionSet() == null ? "" : fieldViewModel.optionSet())) {
+                renderList.addAll(parseOptions(cursor, fieldViewModel));
+            }
+        } else {
+            renderList.add(fieldViewModel);
+        }
+        return renderList;
+    }
+
+    private ArrayList<FieldViewModel> parseOptions(Cursor cursor, FieldViewModel fieldViewModel) {
+        ArrayList<FieldViewModel> renderList = new ArrayList<>();
+        if (cursor != null && cursor.moveToFirst()) {
+            int optionCount = cursor.getCount();
+            for (int i = 0; i < optionCount; i++) {
+                String uid = cursor.getString(0);
+                String displayName = cursor.getString(1);
+                String optionCode = cursor.getString(2);
+
+                ObjectStyleModel objectStyle = getObjectStyle(fieldViewModel);
+
+                renderList.add(fieldFactory.create(
+                        fieldViewModel.uid() + "." + uid, //fist
+                        displayName + "-" + optionCode, ValueType.TEXT, false,
+                        fieldViewModel.optionSet(), fieldViewModel.value(), fieldViewModel.programStageSection(),
+                        fieldViewModel.allowFutureDate(), fieldViewModel.editable() == null ? false : fieldViewModel.editable(), renderingType, fieldViewModel.description(), null, optionCount, objectStyle));
+
+                cursor.moveToNext();
+            }
+        }
+        return renderList;
+    }
+
+    private ObjectStyleModel getObjectStyle(FieldViewModel fieldViewModel) {
+        ObjectStyleModel objectStyle = ObjectStyleModel.builder().build();
+        try (Cursor objStyleCursor = briteDatabase.query("SELECT * FROM ObjectStyle WHERE uid = ?", fieldViewModel.uid())) {
+            if (objStyleCursor.moveToFirst())
+                objectStyle = ObjectStyleModel.create(objStyleCursor);
+        }
+        return objectStyle;
     }
 
     @Override

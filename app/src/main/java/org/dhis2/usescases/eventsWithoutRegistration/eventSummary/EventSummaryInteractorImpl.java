@@ -1,7 +1,5 @@
 package org.dhis2.usescases.eventsWithoutRegistration.eventSummary;
 
-import android.util.Log;
-
 import org.dhis2.data.forms.dataentry.fields.FieldViewModel;
 import org.dhis2.data.metadata.MetadataRepository;
 import org.dhis2.data.schedulers.SchedulerProvider;
@@ -35,7 +33,7 @@ import timber.log.Timber;
  * QUADRAM. Created by Cristian on 01/03/2018.
  */
 
-public class EventSummaryEventSummaryInteractor implements EventSummaryContract.EventSummaryInteractor {
+public class EventSummaryInteractorImpl implements EventSummaryContract.EventSummaryInteractor {
     private EventSummaryContract.EventSummaryView eventSummaryView;
     @NonNull
     private final MetadataRepository metadataRepository;
@@ -50,9 +48,9 @@ public class EventSummaryEventSummaryInteractor implements EventSummaryContract.
     private EventStatus currentStatus;
 
 
-    EventSummaryEventSummaryInteractor(@NonNull EventSummaryRepository eventSummaryRepository,
-                                       @NonNull MetadataRepository metadataRepository,
-                                       @NonNull SchedulerProvider schedulerProvider) {
+    EventSummaryInteractorImpl(@NonNull EventSummaryRepository eventSummaryRepository,
+                               @NonNull MetadataRepository metadataRepository,
+                               @NonNull SchedulerProvider schedulerProvider) {
         this.metadataRepository = metadataRepository;
         this.eventSummaryRepository = eventSummaryRepository;
         this.schedulerProvider = schedulerProvider;
@@ -187,40 +185,44 @@ public class EventSummaryEventSummaryInteractor implements EventSummaryContract.
         eventSummaryView.setHideSection(null);
 
         for (RuleEffect ruleEffect : calcResult.items()) {
-            RuleAction ruleAction = ruleEffect.ruleAction();
-            if (ruleAction instanceof RuleActionShowWarning) {
-                RuleActionShowWarning showWarning = (RuleActionShowWarning) ruleAction;
-                FieldViewModel model = fieldViewModels.get(showWarning.field());
-                if (model != null)
-                    fieldViewModels.put(showWarning.field(), model.withWarning(showWarning.content()));
-                else
-                    Log.d("PR_FIELD_ERROR", String.format("Field with uid %s is missing", showWarning.field()));
-            } else if (ruleAction instanceof RuleActionShowError) {
-                RuleActionShowError showError = (RuleActionShowError) ruleAction;
-                FieldViewModel model = fieldViewModels.get(showError.field());
-                if (model != null)
-                    fieldViewModels.put(showError.field(), model.withError(showError.content()));
-                else
-                    Log.d("PR_FIELD_ERROR", String.format("Field with uid %s is missing", showError.field()));
-                eventSummaryView.fieldWithError(true);
-            } else if (ruleAction instanceof RuleActionHideField) {
-                RuleActionHideField hideField = (RuleActionHideField) ruleAction;
-                fieldViewModels.remove(hideField.field());
-            } else if (ruleAction instanceof RuleActionWarningOnCompletion) {
-                RuleActionWarningOnCompletion warningOnCompletion = (RuleActionWarningOnCompletion) ruleAction;
-                eventSummaryView.messageOnComplete(warningOnCompletion.content(), true);
-            } else if (ruleAction instanceof RuleActionErrorOnCompletion) {
-                RuleActionErrorOnCompletion errorOnCompletion = (RuleActionErrorOnCompletion) ruleAction;
-                eventSummaryView.messageOnComplete(errorOnCompletion.content(), false);
-            } else if (ruleAction instanceof RuleActionSetMandatoryField) {
-                RuleActionSetMandatoryField mandatoryField = (RuleActionSetMandatoryField) ruleAction;
-                FieldViewModel model = fieldViewModels.get(mandatoryField.field());
-                if (model != null)
-                    fieldViewModels.put(mandatoryField.field(), model.setMandatory());
-            } else if (ruleAction instanceof RuleActionHideSection) {
-                RuleActionHideSection hideSection = (RuleActionHideSection) ruleAction;
-                eventSummaryView.setHideSection(hideSection.programStageSection());
-            }
+            applyRuleEffect(fieldViewModels, ruleEffect);
+        }
+    }
+
+    private void applyRuleEffect(Map<String, FieldViewModel> fieldViewModels, RuleEffect ruleEffect) {
+        RuleAction ruleAction = ruleEffect.ruleAction();
+        if (ruleAction instanceof RuleActionShowWarning) {
+            RuleActionShowWarning showWarning = (RuleActionShowWarning) ruleAction;
+            FieldViewModel model = fieldViewModels.get(showWarning.field());
+            if (model != null)
+                fieldViewModels.put(showWarning.field(), model.withWarning(showWarning.content()));
+            else
+                Timber.d("Field with uid %s is missing", showWarning.field());
+        } else if (ruleAction instanceof RuleActionShowError) {
+            RuleActionShowError showError = (RuleActionShowError) ruleAction;
+            FieldViewModel model = fieldViewModels.get(showError.field());
+            if (model != null)
+                fieldViewModels.put(showError.field(), model.withError(showError.content()));
+            else
+                Timber.d("Field with uid %s is missing", showError.field());
+            eventSummaryView.fieldWithError(true);
+        } else if (ruleAction instanceof RuleActionHideField) {
+            RuleActionHideField hideField = (RuleActionHideField) ruleAction;
+            fieldViewModels.remove(hideField.field());
+        } else if (ruleAction instanceof RuleActionWarningOnCompletion) {
+            RuleActionWarningOnCompletion warningOnCompletion = (RuleActionWarningOnCompletion) ruleAction;
+            eventSummaryView.messageOnComplete(warningOnCompletion.content(), true);
+        } else if (ruleAction instanceof RuleActionErrorOnCompletion) {
+            RuleActionErrorOnCompletion errorOnCompletion = (RuleActionErrorOnCompletion) ruleAction;
+            eventSummaryView.messageOnComplete(errorOnCompletion.content(), false);
+        } else if (ruleAction instanceof RuleActionSetMandatoryField) {
+            RuleActionSetMandatoryField mandatoryField = (RuleActionSetMandatoryField) ruleAction;
+            FieldViewModel model = fieldViewModels.get(mandatoryField.field());
+            if (model != null)
+                fieldViewModels.put(mandatoryField.field(), model.setMandatory());
+        } else if (ruleAction instanceof RuleActionHideSection) {
+            RuleActionHideSection hideSection = (RuleActionHideSection) ruleAction;
+            eventSummaryView.setHideSection(hideSection.programStageSection());
         }
     }
 }

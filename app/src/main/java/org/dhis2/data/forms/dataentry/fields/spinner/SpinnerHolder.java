@@ -76,7 +76,7 @@ public class SpinnerHolder extends FormViewHolder implements View.OnClickListene
         editText.setFocusable(false);
         editText.setClickable(viewModel.editable());
 
-        editText.setText(viewModel.value()); //option code is already transformed to VALUE in the fieldviewmodelfactory implementation
+        editText.setText(viewModel.value()); //option code is already transformed to value in the fieldviewmodelfactory implementation
 
         if (!isEmpty(viewModel.warning())) {
             inputLayout.setError(viewModel.warning());

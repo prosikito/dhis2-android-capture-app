@@ -57,7 +57,7 @@ import timber.log.Timber;
  * QUADRAM. Created by Cristian on 01/03/2018.
  */
 
-public class EventInitialEventInitialPresenter implements EventInitialContract.EventInitialPresenter {
+public class EventInitialPresenterImpl implements EventInitialContract.EventInitialPresenter {
 
     public static final int ACCESS_COARSE_LOCATION_PERMISSION_REQUEST = 101;
     private EventInitialContract.EventInitialView eventInitialView;
@@ -75,10 +75,10 @@ public class EventInitialEventInitialPresenter implements EventInitialContract.E
     private String programStageId;
     private List<OrganisationUnitModel> orgUnits;
 
-    public EventInitialEventInitialPresenter(@NonNull EventSummaryRepository eventSummaryRepository,
-                                             @NonNull EventInitialRepository eventInitialRepository,
-                                             @NonNull MetadataRepository metadataRepository,
-                                             @NonNull SchedulerProvider schedulerProvider) {
+    public EventInitialPresenterImpl(@NonNull EventSummaryRepository eventSummaryRepository,
+                                     @NonNull EventInitialRepository eventInitialRepository,
+                                     @NonNull MetadataRepository metadataRepository,
+                                     @NonNull SchedulerProvider schedulerProvider) {
 
         this.metadataRepository = metadataRepository;
         this.eventInitialRepository = eventInitialRepository;

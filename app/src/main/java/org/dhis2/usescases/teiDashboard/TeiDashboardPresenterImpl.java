@@ -60,7 +60,7 @@ import timber.log.Timber;
  * QUADRAM. Created by ppajuelo on 30/11/2017.
  */
 
-public class TeiDashboardTeiDashboardPresenter implements TeiDashboardContracts.TeiDashboardPresenter {
+public class TeiDashboardPresenterImpl implements TeiDashboardContracts.TeiDashboardPresenter {
 
     private static final String TEI_UID = "TEI_UID";
     private static final String PROGRAM_UID = "PROGRAM_UID";
@@ -77,7 +77,7 @@ public class TeiDashboardTeiDashboardPresenter implements TeiDashboardContracts.
     private CompositeDisposable compositeDisposable;
     private DashboardProgramModel dashboardProgramModel;
 
-    TeiDashboardTeiDashboardPresenter(D2 d2, DashboardRepository dashboardRepository, MetadataRepository metadataRepository) {
+    TeiDashboardPresenterImpl(D2 d2, DashboardRepository dashboardRepository, MetadataRepository metadataRepository) {
         this.d2 = d2;
         this.dashboardRepository = dashboardRepository;
         this.metadataRepository = metadataRepository;

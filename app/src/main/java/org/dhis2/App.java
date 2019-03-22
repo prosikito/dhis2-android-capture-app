@@ -60,8 +60,6 @@ public class App extends MultiDexApplication implements Components {
 
     private static final String DATABASE_NAME = "dhis.db";
 
-    private static App instance;
-
     @Inject
     ConfigurationManager configurationManager;
 
@@ -101,8 +99,6 @@ public class App extends MultiDexApplication implements Components {
         }
         Fabric.with(this, new Crashlytics());
         Timber.d("FABRIC INITIALIZATION END AT %s", System.currentTimeMillis() - startTime);
-
-        instance = this;
 
         setUpAppComponent();
         setUpServerComponent();
@@ -305,11 +301,6 @@ public class App extends MultiDexApplication implements Components {
     ////////////////////////////////////////////////////////////////////////
     // AndroidInjector
     ////////////////////////////////////////////////////////////////////////
-
-
-    public static App getInstance() {
-        return instance;
-    }
 
     /**
      * Visible only for testing purposes.

@@ -175,10 +175,7 @@ final class EditTextCustomHolder extends FormViewHolder {
                 editTextModel.value() == null ? "" : valueOf(editTextModel.value()));
     }
 
-    public void update(@NonNull FieldViewModel model) {
-        this.editTextModel = (EditTextViewModel) model;
-
-        Bindings.setObjectStyle(icon, itemView, editTextModel.objectStyle());
+    private void setEditable() {
         if (this.isEditable) {
             editText.setFocusable(true);
             editText.setFocusableInTouchMode(true);
@@ -188,22 +185,48 @@ final class EditTextCustomHolder extends FormViewHolder {
             editText.setFocusableInTouchMode(false);
             editText.setEnabled(false);
         }
+    }
 
+    private void setText() {
         if (editTextModel.value() != null)
             editText.post(() -> editText.setText(valueOf(editTextModel.value())));
         else
             editText.setText(null);
+    }
 
+    private void setWarningsAndErrors() {
         if (!isEmpty(editTextModel.warning())) {
             inputLayout.setError(editTextModel.warning());
         } else if (!isEmpty(editTextModel.error())) {
             inputLayout.setError(editTextModel.error());
         } else
             inputLayout.setError(null);
+    }
 
+    private void setEnabled(@NonNull FieldViewModel model) {
+        if (model.editable()) {
+            editText.setFocusable(true);
+            editText.setFocusableInTouchMode(true);
+            editText.setEnabled(true);
+        } else {
+            editText.setFocusable(false);
+            editText.setFocusableInTouchMode(false);
+            editText.setEnabled(false);
+        }
+    }
+
+    public void update(@NonNull FieldViewModel model) {
+        this.editTextModel = (EditTextViewModel) model;
+
+        Bindings.setObjectStyle(icon, itemView, editTextModel.objectStyle());
+
+        setEditable();
+
+        setWarningsAndErrors();
 
         editText.setSelection(editText.getText() == null ?
                 0 : editText.getText().length());
+
         if (inputLayout.getHint() == null || !inputLayout.getHint().toString().equals(editTextModel.label())) {
             label = new StringBuilder(editTextModel.label());
             if (editTextModel.mandatory())
@@ -214,21 +237,11 @@ final class EditTextCustomHolder extends FormViewHolder {
                 description.setVisibility(View.VISIBLE);
             else
                 description.setVisibility(View.GONE);
-
         }
 
         descriptionText = editTextModel.description();
 
-
-        if (model.editable()) {
-            editText.setFocusable(true);
-            editText.setFocusableInTouchMode(true);
-            editText.setEnabled(true);
-        } else {
-            editText.setFocusable(false);
-            editText.setFocusableInTouchMode(false);
-            editText.setEnabled(false);
-        }
+        setEnabled(model);
 
         setInputType(editTextModel.valueType());
         setRenderingType(editTextModel.fieldRendering());
@@ -257,58 +270,86 @@ final class EditTextCustomHolder extends FormViewHolder {
         return gson.fromJson(json, type);
     }
 
+    private boolean validatePhone() {
+        if (Patterns.PHONE.matcher(editText.getText().toString()).matches())
+            return true;
+        else {
+            inputLayout.setError(editText.getContext().getString(R.string.invalid_phone_number));
+            return false;
+        }
+    }
+
+    private boolean validateEmail() {
+        if (Patterns.EMAIL_ADDRESS.matcher(editText.getText().toString()).matches())
+            return true;
+        else {
+            inputLayout.setError(editText.getContext().getString(R.string.invalid_email));
+            return false;
+        }
+    }
+
+    private boolean validateNegInt() {
+        if (Integer.valueOf(editText.getText().toString()) < 0)
+            return true;
+        else {
+            inputLayout.setError(editText.getContext().getString(R.string.invalid_negative_number));
+            return false;
+        }
+    }
+
+    private boolean validateZeroPosInt() {
+        if (editText.getText() != null &&
+                Integer.valueOf(editText.getText().toString()) >= 0)
+            return true;
+        else {
+            inputLayout.setError(editText.getContext().getString(R.string.invalid_possitive_zero));
+            return false;
+        }
+    }
+
+    private boolean validatePosInt() {
+        if (Integer.valueOf(editText.getText().toString()) > 0)
+            return true;
+        else {
+            inputLayout.setError(editText.getContext().getString(R.string.invalid_possitive));
+            return false;
+        }
+    }
+
+    private boolean validateInterval() {
+        if (Float.valueOf(editText.getText().toString()) >= 0 && Float.valueOf(editText.getText().toString()) <= 1)
+            return true;
+        else {
+            inputLayout.setError(editText.getContext().getString(R.string.invalid_interval));
+            return false;
+        }
+    }
+
+    private boolean validatePPercentage() {
+        if (Float.valueOf(editText.getText().toString()) >= 0 && Float.valueOf(editText.getText().toString()) <= 100)
+            return true;
+        else {
+            inputLayout.setError(editText.getContext().getString(R.string.invalid_percentage));
+            return false;
+        }
+    }
+
     private boolean validate() {
         switch (editTextModel.valueType()) {
             case PHONE_NUMBER:
-                if (Patterns.PHONE.matcher(editText.getText().toString()).matches())
-                    return true;
-                else {
-                    inputLayout.setError(editText.getContext().getString(R.string.invalid_phone_number));
-                    return false;
-                }
+                return validatePhone();
             case EMAIL:
-                if (Patterns.EMAIL_ADDRESS.matcher(editText.getText().toString()).matches())
-                    return true;
-                else {
-                    inputLayout.setError(editText.getContext().getString(R.string.invalid_email));
-                    return false;
-                }
+                return validateEmail();
             case INTEGER_NEGATIVE:
-                if (Integer.valueOf(editText.getText().toString()) < 0)
-                    return true;
-                else {
-                    inputLayout.setError(editText.getContext().getString(R.string.invalid_negative_number));
-                    return false;
-                }
+                return validateNegInt();
             case INTEGER_ZERO_OR_POSITIVE:
-                if (editText.getText() != null &&
-                        Integer.valueOf(editText.getText().toString()) >= 0)
-                    return true;
-                else {
-                    inputLayout.setError(editText.getContext().getString(R.string.invalid_possitive_zero));
-                    return false;
-                }
+                return validateZeroPosInt();
             case INTEGER_POSITIVE:
-                if (Integer.valueOf(editText.getText().toString()) > 0)
-                    return true;
-                else {
-                    inputLayout.setError(editText.getContext().getString(R.string.invalid_possitive));
-                    return false;
-                }
+                return validatePosInt();
             case UNIT_INTERVAL:
-                if (Float.valueOf(editText.getText().toString()) >= 0 && Float.valueOf(editText.getText().toString()) <= 1)
-                    return true;
-                else {
-                    inputLayout.setError(editText.getContext().getString(R.string.invalid_interval));
-                    return false;
-                }
+                return validateInterval();
             case PERCENTAGE:
-                if (Float.valueOf(editText.getText().toString()) >= 0 && Float.valueOf(editText.getText().toString()) <= 100)
-                    return true;
-                else {
-                    inputLayout.setError(editText.getContext().getString(R.string.invalid_percentage));
-                    return false;
-                }
+                return validatePPercentage();
             default:
                 return true;
         }

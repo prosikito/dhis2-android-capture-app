@@ -122,11 +122,11 @@ public final class AttrValueStore implements AttrEntryStore {
     }
 
     private boolean checkUnique(String attribute, String value) {
-        Cursor uniqueCursor = briteDatabase.query("SELECT TrackedEntityAttributeValue.VALUE FROM TrackedEntityAttributeValue" +
+        Cursor uniqueCursor = briteDatabase.query("SELECT TrackedEntityAttributeValue.value FROM TrackedEntityAttributeValue" +
                 " JOIN TrackedEntityAttribute ON TrackedEntityAttribute.uid = TrackedEntityAttributeValue.attribute" +
                 " WHERE TrackedEntityAttribute.uid = ? AND" +
                 " TrackedEntityAttribute.uniqueProperty = ? AND" +
-                " TrackedEntityAttributeValue.VALUE = ?", attribute, "1", value);
+                " TrackedEntityAttributeValue.value = ?", attribute, "1", value);
 
         return uniqueCursor == null || uniqueCursor.getCount() == 0;
     }

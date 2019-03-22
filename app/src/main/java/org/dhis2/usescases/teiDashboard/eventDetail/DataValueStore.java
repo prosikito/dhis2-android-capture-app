@@ -23,14 +23,19 @@ import androidx.annotation.Nullable;
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
 
+import static org.dhis2.utils.SQLConstants.ALL;
 import static org.dhis2.utils.SQLConstants.AND;
 import static org.dhis2.utils.SQLConstants.EQUAL;
+import static org.dhis2.utils.SQLConstants.FROM;
+import static org.dhis2.utils.SQLConstants.POINT;
 import static org.dhis2.utils.SQLConstants.QUESTION_MARK;
+import static org.dhis2.utils.SQLConstants.SELECT;
+import static org.dhis2.utils.SQLConstants.WHERE;
 
 final class DataValueStore implements DataEntryStore {
-    private static final String SELECT_EVENT = "SELECT * FROM " + EventModel.TABLE +
-            " WHERE " + EventModel.Columns.UID + " = ? " +
-            "AND " + EventModel.TABLE + "." + EventModel.Columns.STATE + " != '" + State.TO_DELETE + "' LIMIT 1";
+    private static final String SELECT_EVENT = SELECT + ALL + FROM + EventModel.TABLE +
+            WHERE + EventModel.Columns.UID + " = ? " +
+            AND + EventModel.TABLE + POINT + EventModel.Columns.STATE + " != '" + State.TO_DELETE + "' LIMIT 1";
 
     @NonNull
     private final BriteDatabase briteDatabase;

@@ -93,7 +93,7 @@ public class EventSummaryRepositoryImpl implements EventSummaryRepository {
             "  Field.type,\n" +
             "  Field.mandatory,\n" +
             "  Field.optionSet,\n" +
-            "  Value.VALUE,\n" +
+            "  Value.value,\n" +
             "  Option.displayName,\n" +
             "  Field.section,\n" +
             "  Field.allowFutureDate,\n" +
@@ -125,7 +125,7 @@ public class EventSummaryRepositoryImpl implements EventSummaryRepository {
             "    Value.event = Event.uid AND Value.dataElement = Field.id\n" +
             "  )\n" +
             "  LEFT OUTER JOIN Option ON (\n" +
-            "    Field.optionSet = Option.optionSet AND Value.VALUE = Option.code\n" +
+            "    Field.optionSet = Option.optionSet AND Value.value = Option.code\n" +
             "  )\n" +
             " %s  " +
             "ORDER BY CASE" +
@@ -151,7 +151,7 @@ public class EventSummaryRepositoryImpl implements EventSummaryRepository {
             "  Event.eventDate," +
             "  Event.programStage," +
             "  TrackedEntityDataValue.dataElement," +
-            "  TrackedEntityDataValue.VALUE," +
+            "  TrackedEntityDataValue.value," +
             "  ProgramRuleVariable.useCodeForOptionSet," +
             "  Option.code," +
             "  Option.name" +
@@ -159,8 +159,8 @@ public class EventSummaryRepositoryImpl implements EventSummaryRepository {
             "  INNER JOIN Event ON TrackedEntityDataValue.event = Event.uid " +
             "  INNER JOIN DataElement ON DataElement.uid = TrackedEntityDataValue.dataElement " +
             "  LEFT JOIN ProgramRuleVariable ON ProgramRuleVariable.dataElement = DataElement.uid " +
-            "  LEFT JOIN Option ON (Option.optionSet = DataElement.optionSet AND Option.code = TrackedEntityDataValue.VALUE) " +
-            " WHERE Event.uid = ? AND VALUE IS NOT NULL AND " + EventModel.TABLE + "." + EventModel.Columns.STATE + NOT_EQUAL + QUOTE + State.TO_DELETE + "';";
+            "  LEFT JOIN Option ON (Option.optionSet = DataElement.optionSet AND Option.code = TrackedEntityDataValue.value) " +
+            " WHERE Event.uid = ? AND value IS NOT NULL AND " + EventModel.TABLE + "." + EventModel.Columns.STATE + NOT_EQUAL + QUOTE + State.TO_DELETE + "';";
 
     private static final String EVENT_QUERY = "SELECT * FROM Event WHERE Event.uid = ? LIMIT 1";
     private static final String PROGRAM_QUERY = "SELECT * FROM Program JOIN ProgramStage ON " +
@@ -304,56 +304,62 @@ public class EventSummaryRepositoryImpl implements EventSummaryRepository {
         String lastUpdated = DateUtils.databaseDateFormat().format(DateUtils.getInstance().getToday());
         try (Cursor cursor = briteDatabase.query(EVENT_QUERY, eventUid)) {
             if (cursor != null && cursor.moveToNext()) {
-
                 EventModel event = EventModel.create(cursor);
-                cursor.close();
-
                 ContentValues values = event.toContentValues();
-                switch (event.status()) {
-                    case ACTIVE:
-                        values.put(EventModel.Columns.STATUS, EventStatus.COMPLETED.name());
-                        values.put(EventModel.Columns.COMPLETE_DATE, lastUpdated);
-                        break;
-                    case SKIPPED:
-                    case VISITED:
-                    case SCHEDULE:
-                        values.put(EventModel.Columns.STATUS, EventStatus.COMPLETED.name()); //TODO: Can this happen?
-                        values.put(EventModel.Columns.COMPLETE_DATE, lastUpdated);
-                        break;
-                    case COMPLETED:
-                        values.put(EventModel.Columns.STATUS, EventStatus.ACTIVE.name()); //TODO: This should check dates?
-                        break;
-                    default:
-                        break;
-                }
 
+                updateEvent(event, eventUid, cursor, values, lastUpdated);
+                updateProgram(eventUid, cursor, values, lastUpdated);
 
-                values.put(EventModel.Columns.STATE, State.TO_UPDATE.toString());
-                values.put(EventModel.Columns.LAST_UPDATED, lastUpdated);
-
-                if (briteDatabase.update(EventModel.TABLE, values,
-                        EventModel.Columns.UID + " = ?", eventUid == null ? "" : eventUid) <= 0) {
-
-                    throw new IllegalStateException(String.format(Locale.US, "Event=[%s] " +
-                            "has not been successfully updated", event.uid()));
-                }
-
-                try (Cursor programCursor = briteDatabase.query(PROGRAM_QUERY, eventUid == null ? "" : eventUid)) {
-                    if (programCursor != null && cursor.moveToNext()) {
-                        ProgramModel program = ProgramModel.create(programCursor);
-                        ContentValues programValues = program.toContentValues();
-                        values.put(ProgramModel.Columns.LAST_UPDATED, lastUpdated);
-                        if (briteDatabase.update(ProgramModel.TABLE, programValues,
-                                ProgramModel.Columns.UID + " = ?", program.uid() == null ? "" : program.uid()) <= 0) {
-
-                            throw new IllegalStateException(String.format(Locale.US, "Program=[%s] " +
-                                    "has not been successfully updated", event.uid()));
-                        }
-                    }
-                }
                 return Observable.just(event);
             } else
                 return null;
+        }
+    }
+
+    private void updateEvent(EventModel event, String eventUid, Cursor cursor, ContentValues values, String lastUpdated) {
+        switch (event.status()) {
+            case ACTIVE:
+                values.put(EventModel.Columns.STATUS, EventStatus.COMPLETED.name());
+                values.put(EventModel.Columns.COMPLETE_DATE, lastUpdated);
+                break;
+            case SKIPPED:
+            case VISITED:
+            case SCHEDULE:
+                values.put(EventModel.Columns.STATUS, EventStatus.COMPLETED.name()); //TODO: Can this happen?
+                values.put(EventModel.Columns.COMPLETE_DATE, lastUpdated);
+                break;
+            case COMPLETED:
+                values.put(EventModel.Columns.STATUS, EventStatus.ACTIVE.name()); //TODO: This should check dates?
+                break;
+            default:
+                break;
+        }
+
+
+        values.put(EventModel.Columns.STATE, State.TO_UPDATE.toString());
+        values.put(EventModel.Columns.LAST_UPDATED, lastUpdated);
+
+        if (briteDatabase.update(EventModel.TABLE, values,
+                EventModel.Columns.UID + " = ?", eventUid == null ? "" : eventUid) <= 0) {
+
+            throw new IllegalStateException(String.format(Locale.US, "Event=[%s] " +
+                    "has not been successfully updated", event.uid()));
+        }
+    }
+
+    private void updateProgram(String eventUid, Cursor cursor, ContentValues values, String lastUpdated) {
+        try (Cursor programCursor = briteDatabase.query(PROGRAM_QUERY, eventUid == null ? "" : eventUid)) {
+            if (programCursor != null && cursor.moveToNext()) {
+                ProgramModel program = ProgramModel.create(programCursor);
+                ContentValues programValues = program.toContentValues();
+                values.put(ProgramModel.Columns.LAST_UPDATED, lastUpdated);
+                if (briteDatabase.update(ProgramModel.TABLE, programValues,
+                        ProgramModel.Columns.UID + " = ?", program.uid() == null ? "" : program.uid()) <= 0) {
+
+                    throw new IllegalStateException(String.format(Locale.US, "Program=[%s] " +
+                            "has not been successfully updated", eventUid));
+                }
+            }
         }
     }
 
@@ -423,7 +429,7 @@ public class EventSummaryRepositoryImpl implements EventSummaryRepository {
                     String optionCode = cursor.getString(5);
                     String optionName = cursor.getString(6);
                     if (!isEmpty(optionCode) && !isEmpty(optionName))
-                        value = useCode ? optionCode : optionName; //If de has optionSet then check if VALUE should be code or name for program rules
+                        value = useCode ? optionCode : optionName; //If de has optionSet then check if value should be code or name for program rules
                     return RuleDataValue.create(eventDate, programStage, dataElement, value);
                 }).toFlowable(BackpressureStrategy.LATEST);
     }

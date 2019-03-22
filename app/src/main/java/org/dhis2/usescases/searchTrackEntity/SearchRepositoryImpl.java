@@ -200,7 +200,7 @@ public class SearchRepositoryImpl implements SearchRepository {
         }
 
         String attrQuery = "(SELECT TrackedEntityAttributeValue.trackedEntityInstance FROM TrackedEntityAttributeValue WHERE " +
-                "TrackedEntityAttributeValue.trackedEntityAttribute = 'ATTR_ID' AND TrackedEntityAttributeValue.VALUE LIKE 'ATTR_VALUE%') t";
+                "TrackedEntityAttributeValue.trackedEntityAttribute = 'ATTR_ID' AND TrackedEntityAttributeValue.value LIKE 'ATTR_VALUE%') t";
         StringBuilder attr = new StringBuilder("");
 
         for (int i = 0; i < queryData.keySet().size(); i++) {
@@ -259,7 +259,7 @@ public class SearchRepositoryImpl implements SearchRepository {
         }
 
         String attrQuery = "(SELECT TrackedEntityAttributeValue.trackedEntityInstance FROM TrackedEntityAttributeValue WHERE " +
-                "TrackedEntityAttributeValue.trackedEntityAttribute = 'ATTR_ID' AND TrackedEntityAttributeValue.VALUE LIKE 'ATTR_VALUE%') t";
+                "TrackedEntityAttributeValue.trackedEntityAttribute = 'ATTR_ID' AND TrackedEntityAttributeValue.value LIKE 'ATTR_VALUE%') t";
         StringBuilder attr = new StringBuilder("");
 
         for (int i = 0; i < queryData.keySet().size(); i++) {

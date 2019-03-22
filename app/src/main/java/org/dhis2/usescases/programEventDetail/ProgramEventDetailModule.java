@@ -28,7 +28,7 @@ public class ProgramEventDetailModule {
     @PerActivity
     ProgramEventDetailContract.ProgramEventDetailPresenter providesPresenter(@NonNull ProgramEventDetailRepository programEventDetailRepository,
                                                                              @NonNull MetadataRepository metadataRepository) {
-        return new ProgramEventDetailProgramEventDetailPresenter(programEventDetailRepository, metadataRepository);
+        return new ProgramEventDetailPresenterImpl(programEventDetailRepository, metadataRepository);
     }
 
     @Provides

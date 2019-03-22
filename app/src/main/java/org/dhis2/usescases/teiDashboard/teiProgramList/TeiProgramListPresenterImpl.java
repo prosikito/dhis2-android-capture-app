@@ -7,13 +7,13 @@ import org.dhis2.usescases.main.program.ProgramViewModel;
  * QUADRAM. Created by Cristian on 06/03/2018.
  */
 
-public class TeiProgramListTeiProgramListPresenter implements TeiProgramListContract.TeiProgramListPresenter {
+public class TeiProgramListPresenterImpl implements TeiProgramListContract.TeiProgramListPresenter {
 
     private TeiProgramListContract.TeiProgramListView teiProgramListView;
     private final TeiProgramListContract.TeiProgramListInteractor teiProgramListInteractor;
     private String teiUid;
 
-    TeiProgramListTeiProgramListPresenter(TeiProgramListContract.TeiProgramListInteractor teiProgramListInteractor, String trackedEntityId) {
+    TeiProgramListPresenterImpl(TeiProgramListContract.TeiProgramListInteractor teiProgramListInteractor, String trackedEntityId) {
         this.teiProgramListInteractor = teiProgramListInteractor;
         this.teiUid = trackedEntityId;
 

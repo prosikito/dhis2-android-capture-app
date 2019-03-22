@@ -149,10 +149,10 @@ public final class DataValueStore implements DataEntryStore {
         Cursor cursor;
         String value = "";
         if (valueType == DATA_ELEMENT)
-            cursor = briteDatabase.query("SELECT TrackedEntityDataValue.VALUE FROM TrackedEntityDataValue " +
+            cursor = briteDatabase.query("SELECT TrackedEntityDataValue.value FROM TrackedEntityDataValue " +
                     "WHERE dataElement = ? AND event = ?", uid, eventUid);
         else
-            cursor = briteDatabase.query("SELECT TrackedEntityAttributeValue.VALUE FROM TrackedEntityAttributeValue " +
+            cursor = briteDatabase.query("SELECT TrackedEntityAttributeValue.value FROM TrackedEntityAttributeValue " +
                     JOIN + EnrollmentModel.TABLE + ON + EnrollmentModel.TABLE + POINT + EnrollmentModel.Columns.TRACKED_ENTITY_INSTANCE +
                     EQUAL + TrackedEntityAttributeValueModel.TABLE + POINT + TrackedEntityAttributeValueModel.Columns.TRACKED_ENTITY_INSTANCE + " " +
                     "JOIN Event ON Event.enrollment = Enrollment.uid " +
@@ -254,24 +254,28 @@ public final class DataValueStore implements DataEntryStore {
                     }
 
                     if (eventModel.enrollment() != null) {
-                        TrackedEntityInstanceModel tei = null;
-                        try (Cursor teiCursor = briteDatabase.query("SELECT TrackedEntityInstance .* FROM TrackedEntityInstance " +
-                                "JOIN Enrollment ON Enrollment.trackedEntityInstance = TrackedEntityInstance.uid WHERE Enrollment.uid = ?", eventModel.enrollment())) {
-                            if (teiCursor.moveToFirst())
-                                tei = TrackedEntityInstanceModel.create(teiCursor);
-                        } finally {
-                            if (tei != null) {
-                                ContentValues cv = tei.toContentValues();
-                                cv.put(TrackedEntityInstanceModel.Columns.STATE, tei.state() == State.TO_POST ? State.TO_POST.name() : State.TO_UPDATE.name());
-                                cv.put(TrackedEntityInstanceModel.Columns.LAST_UPDATED, DateUtils.databaseDateFormat().format(Calendar.getInstance().getTime()));
-
-                                briteDatabase.update(TrackedEntityInstanceModel.TABLE, cv, "uid = ?", tei.uid());
-                            }
-                        }
+                        updateTEI(eventModel);
                     }
 
                     return Flowable.just(status);
                 });
+    }
+
+    private void updateTEI(EventModel eventModel){
+        TrackedEntityInstanceModel tei = null;
+        try (Cursor teiCursor = briteDatabase.query("SELECT TrackedEntityInstance .* FROM TrackedEntityInstance " +
+                "JOIN Enrollment ON Enrollment.trackedEntityInstance = TrackedEntityInstance.uid WHERE Enrollment.uid = ?", eventModel.enrollment())) {
+            if (teiCursor.moveToFirst())
+                tei = TrackedEntityInstanceModel.create(teiCursor);
+        } finally {
+            if (tei != null) {
+                ContentValues cv = tei.toContentValues();
+                cv.put(TrackedEntityInstanceModel.Columns.STATE, tei.state() == State.TO_POST ? State.TO_POST.name() : State.TO_UPDATE.name());
+                cv.put(TrackedEntityInstanceModel.Columns.LAST_UPDATED, DateUtils.databaseDateFormat().format(Calendar.getInstance().getTime()));
+
+                briteDatabase.update(TrackedEntityInstanceModel.TABLE, cv, "uid = ?", tei.uid());
+            }
+        }
     }
 
 }

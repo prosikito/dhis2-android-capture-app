@@ -52,7 +52,7 @@ public class ProgramEventDetailRepositoryImpl implements ProgramEventDetailRepos
             " DataElement.valueType,\n" +
             " DataElement.optionSet, \n" +
             " ProgramStageDataElement.displayInReports, \n" +
-            " TrackedEntityDataValue.VALUE \n" +
+            " TrackedEntityDataValue.value \n" +
             " FROM TrackedEntityDataValue \n" +
             " JOIN ProgramStageDataElement ON ProgramStageDataElement.dataElement = TrackedEntityDataValue.dataElement \n" +
             " JOIN Event ON Event.programStage = ProgramStageDataElement.programStage \n" +
@@ -221,13 +221,13 @@ public class ProgramEventDetailRepositoryImpl implements ProgramEventDetailRepos
             if (cursor != null && cursor.moveToFirst()) {
                 for (int i = 0; i < cursor.getCount(); i++) {
                     String displayName = cursor.getString(cursor.getColumnIndex("displayName"));
-                    String value = cursor.getString(cursor.getColumnIndex("VALUE"));
+                    String value = cursor.getString(cursor.getColumnIndex("value"));
                     if (cursor.getString(cursor.getColumnIndex(OPTION_SET)) != null)
                         value = ValueUtils.optionSetCodeToDisplayName(briteDatabase, cursor.getString(cursor.getColumnIndex(OPTION_SET)), value);
                     else if (cursor.getString(cursor.getColumnIndex("valueType")).equals(ValueType.ORGANISATION_UNIT.name()))
                         value = ValueUtils.orgUnitUidToDisplayName(briteDatabase, value);
 
-                    //TODO: Would be good to check other VALUE types to render VALUE (coordinates)
+                    //TODO: Would be good to check other value types to render value (coordinates)
 
                     data.add(Pair.create(displayName, value));
                     cursor.moveToNext();
@@ -278,7 +278,7 @@ public class ProgramEventDetailRepositoryImpl implements ProgramEventDetailRepos
         try (Cursor cursor = briteDatabase.query(EVENT_DATA_VALUES, id, id)) {
             if (cursor != null && cursor.moveToFirst()) {
                 for (int i = 0; i < cursor.getCount(); i++) {
-                    String value = cursor.getString(cursor.getColumnIndex("VALUE"));
+                    String value = cursor.getString(cursor.getColumnIndex("value"));
                     if (cursor.getString(cursor.getColumnIndex(OPTION_SET)) != null)
                         value = ValueUtils.optionSetCodeToDisplayName(briteDatabase, cursor.getString(cursor.getColumnIndex(OPTION_SET)), value);
                     else if (cursor.getString(cursor.getColumnIndex("valueType")).equals(ValueType.ORGANISATION_UNIT.name()))

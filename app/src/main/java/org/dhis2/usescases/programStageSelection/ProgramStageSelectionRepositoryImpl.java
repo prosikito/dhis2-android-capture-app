@@ -92,8 +92,8 @@ public class ProgramStageSelectionRepositoryImpl implements ProgramStageSelectio
             "    Value.trackedEntityAttribute = Field.id\n" +
             "        AND Value.trackedEntityInstance = Enrollment.trackedEntityInstance)\n" +
             "  LEFT JOIN ProgramRuleVariable ON ProgramRuleVariable.trackedEntityAttribute = Field.id " +
-            "  LEFT JOIN Option ON (Option.optionSet = Field.optionSet AND Option.code = Value.VALUE) " +
-            "WHERE Enrollment.uid = ? AND Value.VALUE IS NOT NULL;";
+            "  LEFT JOIN Option ON (Option.optionSet = Field.optionSet AND Option.code = Value.value) " +
+            "WHERE Enrollment.uid = ? AND Value.value IS NOT NULL;";
 
     private static final String QUERY_EVENT = "SELECT Event.uid,\n" +
             "  Event.programStage,\n" +
@@ -111,7 +111,7 @@ public class ProgramStageSelectionRepositoryImpl implements ProgramStageSelectio
             "  Event.eventDate," +
             "  Event.programStage," +
             "  TrackedEntityDataValue.dataElement," +
-            "  TrackedEntityDataValue.VALUE," +
+            "  TrackedEntityDataValue.value," +
             "  ProgramRuleVariable.useCodeForOptionSet," +
             "  Option.code," +
             "  Option.name" +
@@ -119,8 +119,8 @@ public class ProgramStageSelectionRepositoryImpl implements ProgramStageSelectio
             "  INNER JOIN Event ON TrackedEntityDataValue.event = Event.uid " +
             "  INNER JOIN DataElement ON DataElement.uid = TrackedEntityDataValue.dataElement " +
             "  LEFT JOIN ProgramRuleVariable ON ProgramRuleVariable.dataElement = DataElement.uid " +
-            "  LEFT JOIN Option ON (Option.optionSet = DataElement.optionSet AND Option.code = TrackedEntityDataValue.VALUE) " +
-            " WHERE Event.uid = ? AND VALUE IS NOT NULL AND " + EventModel.TABLE + "." + EventModel.Columns.STATE + " != '" + State.TO_DELETE + "';";
+            "  LEFT JOIN Option ON (Option.optionSet = DataElement.optionSet AND Option.code = TrackedEntityDataValue.value) " +
+            " WHERE Event.uid = ? AND value IS NOT NULL AND " + EventModel.TABLE + "." + EventModel.Columns.STATE + " != '" + State.TO_DELETE + "';";
 
     private final BriteDatabase briteDatabase;
     private final Flowable<RuleEngine> cachedRuleEngineFlowable;
@@ -180,7 +180,7 @@ public class ProgramStageSelectionRepositoryImpl implements ProgramStageSelectio
                                 String optionCode = cursor.getString(5);
                                 String optionName = cursor.getString(6);
                                 if (!isEmpty(optionCode) && !isEmpty(optionName))
-                                    value = useCode ? optionCode : optionName; //If de has optionSet then check if VALUE should be code or name for program rules
+                                    value = useCode ? optionCode : optionName; //If de has optionSet then check if value should be code or name for program rules
                                 dataValues.add(RuleDataValue.create(eventDateV, programStage,
                                         dataElement, value));
                                 dataValueCursor.moveToNext();
@@ -216,7 +216,7 @@ public class ProgramStageSelectionRepositoryImpl implements ProgramStageSelectio
                     String optionCode = cursor.getString(5);
                     String optionName = cursor.getString(6);
                     if (!isEmpty(optionCode) && !isEmpty(optionName))
-                        value = useCode ? optionCode : optionName; //If de has optionSet then check if VALUE should be code or name for program rules
+                        value = useCode ? optionCode : optionName; //If de has optionSet then check if value should be code or name for program rules
                     return RuleDataValue.create(eventDate, programStage, dataElement, value);
                 }).toFlowable(BackpressureStrategy.LATEST);
     }

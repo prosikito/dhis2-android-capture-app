@@ -25,7 +25,7 @@ public class TeiDashboardModule {
     @Provides
     @PerActivity
     TeiDashboardContracts.TeiDashboardPresenter providePresenter(D2 d2, DashboardRepository dashboardRepository, MetadataRepository metadataRepository) {
-        return new TeiDashboardTeiDashboardPresenter(d2, dashboardRepository, metadataRepository);
+        return new TeiDashboardPresenterImpl(d2, dashboardRepository, metadataRepository);
     }
 
     @Provides

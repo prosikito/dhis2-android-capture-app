@@ -225,14 +225,58 @@ public class EventSummaryActivity extends ActivityGlobalAbstract implements Even
     }
 
 
-    void swap(@NonNull List<FieldViewModel> updates, String sectionUid) {
-
-        View sectionView = sections.get(sectionUid);
+    private void setVisibility(View sectionView, String sectionUid) {
         if (sectionsToHide != null && sectionsToHide.contains(sectionUid)) {
             sectionView.setVisibility(View.GONE);
             sectionView.setVisibility(View.GONE);
         } else
             sectionView.setVisibility(View.VISIBLE);
+    }
+
+    private List<String> getErrorFields(@NonNull List<FieldViewModel> updates) {
+        List<String> errorFields = new ArrayList<>();
+        for (FieldViewModel fields : updates) {
+            if (fields.error() != null)
+                errorFields.add(fields.label());
+        }
+        return errorFields;
+    }
+
+    private List<String> getMissingMandatoryFields(@NonNull List<FieldViewModel> updates) {
+        List<String> missingMandatoryFields = new ArrayList<>();
+        for (FieldViewModel fields : updates) {
+            if (fields.mandatory() && fields.value() == null)
+                missingMandatoryFields.add(fields.label());
+        }
+        return missingMandatoryFields;
+    }
+
+    private void displayErrors(List<String> missingMandatoryFields, List<String> errorFields, View sectionView) {
+        if (!missingMandatoryFields.isEmpty() || !errorFields.isEmpty()) {
+            sectionView.findViewById(R.id.section_info).setVisibility(View.VISIBLE);
+
+            StringBuilder missingString = new StringBuilder(missingMandatoryFields.isEmpty() ? "" : "These fields are mandatory. Please check their values to be able to complete the event.");
+            for (String missinField : missingMandatoryFields) {
+                missingString.append(String.format("%n- %s", missinField));
+            }
+
+            StringBuilder errorString = new StringBuilder(errorFields.isEmpty() ? "" : "These fields contain errors. Please check their values to be able to complete the event.");
+            for (String errorField : errorFields) {
+                errorString.append(String.format("%n- %s", errorField));
+            }
+
+            sectionView.findViewById(R.id.section_info).setOnClickListener(view -> {
+                        String finalMessage = missingString.append("\n").append(errorString.toString()).toString();
+                        showInfoDialog("Error", finalMessage);
+                    }
+            );
+        }
+    }
+
+    void swap(@NonNull List<FieldViewModel> updates, String sectionUid) {
+
+        View sectionView = sections.get(sectionUid);
+        setVisibility(sectionView, sectionUid);
 
         if (sectionView.getVisibility() == View.VISIBLE) {
             int completedSectionFields = calculateCompletedFields(updates);
@@ -247,34 +291,9 @@ public class EventSummaryActivity extends ActivityGlobalAbstract implements Even
             sectionView.findViewById(R.id.empty_progress)
                     .setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.MATCH_PARENT, completedSectionFields));
 
-            List<String> missingMandatoryFields = new ArrayList<>();
-            List<String> errorFields = new ArrayList<>();
-            for (FieldViewModel fields : updates) {
-                if (fields.error() != null)
-                    errorFields.add(fields.label());
-                if (fields.mandatory() && fields.value() == null)
-                    missingMandatoryFields.add(fields.label());
-            }
-            if (!missingMandatoryFields.isEmpty() || !errorFields.isEmpty()) {
-                sectionView.findViewById(R.id.section_info).setVisibility(View.VISIBLE);
-
-                StringBuilder missingString = new StringBuilder(missingMandatoryFields.isEmpty() ? "" : "These fields are mandatory. Please check their values to be able to complete the event.");
-                for (String missinField : missingMandatoryFields) {
-                    missingString.append(String.format("%n- %s", missinField));
-                }
-
-                StringBuilder errorString = new StringBuilder(errorFields.isEmpty() ? "" : "These fields contain errors. Please check their values to be able to complete the event.");
-                for (String errorField : errorFields) {
-                    errorString.append(String.format("%n- %s", errorField));
-                }
-
-                sectionView.findViewById(R.id.section_info).setOnClickListener(view -> {
-                            String finalMessage = missingString.append("\n").append(errorString.toString()).toString();
-                            showInfoDialog("Error", finalMessage);
-                        }
-                );
-            }
-
+            List<String> missingMandatoryFields = getMissingMandatoryFields(updates);
+            List<String> errorFields = getErrorFields(updates);
+            displayErrors(missingMandatoryFields, errorFields, sectionView);
         }
 
         binding.summaryHeader.setText(String.format(getString(R.string.event_summary_header), String.valueOf(totalCompletedFields), String.valueOf(totalFields)));

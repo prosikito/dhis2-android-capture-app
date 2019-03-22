@@ -35,7 +35,7 @@ import okhttp3.ResponseBody;
 import retrofit2.Response;
 import timber.log.Timber;
 
-public class LoginLoginPresenter implements LoginContracts.LoginPresenter {
+public class LoginPresenterImpl implements LoginContracts.LoginPresenter {
 
     private static final String SESSION_LOCKED = "SessionLocked";
     private final ConfigurationRepository configurationRepository;
@@ -49,7 +49,7 @@ public class LoginLoginPresenter implements LoginContracts.LoginPresenter {
     private ObservableField<Boolean> isUserPassSet = new ObservableField<>(false);
     private Boolean canHandleBiometrics;
 
-    LoginLoginPresenter(ConfigurationRepository configurationRepository) {
+    LoginPresenterImpl(ConfigurationRepository configurationRepository) {
         this.configurationRepository = configurationRepository;
     }
 
@@ -63,6 +63,11 @@ public class LoginLoginPresenter implements LoginContracts.LoginPresenter {
         if (((App) loginView.getContext().getApplicationContext()).getServerComponent() != null)
             userManager = ((App) loginView.getContext().getApplicationContext()).getServerComponent().userManager();
 
+        setUrlOrStartMain();
+        addBiometricSupport();
+    }
+
+    private void setUrlOrStartMain(){
         if (userManager != null) {
             disposable.add(userManager.isUserLoggedIn()
                     .subscribeOn(Schedulers.io())
@@ -91,10 +96,13 @@ public class LoginLoginPresenter implements LoginContracts.LoginPresenter {
                                             loginView.setUrl(loginView.getContext().getString(R.string.login_https));
                                     },
                                     Timber::e));
-        } else
+        } else {
             loginView.setUrl(loginView.getContext().getString(R.string.login_https));
+        }
+    }
 
-
+    @SuppressWarnings("squid:S2583")
+    private void addBiometricSupport(){
         if (false && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) //TODO: REMOVE FALSE WHEN GREEN LIGHT
             disposable.add(RxPreconditions
                     .hasBiometricSupport(loginView.getContext())
@@ -107,8 +115,6 @@ public class LoginLoginPresenter implements LoginContracts.LoginPresenter {
                     .subscribe(
                             canHandleBiometricsResult2 -> loginView.showBiometricButton(),
                             Timber::e));
-
-
     }
 
     @Override

@@ -40,14 +40,15 @@ public class ColorUtils {
 
         int colorToReturn = Color.BLACK;
 
-        if (hexColor != null && hexColor.length() == 4) {//Color is formatted as #fff
+        if (hexColor != null && !hexColor.isEmpty()) {
+            if (hexColor.length() == 4) {//Color is formatted as #fff
                 char r = hexColor.charAt(1);
                 char g = hexColor.charAt(2);
                 char b = hexColor.charAt(3);
                 hexColor = "#" + r + r + g + g + b + b; //formatted to #ffff
-                colorToReturn = Color.parseColor(hexColor);
+            }
+            colorToReturn = Color.parseColor(hexColor);
         }
-
         if (isEmpty(hexColor) || colorToReturn == Color.BLACK || colorToReturn == Color.WHITE) {
             colorToReturn = defaultPrimaryColor;
         }

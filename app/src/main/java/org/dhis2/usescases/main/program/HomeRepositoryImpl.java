@@ -146,7 +146,8 @@ class HomeRepositoryImpl implements HomeRepository {
                         typeName = "DataSets";
                     }
 
-                    return ProgramViewModel.create(uid, displayName, color, icon, count, teiType, typeName, programType, description, true, true);
+                    return ProgramViewModel.create(uid, displayName, color, icon, count, teiType, typeName,
+                            programType, description, true, true);
                 }).map(list -> checkCount(list, period)).toFlowable(BackpressureStrategy.LATEST);
     }
 

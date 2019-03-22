@@ -604,7 +604,7 @@ public class DateUtils {
 
 
     /**
-     * @param currentDate      Date from which calculation will be carried out. Default VALUE is today.
+     * @param currentDate      Date from which calculation will be carried out. Default value is today.
      * @param expiryDays       Number of extra days to add events on previous period
      * @param expiryPeriodType Expiry Period
      * @return Min date to select

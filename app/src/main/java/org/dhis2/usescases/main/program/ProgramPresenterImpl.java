@@ -39,7 +39,7 @@ import static android.text.TextUtils.isEmpty;
  * Created by ppajuelo on 18/10/2017.f
  */
 
-public class ProgramProgramPresenter implements ProgramContract.ProgramPresenter {
+public class ProgramPresenterImpl implements ProgramContract.ProgramPresenter {
 
     private static final String CURRENT_PERIOD = "CURRENT_PERIOD";
     private static final String CHOOSEN_DATE = "CHOOSEN_DATE";
@@ -52,7 +52,7 @@ public class ProgramProgramPresenter implements ProgramContract.ProgramPresenter
 
     private FlowableProcessor<Pair<TreeNode, String>> parentOrgUnit;
 
-    ProgramProgramPresenter(HomeRepository homeRepository) {
+    ProgramPresenterImpl(HomeRepository homeRepository) {
         this.homeRepository = homeRepository;
     }
 
@@ -95,9 +95,7 @@ public class ProgramProgramPresenter implements ProgramContract.ProgramPresenter
 
     @Override
     public void getProgramsWithDates(ArrayList<Date> dates, Period period) {
-
         programQueries.onNext(Trio.create(dates, period, orgUnitQuery()));
-
     }
 
 

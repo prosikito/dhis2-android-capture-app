@@ -480,7 +480,7 @@ public class DashboardRepositoryImpl implements DashboardRepository {
                     Long id = idColumnIndex != -1 && !cursor.isNull(idColumnIndex) ? cursor.getLong(idColumnIndex) : null;
                     int enrollmentColumnIndex = cursor.getColumnIndex("enrollment");
                     String enrollment = enrollmentColumnIndex != -1 && !cursor.isNull(enrollmentColumnIndex) ? cursor.getString(enrollmentColumnIndex) : null;
-                    int valueColumnIndex = cursor.getColumnIndex("VALUE");
+                    int valueColumnIndex = cursor.getColumnIndex("value");
                     String value = valueColumnIndex != -1 && !cursor.isNull(valueColumnIndex) ? cursor.getString(valueColumnIndex) : null;
                     int storedByColumnIndex = cursor.getColumnIndex("storedBy");
                     String storedBy = storedByColumnIndex != -1 && !cursor.isNull(storedByColumnIndex) ? cursor.getString(storedByColumnIndex) : null;
@@ -516,7 +516,7 @@ public class DashboardRepositoryImpl implements DashboardRepository {
 
                     sqLiteBind(insetNoteStatement, 1, codeGenerator.generate()); //enrollment
                     sqLiteBind(insetNoteStatement, 2, enrollmentUid == null ? "" : enrollmentUid); //enrollment
-                    sqLiteBind(insetNoteStatement, 3, stringBooleanPair.val0() == null ? "" : stringBooleanPair.val0()); //VALUE
+                    sqLiteBind(insetNoteStatement, 3, stringBooleanPair.val0() == null ? "" : stringBooleanPair.val0()); //value
                     sqLiteBind(insetNoteStatement, 4, userName == null ? "" : userName); //storeBy
                     sqLiteBind(insetNoteStatement, 5, DateUtils.databaseDateFormat().format(Calendar.getInstance().getTime())); //storeDate
 
@@ -547,7 +547,7 @@ public class DashboardRepositoryImpl implements DashboardRepository {
 
                 sqLiteBind(insetNoteStatement, 1, codeGenerator.generate()); //enrollment
                 sqLiteBind(insetNoteStatement, 2, enrollmentUidAux == null ? "" : enrollmentUidAux); //enrollment
-                sqLiteBind(insetNoteStatement, 3, stringBooleanPair.val0()); //VALUE
+                sqLiteBind(insetNoteStatement, 3, stringBooleanPair.val0()); //value
                 sqLiteBind(insetNoteStatement, 4, userName == null ? "" : userName); //storeBy
                 sqLiteBind(insetNoteStatement, 5, DateUtils.databaseDateFormat().format(Calendar.getInstance().getTime())); //storeDate
 

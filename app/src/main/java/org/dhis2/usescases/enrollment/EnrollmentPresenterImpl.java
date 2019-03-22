@@ -12,14 +12,14 @@ import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.schedulers.Schedulers;
 import timber.log.Timber;
 
-public class EnrollmentEnrollmentPresenterImpl implements EnrollmentContracts.EnrollmentPresenter {
+public class EnrollmentPresenterImpl implements EnrollmentContracts.EnrollmentPresenter {
 
     private final CompositeDisposable compositeDisposable;
     private final D2 d2;
     private final String enrollmentUid;
     private EnrollmentContracts.EnrollmentView enrollmentView;
 
-    EnrollmentEnrollmentPresenterImpl(String enrollmentUid, D2 d2) {
+    EnrollmentPresenterImpl(String enrollmentUid, D2 d2) {
         this.enrollmentUid = enrollmentUid;
         this.compositeDisposable = new CompositeDisposable();
         this.d2 = d2;

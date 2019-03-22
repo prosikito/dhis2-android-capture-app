@@ -46,7 +46,7 @@ public class EventInitialModule {
                                                                  @NonNull EventInitialRepository eventInitialRepository,
                                                                  @NonNull MetadataRepository metadataRepository,
                                                                  @NonNull SchedulerProvider schedulerProvider) {
-        return new EventInitialEventInitialPresenter(eventSummaryRepository, eventInitialRepository, metadataRepository, schedulerProvider);
+        return new EventInitialPresenterImpl(eventSummaryRepository, eventInitialRepository, metadataRepository, schedulerProvider);
     }
 
 

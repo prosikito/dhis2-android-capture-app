@@ -50,7 +50,7 @@ class QrReaderPresenterImpl implements QrReaderContracts.Presenter {
 
     private static final String DATA_ELEMENT = "dataElement";
     private static final String STORED_BY = "storedBy";
-    private static final String VALUE = "VALUE";
+    private static final String VALUE = "value";
     private static final String PROVIDED_ELSEWHERE = "providedElsewhere";
     private static final String CREATED = "created";
     private static final String LAST_UPDATED = "lastUpdated";

@@ -27,7 +27,7 @@ public final class SplashModule {
     @Provides
     @PerActivity
     SplashContracts.SplashPresenter providePresenter(SplashRepository splashRepository) {
-        return new SplashSplashPresenter(userManager, splashRepository);
+        return new SplashPresenterImpl(userManager, splashRepository);
     }
 
     @Provides

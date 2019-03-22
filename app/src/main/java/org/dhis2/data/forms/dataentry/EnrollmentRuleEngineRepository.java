@@ -41,7 +41,7 @@ public final class EnrollmentRuleEngineRepository implements RuleEngineRepositor
 
     private static final String QUERY_ATTRIBUTE_VALUES = "SELECT\n" +
             "  Field.id,\n" +
-            "  Value.VALUE,\n" +
+            "  Value.value,\n" +
             "  ProgramRuleVariable.useCodeForOptionSet,\n" +
             "  Option.code,\n" +
             "  Option.name\n" +
@@ -58,8 +58,8 @@ public final class EnrollmentRuleEngineRepository implements RuleEngineRepositor
             "    Value.trackedEntityAttribute = Field.id\n" +
             "        AND Value.trackedEntityInstance = Enrollment.trackedEntityInstance)\n" +
             "  LEFT JOIN ProgramRuleVariable ON ProgramRuleVariable.trackedEntityAttribute = Field.id " +
-            "  LEFT JOIN Option ON (Option.optionSet = Field.optionSet AND Option.code = Value.VALUE) " +
-            "WHERE Enrollment.uid = ? AND Value.VALUE IS NOT NULL;";
+            "  LEFT JOIN Option ON (Option.optionSet = Field.optionSet AND Option.code = Value.value) " +
+            "WHERE Enrollment.uid = ? AND Value.value IS NOT NULL;";
 
     @NonNull
     private final BriteDatabase briteDatabase;

@@ -20,7 +20,7 @@ public class ReservedValueModule {
     @PerActivity
     @Provides
     ReservedValueContracts.ReservedValuePresenter providePresenter(ReservedValueRepository repository, D2 d2) {
-        return new ReservedValueReservedValuePresenter(repository, d2);
+        return new ReservedValuePresenterImpl(repository, d2);
     }
 
     @PerActivity

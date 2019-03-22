@@ -28,7 +28,7 @@ public class DataSetInitialModule {
     @Provides
     @PerActivity
     DataSetInitialContract.DataSetInitialPresenter providesPresenter(DataSetInitialRepository dataSetInitialRepository) {
-        return new DataSetInitialDataSetInitialPresenter(dataSetInitialRepository);
+        return new DataSetInitialPresenterImpl(dataSetInitialRepository);
     }
 
     @Provides
